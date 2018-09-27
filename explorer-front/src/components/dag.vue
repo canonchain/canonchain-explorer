@@ -612,25 +612,25 @@ export default {
                     },
                     // 12个见证人
                     {
-                        selector: ".czr_3wo78xuz6y3j6wm1t9ydyk9hnfig9b5miykxk3pix8duikezrz3dryim36nm",
+                        selector: ".czr_396a5uCH7PPEgVxDSty8u1in2aM9b29uxrE7LiBBjUcye6tLWu",
                         style: {
                             'border-color': '#ff0000'
                         }
                     },
                     {
-                        selector: ".czr_3tx4ermquad5u61rztiaynjn3eoitijhjcpwhaem7mtgbrgkgxs87dcuwuzi",
+                        selector: ".czr_3FU2GCT1RZBDVpyqXLGgPDq1UfTHU8P283GrHe4Lza8UDzkH13",
                         style: {
                             'border-color': '#00ff78'
                         }
                     },
                     {
-                        selector: ".czr_3n571ydsypy34ea5c7w6z7owyc1hxqgbnqa8em8p6bp6pkk3ii55j14btpn6",
+                        selector: ".czr_3HtqugXF5h9rVYEjDAsFXH6e6BSedTFzJC8sMJQkPqbDMqa3N2",
                         style: {
                             'border-color': '#00626b'
                         }
                     },
                     {
-                        selector: ".czr_3mzcp6rw6pmzkaghec9u15gbcyb8nkn5ffcdzea7ojrbp53pyw8zwob4asqm",
+                        selector: ".czr_3purueBfcED7kskpW4fGnTU8fiQ6jXenVFGZrSVRCCAhvihS7Y",
                         style: {
                             'border-color': '#ff0089'
                         }
@@ -638,25 +638,25 @@ export default {
 
 
                     {
-                        selector: ".czr_3h66dopq1b5g6s5fe3g8gzf5mpu4bcckyzqz5k8ramborjwahoa3jaz4ogq6",
+                        selector: ".czr_4DU2ZWJDyLQoXKrgxbFYugPoAxAkac9oFBZFFXEAZKGQ9zEB1K",
                         style: {
                             'border-color': '#a6ff0a'
                         }
                     },
                     {
-                        selector: ".czr_341qh4575khs734rfi8q7s1kioa541mhm3bfb1mryxyscy19tzarhyitiot6",
+                        selector: ".czr_4XGnn8ybPYFjnsuZ5NVHL4fW82mLPMtxSxg5eDpuoaKnSb9LP8",
                         style: {
                             'border-color': '#130162'
                         }
                     },
                     {
-                        selector: ".czr_3wo78xuz6y3j6wm1t9ydyk9hnfig9b5miykxk3pix8duikezrz3dryim36nm",
+                        selector: ".czr_4g1G1r1vm9pEGKtftLgtQKD4Wvxx9KAQKK8GjugfLZybbfhAZy",
                         style: {
                             'border-color': '#e9aee0'
                         }
                     },
                     {
-                        selector: ".czr_31zno6169xdfwxooug1facquhpobfz4onbbw3wtzwab6magkmy9q9gfn6zod",
+                        selector: ".czr_4gag5DEJfPQwFwrmZTGuadVb8s5CS5yapgpnevvSBef5Zw5iUz",
                         style: {
                             'border-color': '#ab420c'
                         }
@@ -664,25 +664,25 @@ export default {
 
 
                     {
-                        selector: ".czr_31ynix6oeb5tn4cemqdyc1ucec5k1fu8juopraigx8xu6i1zph6xpkyyh3fr",
+                        selector: ".czr_4jW4HnSu4r6u8AL2GDdGU3EBzF7W9pZcZb13dg5fD5vzbHCi8R",
                         style: {
                             'border-color': '#631083'
                         }
                     },
                     {
-                        selector: ".czr_1w5jso7p7dpikc8u65ofehfq6sonpyfgiieuce1zqpb1iacmui8qs6ih3wb1",
+                        selector: ".czr_4k2JgNoW13BhuWGAY12eGVL2B6z5HiiCHiMZBe5CBy16RwMVy5",
                         style: {
                             'border-color': '#00b6eb'
                         }
                     },
                     {
-                        selector: ".czr_1rfntpgswdih8x9gaa6ekjkyqhdbzc3npo7zy7iupx8eg5czqbqhfaugx4nb",
+                        selector: ".czr_4m7fBNfZdDqCVSvBGizojquYbc5aob1qxFBQU3U7EcATPzegQx",
                         style: {
                             'border-color': '#959595'
                         }
                     },
                     {
-                        selector: ".czr_1qbsxr4odr1g65j4erbpdxchxqk87nbj63xr6yfsm5z5u7egx35q54t1h9di",
+                        selector: ".czr_4pT89FFMcDRD9ZGwE6Po5ttdmffuVbK7TGvKLTmD7NJENBatyP",
                         style: {
                             'border-color': '#fff300'
                         }

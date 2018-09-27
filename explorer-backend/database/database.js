@@ -55,7 +55,7 @@ let pageUtility = {
             return status
         }).then(function (status) {
             rpcStableMci = Number(status.status.last_stable_mci);
-            if (dbStableMci < rpcStableMci) {
+            if ((dbStableMci < rpcStableMci) || (rpcStableMci ===0)) {
                 if ((dbStableMci + 1000) < rpcStableMci) {
                     //数量太多，需要分批插入
                     cartMci = dbStableMci + 1000;
