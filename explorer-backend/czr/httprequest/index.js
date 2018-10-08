@@ -3,8 +3,8 @@ var rpc = require('../json-rpc/index');
 
 var options = {
     // host: '192.168.10.232',
-    host: '192.168.10.153',
-    // host: "127.0.0.1",
+    // host: '192.168.10.153',
+    host: "127.0.0.1",
     port: 8765,
 };
 

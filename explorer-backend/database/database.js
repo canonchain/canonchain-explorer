@@ -51,9 +51,14 @@ let pageUtility = {
     },
     getRPC() {
         //获取网络中最新稳定的MCI
+        logger.info(`获取网络中最新稳定的MCI-Start`);
         czr.request.status().then(function (status) {
+            logger.info(`获取网络中最新稳定的MCI-Success : ${status}`);
             return status
-        }).then(function (status) {
+        }).catch((err)=>{
+            logger.info(`获取网络中最新稳定的MCI-Error : ${err}`);
+        })
+        .then(function (status) {
             rpcStableMci = Number(status.status.last_stable_mci);
             if ((dbStableMci < rpcStableMci) || (rpcStableMci ===0)) {
                 if ((dbStableMci + 1000) < rpcStableMci) {

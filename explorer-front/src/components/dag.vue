@@ -797,7 +797,7 @@ export default {
                         classes += "is_minor ";
                     }
                     if(isWt){
-                        classes += _node.witness_from+"";
+                        classes += _node.witness_from+" ";
                     }
                     if (_node.is_stable) {
                         classes += "is_stable ";
@@ -966,7 +966,7 @@ export default {
                     if (_node.is_on_main_chain) classes += "is_on_main_chain ";
                     if (_node.is_minor) classes += "is_minor ";
                     if(isWt){
-                        classes += _node.witness_from+"";
+                        classes += _node.witness_from+" ";
                     }
                     if (_node.is_stable) classes += "is_stable ";
                     if (_node.sequence === "final-bad") classes += "finalBad";
