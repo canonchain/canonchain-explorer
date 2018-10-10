@@ -612,25 +612,25 @@ export default {
                     },
                     // 12个见证人
                     {
-                        selector: ".czr_396a5uCH7PPEgVxDSty8u1in2aM9b29uxrE7LiBBjUcye6tLWu",
+                        selector: ".czr_2xSo8RHWhPwGtRUVF1q6f2AksFdC2dsL1YXF4rLaas7dqGJ24N",
                         style: {
                             'border-color': '#ff0000'
                         }
                     },
                     {
-                        selector: ".czr_3FU2GCT1RZBDVpyqXLGgPDq1UfTHU8P283GrHe4Lza8UDzkH13",
+                        selector: ".czr_3A5dwJa2pDAcYgkasdFNmGMeddGtEesE4bduAJKG7M4H1qh7Sn",
                         style: {
                             'border-color': '#00ff78'
                         }
                     },
                     {
-                        selector: ".czr_3HtqugXF5h9rVYEjDAsFXH6e6BSedTFzJC8sMJQkPqbDMqa3N2",
+                        selector: ".czr_3BdVwpo7jQkjjv8wtW2wVWokhhopCn8geHy4okDRuo2HSacN4c",
                         style: {
                             'border-color': '#00626b'
                         }
                     },
                     {
-                        selector: ".czr_3purueBfcED7kskpW4fGnTU8fiQ6jXenVFGZrSVRCCAhvihS7Y",
+                        selector: ".czr_3Gz2a5RUvhY8hdwbKqDxGCMC3uZac3SghKYBzQgXcyAchffD8B",
                         style: {
                             'border-color': '#ff0089'
                         }
@@ -638,25 +638,25 @@ export default {
 
 
                     {
-                        selector: ".czr_4DU2ZWJDyLQoXKrgxbFYugPoAxAkac9oFBZFFXEAZKGQ9zEB1K",
+                        selector: ".czr_3NABwspcEqCzmUYvoMYa9YGmsrjy4ecZWSniVFcwrDNoUZ89RH",
                         style: {
                             'border-color': '#a6ff0a'
                         }
                     },
                     {
-                        selector: ".czr_4XGnn8ybPYFjnsuZ5NVHL4fW82mLPMtxSxg5eDpuoaKnSb9LP8",
+                        selector: ".czr_3XcnHaweAPubE4a5V3J2oFEZZCytYaJ6sKgLaAa6ddXBFu86R8",
                         style: {
                             'border-color': '#130162'
                         }
                     },
                     {
-                        selector: ".czr_4g1G1r1vm9pEGKtftLgtQKD4Wvxx9KAQKK8GjugfLZybbfhAZy",
+                        selector: ".czr_455WUtrji5ybVokTS1SY7qwWEcuW4UVxGG44hWnQ7vk3Zru2Yk",
                         style: {
                             'border-color': '#e9aee0'
                         }
                     },
                     {
-                        selector: ".czr_4gag5DEJfPQwFwrmZTGuadVb8s5CS5yapgpnevvSBef5Zw5iUz",
+                        selector: ".czr_49k66vc83hAA8JnQ8Y1KmTsbpfURUAWbzh7nGNBdSWSNqxGgEN",
                         style: {
                             'border-color': '#ab420c'
                         }
@@ -664,25 +664,25 @@ export default {
 
 
                     {
-                        selector: ".czr_4jW4HnSu4r6u8AL2GDdGU3EBzF7W9pZcZb13dg5fD5vzbHCi8R",
+                        selector: ".czr_4ZNah9gnVSyGv4tL5B3jMcj1q54b1Q6XEkat2ADFCQ19sCdFeh",
                         style: {
                             'border-color': '#631083'
                         }
                     },
                     {
-                        selector: ".czr_4k2JgNoW13BhuWGAY12eGVL2B6z5HiiCHiMZBe5CBy16RwMVy5",
+                        selector: ".czr_4aX86VPL8eaepDF1wd5sY6HvvdBsJVJsNBQpEMqniWb3uuF1M9",
                         style: {
                             'border-color': '#00b6eb'
                         }
                     },
                     {
-                        selector: ".czr_4m7fBNfZdDqCVSvBGizojquYbc5aob1qxFBQU3U7EcATPzegQx",
+                        selector: ".czr_4eJg3fGEKyikgiuH3vR3NkqX9EeRbyGKNE6moAdqCCDfkSAtaj",
                         style: {
                             'border-color': '#959595'
                         }
                     },
                     {
-                        selector: ".czr_4pT89FFMcDRD9ZGwE6Po5ttdmffuVbK7TGvKLTmD7NJENBatyP",
+                        selector: ".czr_4swFXWhvv7veRidPE8XZpZ1snmNozGTxK7EBoeJW2btU6JyHuT",
                         style: {
                             'border-color': '#fff300'
                         }
@@ -1354,14 +1354,24 @@ export default {
 
         //创建圆形
         createGraph: function(_nodes, _edges) {
+            //参考：https://github.com/dagrejs/dagre/wiki
+            //创建一个新的有向图
             var graph = new dagre.graphlib.Graph({
                 multigraph: true,
                 compound: true
             });
+            //设置图标签的对象
             graph.setGraph({});
+            //设置默认边缘标签
             graph.setDefaultEdgeLabel(function() {
                 return {};
             });
+            /* 
+            将节点添加到图表中。
+            第一个参数是节点ID。
+            第二个是关于节点的元数据。
+            在这种情况下，我们将为每个节点添加标签。
+            */
             _nodes.forEach(function(node) {
                 graph.setNode(node.data.unit, {
                     label: node.data.unit_s,
