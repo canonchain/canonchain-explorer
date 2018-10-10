@@ -1542,8 +1542,11 @@ export default {
         //搜索地址/unit 【OK】
         searchForm: function() {
             var text = $inputSearch.val();
-            if (text.length == 64) {
+            text = text.replace(/\s+/g,"");
+            if (text.length == 64) {                
                 location.hash = "#/dag/" + text + (isWt?"?wt=1":"");
+            } else if(text.length===0){
+                return;
             } else {
                 this.$message.error("请输入正确格式的Block");
             }
