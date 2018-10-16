@@ -641,7 +641,7 @@ router.get("/get_previous_units", function (req, res, next) {
                 var dataAryStr = dataAry.join(",");
 
                 //"Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")"
-                pgclient.query("Select item,parent FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
+                pgclient.query("Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")", (result) => {
                     let resultTypeVal = Object.prototype.toString.call(result);
                     if (resultTypeVal === '[object Error]') {
                         responseData = {
