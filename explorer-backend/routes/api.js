@@ -24,16 +24,15 @@ var formatUnits = function (unitsAry) {
     var tempStatus;
     var isMinor;
     unitsAry.forEach(function (item) {
-        // hash,pkid,is_stable,is_fork,is_invalid,is_fail,is_on_mc
         if (item.is_stable) {
-            if (item.is_fork || item.is_invalid) {
-                tempStatus = "temp-bad";
-            } else {
-                if (item.is_fail) {
-                    tempStatus = 'final-bad'
-                } else {
-                    tempStatus = 'good'
-                }
+            if (item.status=="1") {
+                tempStatus = 'temp-bad'
+            } else if (item.status=="2"){
+                tempStatus = 'temp-bad'
+            } else if (item.status=="3"){
+                tempStatus = 'final-bad'
+            } else if (item.status=="0"){
+                tempStatus = 'good'
             }
         } else {
             tempStatus = 'good'
@@ -207,8 +206,7 @@ router.get("/get_account_list", function (req, res, next) {
     } else {
         page = Number(queryPage) || 1;
     }
-    //TODO 筛选To里 不是失败的
-    // is_stable === true  and  is_fork === false and is_invalid === false and is_fail === false
+    
     pgclient.query('Select COUNT(1) FROM transaction WHERE "from" = $1 OR "to"=$1', [queryAccount], (count) => {
         let typeCountVal = Object.prototype.toString.call(count);
         if (typeCountVal === '[object Error]') {
@@ -239,7 +237,7 @@ router.get("/get_account_list", function (req, res, next) {
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
                 // *,balance/sum(balance) 
-                pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,is_fork,is_invalid,is_fail,amount,mci FROM transaction WHERE "from" = $1 OR "to"=$1 order by exec_timestamp desc, level desc,pkid desc LIMIT $2 OFFSET $3', [queryAccount, LIMITVAL, OFFSETVAL], (data) => {
+                pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount,mci FROM transaction WHERE "from" = $1 OR "to"=$1 order by exec_timestamp desc, level desc,pkid desc LIMIT $2 OFFSET $3', [queryAccount, LIMITVAL, OFFSETVAL], (data) => {
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -248,7 +246,7 @@ router.get("/get_account_list", function (req, res, next) {
                             count: 0,
                             code: 500,
                             success: false,
-                            message: "Select exec_timestamp,level,hash,from,to,is_stable,is_fork,is_invalid,is_fail,amount,mci FROM transaction Error"
+                            message: 'Select exec_timestamp,level,hash,from,to,is_stable,"status",amount,mci FROM transaction Error'
                         }
                         res.json(responseData);
                     } else {
@@ -334,7 +332,7 @@ router.get("/get_transactions", function (req, res, next) {
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
                 // *,balance/sum(balance) 
-                pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,is_fork,is_invalid,is_fail,amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
+                pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -343,7 +341,7 @@ router.get("/get_transactions", function (req, res, next) {
                             transactions: [],
                             code: 500,
                             success: false,
-                            message: 'Select exec_timestamp,level,hash,"from","to",is_stable,is_fork,is_invalid,is_fail,amount FROM transaction Error'
+                            message: 'Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction Error'
                         }
                     } else {
                         responseData = {
@@ -365,14 +363,14 @@ router.get("/get_transactions", function (req, res, next) {
 
 //获取最新的交易
 router.get("/get_latest_transactions", function (req, res, next) {
-    pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,is_fork,is_invalid,is_fail,amount FROM transaction where "from" != "to" or is_stable = true or amount != 0 order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
+    pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction where "from" != "to" or is_stable = true or amount != 0 order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
                 transactions: [],
                 code: 500,
                 success: false,
-                message: 'select exec_timestamp,level,hash,"from","to",is_stable,is_fork,is_invalid,is_fail,amount from transaction error'
+                message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from transaction error'
             }
         } else {
             responseData = {
@@ -389,7 +387,7 @@ router.get("/get_latest_transactions", function (req, res, next) {
 //获取交易号信息
 router.get("/get_transaction", function (req, res, next) {
     var queryTransaction = req.query.transaction;// ?account=2
-    pgclient.query('Select pkid,hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,is_fork,is_invalid,is_fail,is_on_mc,mci,latest_included_mci,mc_timestamp FROM transaction  WHERE hash = $1', [queryTransaction], (data) => {
+    pgclient.query('Select pkid,hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp FROM transaction  WHERE hash = $1', [queryTransaction], (data) => {
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -411,9 +409,7 @@ router.get("/get_transaction", function (req, res, next) {
                     "witnessed_level": "0",
                     "best_parent": "-",
                     "is_stable": false,
-                    "is_fork": false,
-                    "is_invalid": false,
-                    "is_fail": false,
+                    "status": "0",
                     "is_on_mc": false,
                     "mci": "0",
                     "latest_included_mci": "0",
@@ -446,9 +442,7 @@ router.get("/get_transaction", function (req, res, next) {
                         "witnessed_level": "0",
                         "best_parent": "-",
                         "is_stable": false,
-                        "is_fork": false,
-                        "is_invalid": false,
-                        "is_fail": false,
+                        "status": "0",
                         "is_on_mc": false,
                         "mci": "0",
                         "latest_included_mci": "0",
@@ -484,9 +478,7 @@ router.get("/get_transaction", function (req, res, next) {
                                 "witnessed_level": "0",
                                 "best_parent": "-",
                                 "is_stable": false,
-                                "is_fork": false,
-                                "is_invalid": false,
-                                "is_fail": false,
+                                "status": "0",
                                 "is_on_mc": false,
                                 "mci": "0",
                                 "latest_included_mci": "0",
@@ -566,9 +558,9 @@ router.get("/get_previous_units", function (req, res, next) {
            
         */
         sqlOptions = {
-            // hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount
-            // text: "Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount FROM transaction WHERE pkid < $1 order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100",
-            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free < $1) or (is_free = $1 and exec_timestamp < $2) or (is_free = $1 and exec_timestamp = $2 and level < $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4) order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
+            // hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount
+            // text: "Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount FROM transaction WHERE pkid < $1 order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100",
+            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free < $1) or (is_free = $1 and exec_timestamp < $2) or (is_free = $1 and exec_timestamp = $2 and level < $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4) order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
             values: [searchParameter.is_free,searchParameter.exec_timestamp,searchParameter.level,searchParameter.pkid]
         }
     } else if (searchParameter.direction === 'up') {
@@ -584,25 +576,25 @@ router.get("/get_previous_units", function (req, res, next) {
         
         */
         sqlOptions = {
-            // text: "Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount FROM transaction WHERE pkid > $1 order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100",
-            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free > $1) or (is_free = $1 and exec_timestamp > $2) or (is_free = $1 and exec_timestamp = $2 and level > $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid > $4) order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
+            // text: "Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount FROM transaction WHERE pkid > $1 order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100",
+            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free > $1) or (is_free = $1 and exec_timestamp > $2) or (is_free = $1 and exec_timestamp = $2 and level > $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid > $4) order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
             values: [searchParameter.is_free,searchParameter.exec_timestamp,searchParameter.level,searchParameter.pkid]
         }
 
     } else if ((searchParameter.direction === 'center') && searchParameter.active_unit) {
         //text: "select * from transaction where pkid > ((select pkid from transaction where hash = $1 order by pkid desc limit 1 )-49) order by pkid offset 0 limit 100 "
         sqlOptions = {
-            // text: "select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount from transaction where pkid < ((select pkid from transaction where hash = $1 order by pkid desc limit 1 )+50) order by is_free desc , exec_timestamp desc, level desc,pkid desc offset 0 limit 100 ",
+            // text: "select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount from transaction where pkid < ((select pkid from transaction where hash = $1 order by pkid desc limit 1 )+50) order by is_free desc , exec_timestamp desc, level desc,pkid desc offset 0 limit 100 ",
             /* 
 
-            (Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount FROM transaction WHERE (is_free >(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level > (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid > (select pkid from transaction where hash = $1 limit 1 )) limit 49) UNION (select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount from transaction where hash = $1 limit 1) UNION (Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,'from','to',amount FROM transaction WHERE (is_free <(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) ) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level < (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid < (select pkid from transaction where hash = $1 limit 1 )) order by is_free desc, exec_timestamp desc, level desc,pkid desc  limit 50) order by is_free desc , exec_timestamp desc, level desc,pkid desc
+            (Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount FROM transaction WHERE (is_free >(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level > (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid > (select pkid from transaction where hash = $1 limit 1 )) limit 49) UNION (select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount from transaction where hash = $1 limit 1) UNION (Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,'from','to',amount FROM transaction WHERE (is_free <(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) ) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level < (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid < (select pkid from transaction where hash = $1 limit 1 )) order by is_free desc, exec_timestamp desc, level desc,pkid desc  limit 50) order by is_free desc , exec_timestamp desc, level desc,pkid desc
 
             */
-            text: '(Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free >(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level > (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid > (select pkid from transaction where hash = $1 limit 1 )) limit 49) UNION (select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent from transaction where hash = $1 limit 1) UNION (Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free <(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) ) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level < (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid < (select pkid from transaction where hash = $1 limit 1 )) order by is_free desc, exec_timestamp desc, level desc,pkid desc  limit 50) order by is_free desc , exec_timestamp desc, level desc,pkid desc',
+            text: '(Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free >(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level > (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid > (select pkid from transaction where hash = $1 limit 1 )) limit 49) UNION (select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent from transaction where hash = $1 limit 1) UNION (Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE (is_free <(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) ) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level < (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid < (select pkid from transaction where hash = $1 limit 1 )) order by is_free desc, exec_timestamp desc, level desc,pkid desc  limit 50) order by is_free desc , exec_timestamp desc, level desc,pkid desc',
             values: [searchParameter.active_unit]
         }
     } else {
-        sqlOptions = 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,"from","to",amount ,best_parent FROM transaction order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100';
+        sqlOptions = 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100';
     }
 
     pgclient.query(sqlOptions, (data) => {

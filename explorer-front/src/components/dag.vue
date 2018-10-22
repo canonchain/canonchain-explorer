@@ -109,18 +109,17 @@
                             </span>
                         </template>
                         <template v-else>
-                            <template v-if="activeUnitInfo.is_fork === true || activeUnitInfo.is_invalid === true">
-                                <span class="txt-info">
-                                    失败
-                                </span>
+                            <template v-if='activeUnitInfo.status == "0"'>
+                                <span class="txt-success"> 成功 </span>
                             </template>
-                            <template v-else>
-                                <template v-if="activeUnitInfo.is_fail === true">
-                                    <span class="txt-danger"> 失败 </span>
-                                </template>
-                                <template v-else>
-                                    <span class="txt-success">成功</span>
-                                </template>
+                            <template v-else-if='activeUnitInfo.status == "1"'>
+                                <span class="txt-danger"> 失败(1) </span>
+                            </template>
+                            <template v-else-if='activeUnitInfo.status == "2"'>
+                                <span class="txt-danger"> 失败(2) </span>
+                            </template>
+                            <template v-else-if='activeUnitInfo.status == "3"'>
+                                <span class="txt-danger"> 失败(3) </span>
                             </template>
                         </template>
                     </span>
@@ -313,9 +312,7 @@ export default {
                 witnessed_level: "1",
                 best_parent: "-",
                 is_stable: true,
-                is_fork: false,
-                is_invalid: false,
-                is_fail: false,
+                status: "0",
                 is_on_mc: true,
                 mci: "-",
                 latest_included_mci: "-",

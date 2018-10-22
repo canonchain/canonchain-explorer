@@ -38,18 +38,17 @@
                                     </span>
                                 </template>
                                 <template v-else>
-                                    <template v-if="blockInfo.is_fork === true || blockInfo.is_invalid === true">
-                                        <span class="txt-info">
-                                            失败
-                                        </span>
+                                    <template v-if='blockInfo.status == "0"'>
+                                        <span class="txt-success"> 成功 </span>
                                     </template>
-                                    <template v-else>
-                                        <template v-if="blockInfo.is_fail === true">
-                                            <span class="txt-danger"> 失败 </span>
-                                        </template>
-                                        <template v-else>
-                                            <span class="txt-success">成功</span>
-                                        </template>
+                                    <template v-else-if='blockInfo.status == "1"'>
+                                        <span class="txt-danger"> 失败(1) </span>
+                                    </template>
+                                    <template v-else-if='blockInfo.status == "2"'>
+                                        <span class="txt-danger"> 失败(2) </span>
+                                    </template>
+                                    <template v-else-if='blockInfo.status == "3"'>
+                                        <span class="txt-danger"> 失败(3) </span>
                                     </template>
                                 </template>
 
@@ -120,10 +119,8 @@ export default {
                 best_parent: "-",
                 data: "",
                 exec_timestamp: "0",
-                is_fail: "0",
-                is_fork: "0",
+                status: "0",
                 is_free: "0",
-                is_invalid: "0",
                 is_on_mc: "0",
                 is_stable: "0",
                 last_summary: "-",

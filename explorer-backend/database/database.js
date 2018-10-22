@@ -588,9 +588,7 @@ let pageUtility = {
                 item.witnessed_level + "','" +
                 item.best_parent + "'," +
                 (item.is_stable === '1') + "," +
-                (item.is_fork === '1') + "," +
-                (item.is_invalid === '1') + "," +
-                (item.is_fail === '1') + "," +
+                Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
                 (Number(item.mci) || 0) + "," +//item.mci可能为null
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
@@ -612,7 +610,7 @@ let pageUtility = {
         });
 
         let batchInsertSql = {
-            text: 'INSERT INTO transaction(hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,is_fork,is_invalid,is_fail,is_on_mc,mci,latest_included_mci,mc_timestamp) VALUES' + tempAry.toString()
+            text: 'INSERT INTO transaction(hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp) VALUES' + tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -628,15 +626,13 @@ let pageUtility = {
         ﻿update transaction set
             is_free=tmp.is_free ,
             is_stable=tmp.is_stable ,
-            is_fork=tmp.is_fork ,
-            is_invalid=tmp.is_invalid ,
-            is_fail=tmp.is_fail ,
+            status=tmp.status ,
             is_on_mc=tmp.is_on_mc
         from (values
               ('B5956299E1BC73B23A56D4CC1C58D42F2D494808FBDEE073259B48F571CCE97C',true,true,true,true,true,true),
               ('5F2B6FA741A33CDD506C5E150E37FCC73842082B24948A7159DFEB4C07500A08',true,true,true,true,true,true)
              )
-        as tmp (hash,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc)
+        as tmp (hash,is_free,is_stable,status,is_on_mc)
         where
             transaction.hash=tmp.hash
         * */
@@ -647,15 +643,13 @@ let pageUtility = {
                 item.hash + "'," +
                 (item.is_free === '1') + "," +
                 (item.is_stable === '1') + "," +
-                (item.is_fork === '1') + "," +
-                (item.is_invalid === '1') + "," +
-                (item.is_fail === '1') + "," +
+                item.status + "," +
                 (item.is_on_mc === '1') + "," +
                 (item.mc_timestamp) +
                 ")");
         });
-        let batchUpdateSql = "update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , is_fork=tmp.is_fork , is_invalid=tmp.is_invalid , is_fail=tmp.is_fail , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp from (values " + tempAry.toString() +
-            ") as tmp (hash,is_free,is_stable,is_fork,is_invalid,is_fail,is_on_mc,mc_timestamp) where transaction.hash=tmp.hash";
+        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp from (values ' + tempAry.toString() +
+            ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp) where transaction.hash=tmp.hash';
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchUpdateBlock")) {
@@ -707,7 +701,7 @@ let pageUtility = {
     },
     isFail(obj) {
         //true 是失败的
-        return (obj.is_stable === "1") && ((obj.is_fork === "1") || (obj.is_invalid === "1") || (obj.is_fail === "1"));
+        return (obj.is_stable === "1") && (obj.status !="0");
     }
 };
 pageUtility.init();

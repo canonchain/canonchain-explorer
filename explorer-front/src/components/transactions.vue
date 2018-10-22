@@ -51,18 +51,17 @@
                                         </span>
                                     </template>
                                     <template v-else>
-                                        <template v-if="scope.row.is_fork === true || scope.row.is_invalid === true">
-                                            <span class="txt-info">
-                                                失败
-                                            </span>
+                                        <template v-if='scope.row.status == "0"'>
+                                            <span class="txt-success"> 成功 </span>
                                         </template>
-                                        <template v-else>
-                                            <template v-if="scope.row.is_fail === true">
-                                                <span class="txt-danger"> 失败 </span>
-                                            </template>
-                                            <template v-else>
-                                                <span class="txt-success">成功</span>
-                                            </template>
+                                        <template v-else-if='scope.row.status == "1"'>
+                                            <span class="txt-danger"> 失败(1) </span>
+                                        </template>
+                                        <template v-else-if='scope.row.status == "2"'>
+                                            <span class="txt-danger"> 失败(2) </span>
+                                        </template>
+                                        <template v-else-if='scope.row.status == "3"'>
+                                            <span class="txt-danger"> 失败(3) </span>
                                         </template>
                                     </template>
 
