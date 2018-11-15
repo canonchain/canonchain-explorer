@@ -1,14 +1,17 @@
 var express = require("express");
 var router = express.Router();
+var responseTime = require("./response-time");
 
 var pgclient = require('../database/PG');// 引用上述文件
 pgclient.getConnection();
 
 //写日志
 let log4js = require('../database/log_config');
-let logger = log4js.getLogger('read_database');//此处使用category的值
+let logger = log4js.getLogger('read_db');//此处使用category的值
 
 var responseData = null;
+console.log(responseTime);
+router.use(responseTime())
 router.use(function (req, res, next) {
     responseData = {
         code: 200,
