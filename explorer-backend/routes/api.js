@@ -10,7 +10,6 @@ let log4js = require('../database/log_config');
 let logger = log4js.getLogger('read_db');//此处使用category的值
 
 var responseData = null;
-console.log(responseTime);
 router.use(responseTime())
 router.use(function (req, res, next) {
     responseData = {
@@ -630,13 +629,15 @@ router.get("/get_previous_units", function (req, res, next) {
                 res.json(responseData);
             } else {
                 let dataAry = [];
+                // let dataAryDiff = [];
                 data.forEach(item => {
                     dataAry.push("'" + item.hash + "'");
+                    // dataAryDiff.push(item.hash);
                 })
                 var dataAryStr = dataAry.join(",");
 
                 //"Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")"
-                pgclient.query("Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")", (result) => {
+                pgclient.query("Select item,parent FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
                     let resultTypeVal = Object.prototype.toString.call(result);
                     if (resultTypeVal === '[object Error]') {
                         responseData = {
@@ -650,14 +651,17 @@ router.get("/get_previous_units", function (req, res, next) {
                         }
                         res.json(responseData);
                     } else {
+                        //筛选parent数据，把不是 dataAryDiff 里的parent都移除
                         result.forEach(resItem => {
-                            tempEdges[resItem.item + '_' + resItem.parent] = {
-                                "data": {
-                                    "source": resItem.item,
-                                    "target": resItem.parent
-                                },
-                                "best_parent_unit": isBastParent(resItem,data)
-                            }
+                            // if ( dataAryDiff.indexOf(resItem.parent) > -1) {
+                                tempEdges[resItem.item + '_' + resItem.parent] = {
+                                    "data": {
+                                        "source": resItem.item,
+                                        "target": resItem.parent
+                                    },
+                                    "best_parent_unit": isBastParent(resItem,data)
+                                }
+                            // }
                         })
                         responseData = {
                             units: {

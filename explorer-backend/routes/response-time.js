@@ -11,7 +11,6 @@ module.exports = function () {
             if (deltaTime > 1000) {
                 logger.info(`Request URL:' ${req.originalUrl} => res:${deltaTime}`);
             }
-            console.log(deltaTime)
         }
 
         res.once('finish', calResponseTime);
