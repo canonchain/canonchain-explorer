@@ -281,7 +281,11 @@ var bWaitingForNext = false,
 var timerInfoMessage;
 var self;
 
-var isWt=false;
+var isWt = false;
+
+//优化unit渲染
+var storageUnitAry = [];
+var storageParents = {};
 
 export default {
     name: "Dag",
@@ -327,10 +331,10 @@ export default {
     },
     created() {
         self = this;
-        if(window.location.hash.indexOf('?wt=')>1){
-            isWt=true;
-        }else{
-            isWt=false;
+        if (window.location.hash.indexOf("?wt=") > 1) {
+            isWt = true;
+        } else {
+            isWt = false;
         }
     },
     mounted() {
@@ -363,8 +367,8 @@ export default {
             nodes = _nodes;
             edges = _edges;
 
-            var firstItem=nodes[0];
-            var lastItem=nodes[nodes.length - 1];
+            var firstItem = nodes[0];
+            var lastItem = nodes[nodes.length - 1];
             firstParameters = {
                 direction: "up",
                 is_free: firstItem.is_free,
@@ -404,8 +408,12 @@ export default {
             _cy.center(_cy.nodes()[0]);
             page = "dag";
 
-            self.activeUnit = location.hash.substr(6,64);
-            self.activeUnit = ((self.activeUnit.length===64)&&(self.activeUnit.indexOf('wt=')===-1)) ? self.activeUnit : "";
+            self.activeUnit = location.hash.substr(6, 64);
+            self.activeUnit =
+                self.activeUnit.length === 64 &&
+                self.activeUnit.indexOf("wt=") === -1
+                    ? self.activeUnit
+                    : "";
             if (self.activeUnit) {
                 notLastUnitUp = true;
                 self.highlightNode(self.activeUnit);
@@ -416,8 +424,12 @@ export default {
         bind: function() {
             //hash改变时触发
             window.addEventListener("hashchange", function() {
-                self.activeUnit = location.hash.substr(6,64);
-                self.activeUnit = ((self.activeUnit.length===64)&&(self.activeUnit.indexOf('wt=')===-1)) ? self.activeUnit : "";
+                self.activeUnit = location.hash.substr(6, 64);
+                self.activeUnit =
+                    self.activeUnit.length === 64 &&
+                    self.activeUnit.indexOf("wt=") === -1
+                        ? self.activeUnit
+                        : "";
                 if (self.activeUnit.length == 64) {
                     self.highlightNode(self.activeUnit);
                     //隐藏显示的面板
@@ -478,26 +490,26 @@ export default {
                 self.getStar();
             } else {
                 notLastUnitUp = true;
-                self.getStar(location.hash.substr(6,64));
+                self.getStar(location.hash.substr(6, 64));
             }
         },
         getStar(searchUnit) {
-            if(searchUnit&&(searchUnit.length!==64)){
-                searchUnit='';
+            if (searchUnit && searchUnit.length !== 64) {
+                searchUnit = "";
             }
             self.loadingSwitch = true;
             self.$axios
                 .get("/api/get_previous_units", {
                     params: {
                         active_unit: searchUnit,
-                        parameters:{
-                            direction:'center',
-                            active_unit:searchUnit
+                        parameters: {
+                            direction: "center",
+                            active_unit: searchUnit
                         }
-                        
                     }
                 })
                 .then(function(response) {
+                    response = self.filterParent(response);
                     if (response.data.units.nodes.length === 0) {
                         //TODO 回调
                         self.$message.error(
@@ -596,7 +608,7 @@ export default {
                         selector: ".is_minor",
                         style: {
                             "border-width": 2,
-                            'border-color': '#D7D7D7'
+                            "border-color": "#D7D7D7"
                         }
                     },
                     {
@@ -609,79 +621,89 @@ export default {
                     },
                     // 12个见证人
                     {
-                        selector: ".czr_2xSo8RHWhPwGtRUVF1q6f2AksFdC2dsL1YXF4rLaas7dqGJ24N",
+                        selector:
+                            ".czr_2xSo8RHWhPwGtRUVF1q6f2AksFdC2dsL1YXF4rLaas7dqGJ24N",
                         style: {
-                            'border-color': '#ff0000'
+                            "border-color": "#ff0000"
                         }
                     },
                     {
-                        selector: ".czr_3A5dwJa2pDAcYgkasdFNmGMeddGtEesE4bduAJKG7M4H1qh7Sn",
+                        selector:
+                            ".czr_3A5dwJa2pDAcYgkasdFNmGMeddGtEesE4bduAJKG7M4H1qh7Sn",
                         style: {
-                            'border-color': '#00ff78'
+                            "border-color": "#00ff78"
                         }
                     },
                     {
-                        selector: ".czr_3BdVwpo7jQkjjv8wtW2wVWokhhopCn8geHy4okDRuo2HSacN4c",
+                        selector:
+                            ".czr_3BdVwpo7jQkjjv8wtW2wVWokhhopCn8geHy4okDRuo2HSacN4c",
                         style: {
-                            'border-color': '#00626b'
+                            "border-color": "#00626b"
                         }
                     },
                     {
-                        selector: ".czr_3Gz2a5RUvhY8hdwbKqDxGCMC3uZac3SghKYBzQgXcyAchffD8B",
+                        selector:
+                            ".czr_3Gz2a5RUvhY8hdwbKqDxGCMC3uZac3SghKYBzQgXcyAchffD8B",
                         style: {
-                            'border-color': '#ff0089'
-                        }
-                    },
-
-
-                    {
-                        selector: ".czr_3NABwspcEqCzmUYvoMYa9YGmsrjy4ecZWSniVFcwrDNoUZ89RH",
-                        style: {
-                            'border-color': '#a6ff0a'
-                        }
-                    },
-                    {
-                        selector: ".czr_3XcnHaweAPubE4a5V3J2oFEZZCytYaJ6sKgLaAa6ddXBFu86R8",
-                        style: {
-                            'border-color': '#130162'
-                        }
-                    },
-                    {
-                        selector: ".czr_455WUtrji5ybVokTS1SY7qwWEcuW4UVxGG44hWnQ7vk3Zru2Yk",
-                        style: {
-                            'border-color': '#e9aee0'
-                        }
-                    },
-                    {
-                        selector: ".czr_49k66vc83hAA8JnQ8Y1KmTsbpfURUAWbzh7nGNBdSWSNqxGgEN",
-                        style: {
-                            'border-color': '#ab420c'
+                            "border-color": "#ff0089"
                         }
                     },
 
+                    {
+                        selector:
+                            ".czr_3NABwspcEqCzmUYvoMYa9YGmsrjy4ecZWSniVFcwrDNoUZ89RH",
+                        style: {
+                            "border-color": "#a6ff0a"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_3XcnHaweAPubE4a5V3J2oFEZZCytYaJ6sKgLaAa6ddXBFu86R8",
+                        style: {
+                            "border-color": "#130162"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_455WUtrji5ybVokTS1SY7qwWEcuW4UVxGG44hWnQ7vk3Zru2Yk",
+                        style: {
+                            "border-color": "#e9aee0"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_49k66vc83hAA8JnQ8Y1KmTsbpfURUAWbzh7nGNBdSWSNqxGgEN",
+                        style: {
+                            "border-color": "#ab420c"
+                        }
+                    },
 
                     {
-                        selector: ".czr_4ZNah9gnVSyGv4tL5B3jMcj1q54b1Q6XEkat2ADFCQ19sCdFeh",
+                        selector:
+                            ".czr_4ZNah9gnVSyGv4tL5B3jMcj1q54b1Q6XEkat2ADFCQ19sCdFeh",
                         style: {
-                            'border-color': '#631083'
+                            "border-color": "#631083"
                         }
                     },
                     {
-                        selector: ".czr_4aX86VPL8eaepDF1wd5sY6HvvdBsJVJsNBQpEMqniWb3uuF1M9",
+                        selector:
+                            ".czr_4aX86VPL8eaepDF1wd5sY6HvvdBsJVJsNBQpEMqniWb3uuF1M9",
                         style: {
-                            'border-color': '#00b6eb'
+                            "border-color": "#00b6eb"
                         }
                     },
                     {
-                        selector: ".czr_4eJg3fGEKyikgiuH3vR3NkqX9EeRbyGKNE6moAdqCCDfkSAtaj",
+                        selector:
+                            ".czr_4eJg3fGEKyikgiuH3vR3NkqX9EeRbyGKNE6moAdqCCDfkSAtaj",
                         style: {
-                            'border-color': '#959595'
+                            "border-color": "#959595"
                         }
                     },
                     {
-                        selector: ".czr_4swFXWhvv7veRidPE8XZpZ1snmNozGTxK7EBoeJW2btU6JyHuT",
+                        selector:
+                            ".czr_4swFXWhvv7veRidPE8XZpZ1snmNozGTxK7EBoeJW2btU6JyHuT",
                         style: {
-                            'border-color': '#fff300'
+                            "border-color": "#fff300"
                         }
                     },
 
@@ -712,7 +734,6 @@ export default {
             });
             // console.log('createCy 2')
 
-
             //鼠标移入移除
             _cy.on("mouseover", "node", function() {
                 this.addClass("hover");
@@ -723,11 +744,13 @@ export default {
 
             //鼠标点击
             _cy.on("click", "node", function(evt) {
-                window.location.href = "/#/dag/" + evt.cyTarget.id()  + (isWt?"?wt=1":"");
+                window.location.href =
+                    "/#/dag/" + evt.cyTarget.id() + (isWt ? "?wt=1" : "");
             });
 
             _cy.on("tap", "node", function(evt) {
-                window.location.href = "/#/dag/" + evt.cyTarget.id()  + (isWt?"?wt=1":"");
+                window.location.href =
+                    "/#/dag/" + evt.cyTarget.id() + (isWt ? "?wt=1" : "");
             });
 
             //拖动事件
@@ -793,8 +816,8 @@ export default {
                     if (_node.is_minor) {
                         classes += "is_minor ";
                     }
-                    if(isWt){
-                        classes += _node.witness_from+" ";
+                    if (isWt) {
+                        classes += _node.witness_from + " ";
                     }
                     if (_node.is_stable) {
                         classes += "is_stable ";
@@ -869,7 +892,7 @@ export default {
             ) {
                 var extent = _cy.extent(); //
                 var elPositionY = el.position().y;
-                lastActiveUnit = location.hash.substr(6,64); //hash置为 last ActiveUnit
+                lastActiveUnit = location.hash.substr(6, 64); //hash置为 last ActiveUnit
                 el.addClass("active");
                 activeNode = el.id();
 
@@ -962,8 +985,8 @@ export default {
                     classes = "";
                     if (_node.is_on_main_chain) classes += "is_on_main_chain ";
                     if (_node.is_minor) classes += "is_minor ";
-                    if(isWt){
-                        classes += _node.witness_from+" ";
+                    if (isWt) {
+                        classes += _node.witness_from + " ";
                     }
                     if (_node.is_stable) classes += "is_stable ";
                     if (_node.sequence === "final-bad") classes += "finalBad";
@@ -1058,10 +1081,11 @@ export default {
                 self.$axios
                     .get("/api/get_previous_units", {
                         params: {
-                            parameters:firstParameters
+                            parameters: firstParameters
                         }
                     })
                     .then(function(response) {
+                        response = self.filterParent(response)
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1073,7 +1097,7 @@ export default {
                                 }
                             }
                             // firstPkid = nodes[0].pkid;
-                            var firstItem=nodes[0];
+                            var firstItem = nodes[0];
                             firstParameters = {
                                 direction: "up",
                                 is_free: firstItem.is_free,
@@ -1081,7 +1105,6 @@ export default {
                                 level: firstItem.level,
                                 pkid: firstItem.pkid
                             };
-
 
                             self.setNew(
                                 responseData.nodes,
@@ -1111,10 +1134,11 @@ export default {
                 self.$axios
                     .get("/api/get_previous_units", {
                         params: {
-                            parameters:lastParameters
+                            parameters: lastParameters
                         }
                     })
                     .then(function(response) {
+                        response = self.filterParent(response,"down");
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1128,7 +1152,7 @@ export default {
                                 }
                             }
                             // lastPkid = nodes[nodes.length - 1].pkid;
-                            var lastItem=nodes[nodes.length - 1];
+                            var lastItem = nodes[nodes.length - 1];
                             lastParameters = {
                                 direction: "down",
                                 is_free: lastItem.is_free,
@@ -1136,7 +1160,6 @@ export default {
                                 level: lastItem.level,
                                 pkid: lastItem.pkid
                             };
-
 
                             self.generate(
                                 responseData.nodes,
@@ -1164,10 +1187,11 @@ export default {
                 self.$axios
                     .get("/api/get_previous_units", {
                         params: {
-                            parameters:firstParameters
+                            parameters: firstParameters
                         }
                     })
                     .then(function(response) {
+                        response = self.filterParent(response,'up');
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1183,7 +1207,7 @@ export default {
                                 }
                             }
                             // firstPkid = nodes[0].pkid;
-                            var firstItem=nodes[0];
+                            var firstItem = nodes[0];
                             firstParameters = {
                                 direction: "up",
                                 is_free: firstItem.is_free,
@@ -1207,6 +1231,79 @@ export default {
                         // setChangesStableUnits(response.data.arrStableUnits);
                     });
             }
+        },
+        /* 
+        units": {
+            "nodes":[
+                {
+                    "data": {
+                        "unit": "FEA84D27D4755C776EEC2071ED29B6B4C3185B4B92B720D9E4D574A99E08D2E3",
+                        "unit_s": "FEA84D2..."
+                    },
+                    "is_free": true,
+                    "exec_timestamp": "1541692859",
+                    "level": "141216",
+                    "pkid": 238688,
+                    "is_on_main_chain": 1,
+                    "is_stable": 0,
+                    "is_minor": "is-minor",
+                    "witness_from": "czr_3XcnHaweAPubE4a5V3J2oFEZZCytYaJ6sKgLaAa6ddXBFu86R8",
+                    "sequence": "good"
+                },
+            ],
+            "edges":{
+                "FEA84D27D4755C776EEC2071ED29B6B4C3185B4B92B720D9E4D574A99E08D2E3_7AAA3BD5AC5E3E616933DE0DC1898E318D26C85459C103A3778712B272F62601": {
+                    "data": {
+                    "source": "FEA84D27D4755C776EEC2071ED29B6B4C3185B4B92B720D9E4D574A99E08D2E3",
+                    "target": "7AAA3BD5AC5E3E616933DE0DC1898E318D26C85459C103A3778712B272F62601"
+                    },
+                    "best_parent_unit": true
+                },
+            },
+        }
+        */
+        filterParent: function(response,direction) {
+            /* 
+            1.选出接口中存在的unit，存在storageUnitAry;
+            2.把缓存storageParents中的parent遍历，如果有接口unit相关的，拿出来存在target里
+            3.把不存在uint中的target过滤；
+                存在的：存target里；
+                不存在，存在缓存里；
+            */
+           //1-
+           var units = response.data.units;
+           var tempUnitAry=[];
+            units.nodes.forEach(item => {
+                storageUnitAry.push(item.data.unit);
+                tempUnitAry.push(item.data.unit);
+            });
+            //筛选
+            var propsVar= direction=="up"?"source":"target";
+            var currentUnitCont = direction=="up"?tempUnitAry:storageUnitAry;
+
+            let targetParent = {},
+                _edges = units.edges;
+            //2-
+            for (var itemProp in storageParents) {
+                if ((currentUnitCont.indexOf(storageParents[itemProp].data[propsVar]) > -1)) {
+                    //存在的
+                    targetParent[itemProp] = storageParents[itemProp];
+                    delete storageParents[prop];
+                }
+            }
+
+            //3-
+            for (var prop in _edges) {
+                if (storageUnitAry.indexOf(_edges[prop].data.target) > -1) {
+                    //存在的
+                    targetParent[prop] = _edges[prop];
+                }else{
+                    storageParents[prop] = _edges[prop];
+                    delete _edges[prop];
+                }
+            }
+            units.edges = targetParent;
+            return response;
         },
 
         //把不稳定变为稳定
@@ -1255,7 +1352,7 @@ export default {
                     }
                 );
             }
-            location.hash = "#/dag"+ (isWt ? "?wt=1" : "");;
+            location.hash = "#/dag" + (isWt ? "?wt=1" : "");
             if (activeNode) {
                 _cy.getElementById(activeNode).removeClass("active");
             }
@@ -1539,10 +1636,10 @@ export default {
         //搜索地址/unit 【OK】
         searchForm: function() {
             var text = $inputSearch.val();
-            text = text.replace(/\s+/g,"");
-            if (text.length == 64) {                
-                location.hash = "#/dag/" + text + (isWt?"?wt=1":"");
-            } else if(text.length===0){
+            text = text.replace(/\s+/g, "");
+            if (text.length == 64) {
+                location.hash = "#/dag/" + text + (isWt ? "?wt=1" : "");
+            } else if (text.length === 0) {
                 return;
             } else {
                 this.$message.error("请输入正确格式的Block");
@@ -1570,7 +1667,7 @@ export default {
         //
         goBlockHash(hash) {
             self.loadingInfoSwitch = true;
-            location.hash = "#/dag/" + hash + (isWt?"?wt=1":"");
+            location.hash = "#/dag/" + hash + (isWt ? "?wt=1" : "");
         }
     },
     filters: {
