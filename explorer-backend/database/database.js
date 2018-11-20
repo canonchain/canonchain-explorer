@@ -47,7 +47,7 @@ let pageUtility = {
     readyGetData() {
         getRpcTimer = setTimeout(function () {
             pageUtility.getRPC()
-        }, 1500)
+        }, 1000)
     },
     getRPC() {
         //获取网络中最新稳定的MCI
@@ -61,6 +61,7 @@ let pageUtility = {
         .then(function (status) {
             rpcStableMci = Number(status.status.last_stable_mci);
             if ((dbStableMci < rpcStableMci) || (rpcStableMci ===0)) {
+                pageUtility.insertMci(status.status);
                 if ((dbStableMci + 1000) < rpcStableMci) {
                     //数量太多，需要分批插入
                     cartMci = dbStableMci + 1000;
@@ -74,10 +75,26 @@ let pageUtility = {
             } else {
                 getUnstableTimer = setTimeout(function () {
                     pageUtility.getUnstableBlocks();
-                }, 1000 * 7)
+                }, 1000)
             }
         })
     },
+
+    //插入Mci信息
+    insertMci(status) {
+        const mciText = 'INSERT INTO mci(last_mci,last_stable_mci) VALUES($1,$2)';
+        const mciValues = [Number(status.last_mci),Numbers(tatus.last_stable_mci)];
+        pgclient.query(mciText,mciValues,(res) => {
+            let typeVal = Object.prototype.toString.call(res);
+            if (typeVal === '[object Error]') {
+                logger.info(`MCI插入失败`);
+                logger.info(res);
+            } else {
+                logger.info(`MCI插入成功 ${status}`);
+            }
+        })
+    },
+
     startInsertData() {
         stableUnitAry = [];
         //1、查询所有稳定 block 信息
