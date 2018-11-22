@@ -16,7 +16,7 @@ let getRpcTimer = null,
 let dbStableMci,        //本地数据库的最高稳定MCI
     rpcStableMci;       //RPC接口请求到的最高稳定MCI
 let cartMci = 0;        //大量数据分批存储时候，用来记录MCI
-let cartStep = 1000;    //如果数据过多时候，每批处理地数据
+let cartStep = 500;     //如果数据过多时候，每批处理地数据
 let tempMci;            //大量数据分批存储时候，临时MCI
 let isStableDone = false;//稳定的MCI是否插入完成
 //辅助数据 End
@@ -32,6 +32,9 @@ let witnessTotal        = {};//储存预处理的见证人信息[Db]
 let accountsTotal   = {};//储存预处理的账户信息
 let timestampTotal  = {};//储存预处理的时间戳信息
 let unitAryForSql   = [];//作为语句，从数据库搜索已有unit
+
+let timestampInsertAry   = [];//没有的timestamp,插入[Db]
+let timestampUpdateAry   = [];//存在的timestamp,更新[Db]
 // 操作稳定Unit相关变量 End
 
 // 批量操作不稳定Unit相关变量 Start
@@ -89,7 +92,7 @@ let pageUtility = {
                     isStableDone = true;
                 }
                 logger.info(`dbStableMci:${dbStableMci} , rpcStableMci:${rpcStableMci}, 开始准备插入数据 ${dbStableMci < rpcStableMci}`);
-                pageUtility.insertMci(status.status);
+                pageUtility.searchMci(status.status);
             } else {
                 getUnstableTimer = setTimeout(function () {
                     pageUtility.getUnstableBlocks();//查询所有不稳定 block 信息
@@ -99,7 +102,33 @@ let pageUtility = {
     },
 
     //插入Mci信息
-    insertMci(status) {
+    searchMci(status) {
+        //TODO,判断当前MCI是否有了
+        pgclient.query("Select * FROM mci  WHERE last_stable_mci = $1", [Number(status.last_stable_mci)], (data) => {
+            console.log(data);
+            if (data.length > 1) {
+                logger.info("searchMci is Error");
+                return;
+            }else{
+                let currentMci = data[0];
+                if (data.length === 0) {
+                    logger.info("searchMci 数据库无Mci，第一次插入");
+                    pageUtility.insertMci(status);
+                } else if (data.length === 1) {
+                    logger.info("searchMci 判断是否最新的MCI");
+                    if(Number(currentMci.last_mci)!==Number(status.last_mci)){
+                        logger.info("searchMci 插入最新MCI");
+                        pageUtility.insertMci(status);
+                    }else{
+                        logger.info("searchMci 无需插入最新MCI,直接更新吧老铁!");
+                        pageUtility.getUnitByMci();//查询所有稳定 block 信息
+                    }
+                } 
+            }
+            
+        });
+    },
+    insertMci(status){
         const mciText = 'INSERT INTO mci(last_mci,last_stable_mci) VALUES($1,$2)';
         const mciValues = [Number(status.last_mci),Number(status.last_stable_mci)];
         pgclient.query(mciText,mciValues,(res) => {
@@ -108,7 +137,7 @@ let pageUtility = {
                 logger.info(`MCI插入失败`);
                 logger.info(res);
             } else {
-                logger.info(`MCI插入成功 ${status}`);
+                logger.info(`MCI插入成功`);
                 pageUtility.getUnitByMci();//查询所有稳定 block 信息
             }
         })
@@ -195,15 +224,22 @@ let pageUtility = {
             unitAryForSql.push(blockInfo.hash);
 
             //DO timestamp 1秒
-            if (!timestampTotal.hasOwnProperty(blockInfo.exec_timestamp)) {
-                timestampTotal[blockInfo.exec_timestamp] = {
-                    timestamp: blockInfo.exec_timestamp,
-                    type: 1,
-                    count: 1
+
+            if(blockInfo.hasOwnProperty("mc_timestamp")){
+                if (!timestampTotal.hasOwnProperty(blockInfo.mc_timestamp)) {
+                    timestampTotal[blockInfo.mc_timestamp] = {
+                        timestamp: blockInfo.mc_timestamp,
+                        type: 1,
+                        count: 1
+                    }
+                }else{
+                    timestampTotal[blockInfo.mc_timestamp].count+=1;
                 }
             }else{
-                timestampTotal.blockInfo.exec_timestamp.count+=1;
+                logger.info(`mc_timestamp-Error`);
+                logger.info(blockInfo);
             }
+
         });
 
         /*
@@ -238,6 +274,34 @@ let pageUtility = {
             logger.info(`合计 Account:${tempAccountAllAry.length}`);
             logger.info(`更新 Account:${accountsUpdateAry.length}`);//有用
             logger.info(`插入 Account:${accountsInsertAry.length}`);//有用
+            pageUtility.searchTimestampBaseDb()
+
+        });
+    },
+    searchTimestampBaseDb(){
+        //处理Timestamp
+        let tempTimesAllAry = [];
+        for (let item in timestampTotal) {
+            tempTimesAllAry.push(item);
+        }
+
+        let upsertSql = {
+            text: "select timestamp from timestamp where timestamp = ANY ($1)",
+            values: [tempTimesAllAry]
+        };
+        pgclient.query(upsertSql, (timestampRes) => {
+            timestampRes.forEach(item => {
+                if (timestampTotal.hasOwnProperty(item.timestamp)) {
+                    timestampUpdateAry.push(timestampTotal[item.timestamp]);
+                    delete timestampTotal[item.timestamp];
+                }
+            });
+            for (let item in timestampTotal) {
+                timestampInsertAry.push(timestampTotal[item]);
+            }
+            logger.info(`合计 Timestamp:${tempTimesAllAry.length}`);
+            logger.info(`更新 Timestamp:${timestampUpdateAry.length}`);//有用
+            logger.info(`插入 Timestamp:${timestampInsertAry.length}`);//有用
             pageUtility.searchParentsBaseDb()
 
         });
@@ -324,6 +388,7 @@ let pageUtility = {
             }
             /*
             * 批量插入 账户       accountsInsertAry
+            * 批量插入 时间       timestampInsertAry
             * 批量插入 Parent、   parentsTotal:object
             * 批量插入 Witness    witnessTotal:object
             * 批量插入 Block、    unitInsertAry
@@ -332,6 +397,10 @@ let pageUtility = {
             if (accountsInsertAry.length > 0) {
                 logger.info("插入 accountsInsertAry By batchInsertAccount");
                 pageUtility.batchInsertAccount(accountsInsertAry);
+            }
+            if (timestampInsertAry.length > 0) {
+                logger.info("插入 timestampInsertAry By batchInsertTimestamp");
+                pageUtility.batchInsertTimestamp(timestampInsertAry);
             }
             if (Object.keys(parentsTotal).length > 0) {
                 logger.info("插入 parentsTotal By batchInsertParent");
@@ -355,11 +424,15 @@ let pageUtility = {
             pgclient.query('COMMIT', (err) => {
                 logger.info("操作插入稳定 Block End", err);
                 logger.info("需要更新的Account数量 ", accountsUpdateAry.length);
+                logger.info("需要更新的timestamp数量 ", timestampUpdateAry.length);
                 /* 
                 批量更新账户、       accountsUpdateAry
                 */
                 accountsUpdateAry.forEach(account => {
                     pageUtility.aloneUpdateAccount(account)
+                });
+                timestampUpdateAry.forEach(timestamp => {
+                    pageUtility.aloneUpdateTimestamp(timestamp)
                 });
 
                 //归零数据
@@ -372,6 +445,8 @@ let pageUtility = {
                 accountsUpdateAry=[];
                 unitUpdateAry =[];
                 accountsInsertAry=[];
+                timestampInsertAry=[];
+                timestampUpdateAry=[];
 
 
                 //Other
@@ -628,6 +703,32 @@ let pageUtility = {
             }
         });
     },
+    //批量插入 timestamp
+    batchInsertTimestamp(timestampAry){
+        // timestampAry=[{
+        //         timestamp: '11111',
+        //         type: 1,
+        //         count: '0'
+        //     },
+        //     {
+        //         timestamp: '2222',
+        //         type: 1,
+        //         balance: '0'
+        //     }];
+        let tempAry = [];
+        timestampAry.forEach((item) => {
+            tempAry.push("('" + item.timestamp + "'," + item.type + "," + item.count + ")");
+        });
+        let batchInsertSql = {
+            text: "INSERT INTO timestamp (timestamp,type,count) VALUES" + tempAry.toString()
+        };
+        pgclient.query(batchInsertSql, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "batchInsertTimestamp")) {
+                return;
+            }
+        });
+    },
 
     //批量插入Block
     batchInsertBlock(blockAry) {
@@ -740,6 +841,28 @@ let pageUtility = {
                     pageUtility.aloneUpdateAccount(accountObj);
                 } else {
                     logger.info(`Account更新成功 ${accountObj.account}`);
+                }
+            });
+        });
+    },
+    aloneUpdateTimestamp(timestampObj){
+        //需要先获取time,然后再进行相加
+        pgclient.query("Select * FROM timestamp  WHERE timestamp = $1", [timestampObj.timestamp], (data) => {
+            let currentTime = data[0];
+            let targetCount = BigNumber(currentTime.count).plus(timestampObj.count).toString(10);
+            const sqlOptions = {
+                text: "UPDATE timestamp SET count=$2 WHERE timestamp=$1",
+                values: [timestampObj.timestamp, targetCount]
+            };
+            pgclient.query(sqlOptions, (res) => {
+                let typeVal = Object.prototype.toString.call(res);
+                if (typeVal === '[object Error]') {
+                    logger.info(`timestamp 更新失败 ${timestampObj.timestamp}`);
+                    logger.info(res);
+                    logger.info(`timestamp 再次更新 ${timestampObj.timestamp}`);
+                    pageUtility.aloneUpdateTimestamp(timestampObj);
+                } else {
+                    logger.info(`timestamp 更新成功 ${timestampObj.timestamp}`);
                 }
             });
         });
