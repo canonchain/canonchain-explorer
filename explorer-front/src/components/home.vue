@@ -6,6 +6,43 @@
         </div>
         <div class="home-content">
             <div class="container">
+                <div class="home-dashboard">
+                    <div class="dashboard-left">
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <h4 class="mci-tit">最新MCI</h4>
+                                    <p class="mci-number">{{mci.last_mci}}</p>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <h4 class="mci-tit">最新稳定MCI</h4>
+                                    <p class="mci-number">{{mci.last_stable_mci}}</p>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
+                    <div class="dashboard-right">
+                        <div id='czr-charts'>
+                            --
+                        </div>
+                    </div>
+                    <div class="dashboard-select">
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="1" @change="initEcharts">秒</el-radio>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="10" @change="initEcharts">10秒</el-radio>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </div>
                 <h2 class="home-content-tit">最新交易</h2>
                 <template>
                     <el-table :data="database" style="width: 100%" v-loading="loadingSwitch">
@@ -70,7 +107,7 @@
                         </el-table-column>
                         <el-table-column label="金额 / CZR" align="right" width="240">
                             <template slot-scope="scope">
-                                <span >{{scope.row.amount | toCZRVal}}</span>
+                                <span>{{scope.row.amount | toCZRVal}}</span>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -85,6 +122,15 @@
 <script>
 import HeaderCps from "@/components/Header/Header";
 import Dashboard from "@/components/Dashboard/Dashboard";
+
+// 加载echarts，注意引入文件的路径
+import echarts from 'echarts/lib/echarts'
+// 再引入需要使用的图表类型，标题，提示信息等
+import 'echarts/lib/chart/bar'
+import 'echarts/lib/component/tooltip'
+import 'echarts/lib/component/title'
+
+let myChart; 
 export default {
     name: "Home",
     components: {
@@ -94,12 +140,23 @@ export default {
     data() {
         return {
             loadingSwitch: true,
+            mci:{
+                last_stable_mci:"-",
+                last_mci:"-"
+            },
+            radio: '1',
             database: []
         };
     },
     created() {
         self = this;
         self.getTransactions();
+        self.getMci();
+    },
+    mounted() {
+        // 基于准备好的dom，初始化echarts实例
+        myChart = echarts.init(document.getElementById('czr-charts'));
+        self.initEcharts(self.radio);
     },
     methods: {
         getTransactions() {
@@ -126,6 +183,80 @@ export default {
         },
         goAccountPath(account) {
             this.$router.push("/account/" + account);
+        },
+        //mci
+        getMci(){
+            self.mci.last_stable_mci = "22222";
+            self.mci.last_mci = "22333";
+            self.$axios
+                .get("/api/get_mci")
+                .then(function(response) {
+                    let _data = response.data;
+                    self.mci.last_stable_mci = _data.mci.last_stable_mci;
+                    self.mci.last_mci = _data.mci.last_mci;
+                })
+                .catch(function(error) {
+                    console.error("/api/get_mci Error")
+                });
+        },
+        //echarts
+        initEcharts(vaule){
+            let data={
+                    timestamp:['1542805423', '1542805422', '1542805421'],
+                    count:[184, 1338, 154]
+            };
+            self.$axios
+                .get("/api/get_timestamp", {
+                    params: {
+                        type: vaule
+                    }
+                })
+                .then(function(response) {
+                    data.timestamp = response.data.timestamp;
+                    data.count = response.data.count;
+                    data.timestamp.forEach((item,index)=>{
+                        data.timestamp[index]=self.toTime(item);
+                    })
+                    // 绘制图表
+                    myChart.setOption({
+                        title: {
+                            text: 'CZR TPS'
+                        },
+                        tooltip: {},
+                        xAxis: {
+                            data: data.timestamp
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: 'TPS',
+                            type: 'bar',
+                            data: data.count
+                        }]
+                    });
+                })
+                .catch(function(error) {
+                    //渲染
+                });
+        },
+        toTime(timestamp){
+           // 简单的一句代码
+            let date = new Date(Number(timestamp)*1000); //获取一个时间对象
+            let addZero = function(val) {
+                return val < 10 ? "0" + val : val;
+            };
+            return (
+                date.getFullYear() +
+                "-" +
+                addZero(date.getMonth() + 1) +
+                "-" +
+                addZero(date.getDate()) +
+                " " +
+                addZero(date.getHours()) +
+                ":" +
+                addZero(date.getMinutes()) +
+                ":" +
+                addZero(date.getSeconds())
+            );
         }
     },
     filters: {
@@ -161,9 +292,6 @@ export default {
 </script>
 
 <style scoped>
-.page-home {
-}
-
 .home-top {
     background: #5a59a0;
     text-align: center;
@@ -192,4 +320,34 @@ export default {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.home-dashboard {
+    margin-top: 20px;
+}
+.grid-content{text-align: center;}
+.home-dashboard .dashboard-left {
+    background-color: #f7f7f7;
+    color: #5a59a0;
+    padding: 18px 10px 0 10px;
+}
+.home-dashboard .dashboard-right {
+    padding: 10px;
+    border: 1px solid #f7f7f7;
+    border-bottom: 1px transparent;
+    /* background-color: #f7f7f7; */
+}
+.home-dashboard .dashboard-select{
+    padding: 10px;
+    border: 1px solid #f7f7f7;
+    border-top: 1px transparent;
+}
+.dashboard-left .mci-tit{
+    color: #646464;
+    font-size: 14px;
+    font-weight: 400;
+}
+.dashboard-left .mci-number{
+    font-size: 22px;
+    line-height: 20px;
+}
+#czr-charts{height: 350px;}
 </style>

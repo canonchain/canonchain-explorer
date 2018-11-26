@@ -679,4 +679,83 @@ router.get("/get_previous_units", function (req, res, next) {
     });
 });
 
+/*
+首页：mci、交易数量、TPS 
+*/
+//获取MCI
+router.get("/get_mci", function (req, res, next) {
+    pgclient.query("Select last_stable_mci,last_mci FROM mci order by last_stable_mci desc LIMIT 1", (data) => {
+        let typeVal = Object.prototype.toString.call(data);
+        if (typeVal === '[object Error]') {
+            responseData = {
+                mci: {},
+                code: 500,
+                success: false,
+                message: "get_mci FROM mci Error"
+            }
+        } else {
+            if (data.length === 1) {
+                responseData = {
+                    mci: data[0],
+                    code: 200,
+                    success: true,
+                    message: "success"
+                }
+            } else {
+                responseData = {
+                    mci: {},
+                    code: 404,
+                    success: false,
+                    message: "no mci found"
+                }
+            }
+        }
+        res.json(responseData);
+    });
+})
+
+//获取TPS
+//获取账号信息
+router.get("/get_timestamp", function (req, res, next) {
+    var queryType = req.query.type;// ?type=1
+    pgclient.query("Select timestamp,count FROM timestamp WHERE type = $1 limit 600", [queryType], (data) => {
+        console.log(req.query)
+        console.log(data)
+        let typeVal = Object.prototype.toString.call(data);
+        if (typeVal === '[object Error]') {
+            responseData = {
+                timestamp: [],
+                count: [],
+                code: 500,
+                success: false,
+                message: "Select timestamp FROM timestamp Error"
+            }
+        } else {
+            if (data.length <= 600) {
+                let timestamp=[];
+                let count=[];
+                data.forEach(item=>{
+                    timestamp.push(item.timestamp)
+                    count.push(item.count)
+                })
+                responseData = {
+                    timestamp:timestamp,
+                    count:count,
+                    code: 200,
+                    success: true,
+                    message: "success"
+                }
+            } else {
+                responseData = {
+                    timestamp: [],
+                    count: [],
+                    code: 404,
+                    success: false,
+                    message: "no timestamp found"
+                }
+            }
+        }
+        res.json(responseData);
+    });
+})
 module.exports = router;
