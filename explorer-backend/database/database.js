@@ -9,7 +9,7 @@ pgclient.getConnection();
 //写日志
 let log4js = require('./log_config');
 let logger = log4js.getLogger('write_db');//此处使用category的值
-
+let self; 
 //辅助数据 Start
 let getRpcTimer = null,
     getUnstableTimer = null;
@@ -30,11 +30,15 @@ let parentsTotal        = {};//储存预处理的parents信息[Db]
 let witnessTotal        = {};//储存预处理的见证人信息[Db]
 
 let accountsTotal   = {};//储存预处理的账户信息
-let timestampTotal  = {};//储存预处理的时间戳信息
 let unitAryForSql   = [];//作为语句，从数据库搜索已有unit
 
+let timestampTotal  = {};//储存预处理的时间戳信息
 let timestampInsertAry   = [];//没有的timestamp,插入[Db]
 let timestampUpdateAry   = [];//存在的timestamp,更新[Db]
+
+let timestamp10Total  = {};//储存预处理的时间戳信息
+let timestamp10InsertAry   = [];//没有的timestamp,插入[Db]
+let timestamp10UpdateAry   = [];//存在的timestamp,更新[Db]
 // 操作稳定Unit相关变量 End
 
 // 批量操作不稳定Unit相关变量 Start
@@ -48,6 +52,8 @@ let unstableUpdateBlockAry  = [];//需要更新的Block
 
 let pageUtility = {
     init() {
+        self =this;
+        logger.info("self",self);
         let SearchOptions = {
             text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
             values: [true]
@@ -105,7 +111,6 @@ let pageUtility = {
     searchMci(status) {
         //TODO,判断当前MCI是否有了
         pgclient.query("Select * FROM mci  WHERE last_stable_mci = $1", [Number(status.last_stable_mci)], (data) => {
-            console.log(data);
             if (data.length > 1) {
                 logger.info("searchMci is Error");
                 return;
@@ -224,7 +229,7 @@ let pageUtility = {
             unitAryForSql.push(blockInfo.hash);
 
             //DO timestamp 1秒
-
+            //DO timestamp 10秒 timestamp10Total
             if(blockInfo.hasOwnProperty("mc_timestamp")){
                 if (!timestampTotal.hasOwnProperty(blockInfo.mc_timestamp)) {
                     timestampTotal[blockInfo.mc_timestamp] = {
@@ -235,6 +240,17 @@ let pageUtility = {
                 }else{
                     timestampTotal[blockInfo.mc_timestamp].count+=1;
                 }
+                //10
+                if (!timestamp10Total.hasOwnProperty(self.formatTimestamp(blockInfo.mc_timestamp))) {
+                    timestamp10Total[self.formatTimestamp(blockInfo.mc_timestamp)] = {
+                        timestamp: self.formatTimestamp(blockInfo.mc_timestamp),
+                        type: 10,
+                        count: 1
+                    }
+                }else{
+                    timestamp10Total[self.formatTimestamp(blockInfo.mc_timestamp)].count+=1;
+                }
+
             }else{
                 logger.info(`mc_timestamp-Error`);
                 logger.info(blockInfo);
@@ -302,7 +318,36 @@ let pageUtility = {
             logger.info(`合计 Timestamp:${tempTimesAllAry.length}`);
             logger.info(`更新 Timestamp:${timestampUpdateAry.length}`);//有用
             logger.info(`插入 Timestamp:${timestampInsertAry.length}`);//有用
-            pageUtility.searchParentsBaseDb()
+            //处理Timestamp 结束
+
+            //处理 10Timestamp 开始
+            let tempTimes10AllAry = [];
+            for (let item10 in timestamp10Total) {
+                tempTimes10AllAry.push(item10);
+            }
+    
+            let upsert10Sql = {
+                text: "select timestamp from timestamp where timestamp = ANY ($1)",
+                values: [tempTimes10AllAry]
+            };
+            pgclient.query(upsert10Sql, (timestampRes) => {
+                timestampRes.forEach(item => {
+                    if (timestamp10Total.hasOwnProperty(item.timestamp)) {
+                        timestamp10UpdateAry.push(timestamp10Total[item.timestamp]);
+                        delete timestamp10Total[item.timestamp];
+                    }
+                });
+                for (let item in timestamp10Total) {
+                    timestamp10InsertAry.push(timestamp10Total[item]);
+                }
+                logger.info(`合计 Timestamp10:${tempTimes10AllAry.length}`);
+                logger.info(`更新 Timestamp10:${timestamp10UpdateAry.length}`);//有用
+                logger.info(`插入 Timestamp10:${timestamp10InsertAry.length}`);//有用
+
+                //处理 10Timestamp 结束
+                pageUtility.searchParentsBaseDb()
+    
+            });
 
         });
     },
@@ -389,18 +434,26 @@ let pageUtility = {
             /*
             * 批量插入 账户       accountsInsertAry
             * 批量插入 时间       timestampInsertAry
+            * 批量插入 时间       timestamp10InsertAry
             * 批量插入 Parent、   parentsTotal:object
             * 批量插入 Witness    witnessTotal:object
             * 批量插入 Block、    unitInsertAry
             * 批量更新 Block、    unitUpdateAry
             * */
+           
             if (accountsInsertAry.length > 0) {
                 logger.info("插入 accountsInsertAry By batchInsertAccount");
                 pageUtility.batchInsertAccount(accountsInsertAry);
             }
             if (timestampInsertAry.length > 0) {
                 logger.info("插入 timestampInsertAry By batchInsertTimestamp");
+                logger.info(timestampInsertAry);
                 pageUtility.batchInsertTimestamp(timestampInsertAry);
+            }
+            if (timestamp10InsertAry.length > 0) {
+                logger.info("插入 timestamp10InsertAry By batchInsertTimestamp");
+                logger.info(timestamp10InsertAry);
+                pageUtility.batchInsertTimestamp(timestamp10InsertAry);
             }
             if (Object.keys(parentsTotal).length > 0) {
                 logger.info("插入 parentsTotal By batchInsertParent");
@@ -425,6 +478,7 @@ let pageUtility = {
                 logger.info("操作插入稳定 Block End", err);
                 logger.info("需要更新的Account数量 ", accountsUpdateAry.length);
                 logger.info("需要更新的timestamp数量 ", timestampUpdateAry.length);
+                logger.info("需要更新的timestamp数量 ", timestamp10UpdateAry.length);
                 /* 
                 批量更新账户、       accountsUpdateAry
                 */
@@ -434,19 +488,27 @@ let pageUtility = {
                 timestampUpdateAry.forEach(timestamp => {
                     pageUtility.aloneUpdateTimestamp(timestamp)
                 });
+                timestamp10UpdateAry.forEach(timestamp => {
+                    pageUtility.aloneUpdateTimestamp(timestamp);
+                });
 
                 //归零数据
                 unitInsertAry = [];
                 accountsTotal = {};
                 parentsTotal = {};
                 witnessTotal = {};
-                timestampTotal = {};
                 unitAryForSql = [];//用来从数据库搜索的数组
                 accountsUpdateAry=[];
                 unitUpdateAry =[];
                 accountsInsertAry=[];
+
+                timestampTotal = {};
                 timestampInsertAry=[];
                 timestampUpdateAry=[];
+
+                timestamp10Total = {};
+                timestamp10InsertAry=[];
+                timestamp10UpdateAry=[];
 
 
                 //Other
@@ -486,34 +548,36 @@ let pageUtility = {
         unstableUpdateBlockAry  = [];
         czr.request.unstableBlocks().then(function (data) {
             unstableInsertBlockAry = data.blocks;
-            //排序 level 由小到大
-            unstableInsertBlockAry.sort(function (a, b) {
-                return Number(a.level) - Number(b.level);
-            });
-            //@A 拆分数据
-            unstableInsertBlockAry.forEach(blockInfo => {
-                //处理parents
-                if (blockInfo.parents.length > 0) {
-                    // {"AAAA":["BBB","CCC"]}
-                    unstableParentsTotal[blockInfo.hash] = blockInfo.parents;
-                }
-                //处理witness
-                if (blockInfo.witness_list.length > 0) {
-                    // {"AAAA":["BBB","CCC"]}
-                    unstableWitnessTotal[blockInfo.hash] = blockInfo.witness_list;
-                }
-                //处理Unit Hash
-                unstableUnitHashAry.push(blockInfo.hash);
-            });
+            if(unstableInsertBlockAry.length>0){
+                //排序 level 由小到大
+                unstableInsertBlockAry.sort(function (a, b) {
+                    return Number(a.level) - Number(b.level);
+                });
+                //@A 拆分数据
+                unstableInsertBlockAry.forEach(blockInfo => {
+                    //处理parents
+                    if (blockInfo.parents.length > 0) {
+                        // {"AAAA":["BBB","CCC"]}
+                        unstableParentsTotal[blockInfo.hash] = blockInfo.parents;
+                    }
+                    //处理witness
+                    if (blockInfo.witness_list.length > 0) {
+                        // {"AAAA":["BBB","CCC"]}
+                        unstableWitnessTotal[blockInfo.hash] = blockInfo.witness_list;
+                    }
+                    //处理Unit Hash
+                    unstableUnitHashAry.push(blockInfo.hash);
+                });
 
 
-            /* 
-            1.筛选好需要操作的Parent
-            2.筛选好需要操作的Witness
-            3.筛选好需要更新的Block
-              筛选好需要插入的Block
-            */
-            pageUtility.searchParentsFromDb();
+                /* 
+                1.筛选好需要操作的Parent
+                2.筛选好需要操作的Witness
+                3.筛选好需要更新的Block
+                筛选好需要插入的Block
+                */
+                pageUtility.searchParentsFromDb();
+            }
         })
     },
     //1.搜索哪些Parents已经存在数据库中,并把 unstableParentsTotal 改为最终需要处理的数据
@@ -717,8 +781,11 @@ let pageUtility = {
         //     }];
         let tempAry = [];
         timestampAry.forEach((item) => {
+            logger.info(item);
             tempAry.push("('" + item.timestamp + "'," + item.type + "," + item.count + ")");
         });
+        //timestampAry
+        logger.info(timestampAry);
         let batchInsertSql = {
             text: "INSERT INTO timestamp (timestamp,type,count) VALUES" + tempAry.toString()
         };
@@ -884,6 +951,9 @@ let pageUtility = {
             })
         }
         return typeVal === '[object Error]'
+    },
+    formatTimestamp(mc_timestamp){
+        return Math.floor(mc_timestamp/10);
     },
     isFail(obj) {
         //true 是失败的
