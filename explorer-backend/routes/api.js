@@ -718,7 +718,17 @@ router.get("/get_mci", function (req, res, next) {
 //获取账号信息
 router.get("/get_timestamp", function (req, res, next) {
     var queryType = req.query.type;// ?type=1
-    pgclient.query("Select timestamp,count FROM timestamp WHERE type = $1 limit 600", [queryType], (data) => {
+    var queryStart = req.query.start;//end
+    var sqlStr;
+    var sqlOpt=[];
+    if(!!queryStart){
+        sqlStr = "Select timestamp,count FROM timestamp WHERE type = $1 and timestamp <= $2";
+        sqlOpt=[queryType,queryStart];
+    }else{
+        sqlStr = "Select timestamp,count FROM timestamp WHERE type = $1 limit 600";
+        sqlOpt=[queryType];
+    }
+    pgclient.query(sqlStr,sqlOpt, (data) => {
         console.log(req.query)
         console.log(data)
         let typeVal = Object.prototype.toString.call(data);

@@ -145,6 +145,7 @@ export default {
                 last_mci:"-"
             },
             radio: '1',
+            start_data:0,
             database: []
         };
     },
@@ -152,6 +153,12 @@ export default {
         self = this;
         self.getTransactions();
         self.getMci();
+        let reg= /^#\/+\?+\w+=(\d{14})$/;
+        let restlt = reg.exec(window.location.hash);
+        console.log(restlt);
+        if(!!restlt){
+            this.start_data = this.toTimestamp(restlt[1]);
+        }
     },
     mounted() {
         // 基于准备好的dom，初始化echarts实例
@@ -186,8 +193,8 @@ export default {
         },
         //mci
         getMci(){
-            self.mci.last_stable_mci = "22222";
-            self.mci.last_mci = "22333";
+            self.mci.last_stable_mci = "-";
+            self.mci.last_mci = "-";
             self.$axios
                 .get("/api/get_mci")
                 .then(function(response) {
@@ -202,14 +209,23 @@ export default {
         //echarts
         initEcharts(vaule){
             let data={
-                    timestamp:['1542805423', '1542805422', '1542805421'],
-                    count:[184, 1338, 154]
+                    timestamp:[],
+                    count:[]
             };
+            let opt;
+            if( self.start_data>0){
+                opt = {
+                    type: vaule,
+                    start:self.start_data
+                }
+            }else{
+                opt = {
+                    type: vaule
+                }
+            }
             self.$axios
                 .get("/api/get_timestamp", {
-                    params: {
-                        type: vaule
-                    }
+                    params: opt
                 })
                 .then(function(response) {
                     data.timestamp = response.data.timestamp;
@@ -240,7 +256,14 @@ export default {
         },
         toTime(timestamp){
            // 简单的一句代码
-            let date = new Date(Number(timestamp)*1000); //获取一个时间对象
+           // 154330965 
+           // 1543309450 Number(timestamp)<999999999
+            let date;// 
+            if(Number(timestamp)<999999999){
+                date=new Date(Number(timestamp)*1000*10); //获取一个时间对象
+            }else{
+                date=new Date(Number(timestamp)*1000); //获取一个时间对象
+            }
             let addZero = function(val) {
                 return val < 10 ? "0" + val : val;
             };
@@ -257,6 +280,15 @@ export default {
                 ":" +
                 addZero(date.getSeconds())
             );
+        },
+        //timestamp
+        toTimestamp(time){
+            function format(opt) {
+                opt = opt.split("");
+                let target =  opt[0]+opt[1]+opt[2]+opt[3]+'/'+opt[4]+opt[5]+'/'+opt[6]+opt[7]+' '+opt[8]+opt[9]+':'+opt[10]+opt[11]+':'+opt[12]+opt[13];
+                return target;
+            }
+            return (new Date(format(time))).getTime()/1000;
         }
     },
     filters: {
