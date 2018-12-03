@@ -16,7 +16,7 @@ let getRpcTimer = null,
 let dbStableMci,        //本地数据库的最高稳定MCI
     rpcStableMci;       //RPC接口请求到的最高稳定MCI
 let cartMci = 0;        //大量数据分批存储时候，用来记录MCI
-let cartStep = 500;     //如果数据过多时候，每批处理地数据
+let cartStep = 10;      //如果数据过多时候，每批处理地数据
 let tempMci;            //大量数据分批存储时候，临时MCI
 let isStableDone = false;//稳定的MCI是否插入完成
 //辅助数据 End
@@ -53,7 +53,6 @@ let unstableUpdateBlockAry  = [];//需要更新的Block
 let pageUtility = {
     init() {
         self =this;
-        logger.info("self",self);
         let SearchOptions = {
             text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
             values: [true]
@@ -120,7 +119,7 @@ let pageUtility = {
                     logger.info("searchMci 数据库无Mci，第一次插入");
                     pageUtility.insertMci(status);
                 } else if (data.length === 1) {
-                    logger.info("searchMci 判断是否最新的MCI");
+                    logger.info("searchMci 判断是否最新的MCI",currentMci.last_mci,status.last_mci);
                     if(Number(currentMci.last_mci)!==Number(status.last_mci)){
                         logger.info("searchMci 插入最新MCI");
                         pageUtility.insertMci(status);
@@ -166,7 +165,7 @@ let pageUtility = {
     
                 if (dbStableMci <= tempMci) {
                     pageUtility.getUnitByMci();
-                    logger.info(`dbStableMci <= tempMci  true`);
+                    // logger.info(`dbStableMci <= tempMci  true`);
                 } else {
                     logger.info(`dbStableMci <= tempMci  false`);
                     pageUtility.filterData();
@@ -512,12 +511,7 @@ let pageUtility = {
 
 
                 //Other
-                logger.info(`
-                    dbStableMci:${dbStableMci}, 
-                    rpcStableMci:${rpcStableMci}, 
-                    tempMci:${tempMci} 
-                    isStableDone:${isStableDone}`);
-
+                logger.info(`数据库稳定MCI:${dbStableMci}, RPC稳定Mci:${rpcStableMci}, 本次操作的最后一个Mci:${tempMci}，是否完成稳定MCI的操作:${isStableDone}`);
                 if (!isStableDone) {
                     //没有完成,处理 cartMci 和 isDone
                     if ((cartMci + cartStep) < rpcStableMci) {
@@ -781,11 +775,9 @@ let pageUtility = {
         //     }];
         let tempAry = [];
         timestampAry.forEach((item) => {
-            logger.info(item);
             tempAry.push("('" + item.timestamp + "'," + item.type + "," + item.count + ")");
         });
         //timestampAry
-        logger.info(timestampAry);
         let batchInsertSql = {
             text: "INSERT INTO timestamp (timestamp,type,count) VALUES" + tempAry.toString()
         };
@@ -907,7 +899,7 @@ let pageUtility = {
                     logger.info(`Account再次更新 ${accountObj.account}`);
                     pageUtility.aloneUpdateAccount(accountObj);
                 } else {
-                    logger.info(`Account更新成功 ${accountObj.account}`);
+                    // logger.info(`Account更新成功 ${accountObj.account}`);
                 }
             });
         });
@@ -929,7 +921,7 @@ let pageUtility = {
                     logger.info(`timestamp 再次更新 ${timestampObj.timestamp}`);
                     pageUtility.aloneUpdateTimestamp(timestampObj);
                 } else {
-                    logger.info(`timestamp 更新成功 ${timestampObj.timestamp}`);
+                    // logger.info(`timestamp 更新成功 ${timestampObj.timestamp}`);
                 }
             });
         });
