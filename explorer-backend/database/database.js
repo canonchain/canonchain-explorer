@@ -10,6 +10,21 @@ pgclient.getConnection();
 let log4js = require('./log_config');
 let logger = log4js.getLogger('write_db');//此处使用category的值
 let self; 
+const WITNESS_ARY=[
+    "czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS",
+    "czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3",
+    "czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU",
+    "czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf",
+    "czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z",
+    "czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7",
+    "czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii",
+    "czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
+    "czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
+    "czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
+    "czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
+    "czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP"
+];
+
 //辅助数据 Start
 let getRpcTimer = null,
     getUnstableTimer = null;
@@ -26,7 +41,7 @@ let unitInsertAry       = [];//不存在unit,插入[Db]
 let unitUpdateAry       = [];//存在的unit,更新[Db]
 let accountsInsertAry   = [];//不存在的账户,插入[Db]
 let accountsUpdateAry   = [];//存在的账户,更新[Db]
-let parentsTotal        = {};//储存预处理的parents信息[Db]
+let parentsTotalAry     = [];//储存预处理的parents信息[Db]
 let witnessTotal        = {};//储存预处理的见证人信息[Db]
 
 let accountsTotal   = {};//储存预处理的账户信息
@@ -43,7 +58,7 @@ let timestamp10UpdateAry   = [];//存在的timestamp,更新[Db]
 
 // 批量操作不稳定Unit相关变量 Start
 let unstableUnitHashAry     = [];//不稳定Unit Hash组成的数组
-let unstableParentsTotal    = {};//需要插入的Parents
+let unstableParentsAry      = [];//需要插入的Parents
 let unstableWitnessTotal    = {};//需要预处理的Witness
 let unstableInsertBlockAry  = [];//需要插入的Block
 let unstableUpdateBlockAry  = [];//需要更新的Block
@@ -108,7 +123,6 @@ let pageUtility = {
 
     //插入Mci信息
     searchMci(status) {
-        //TODO,判断当前MCI是否有了
         pgclient.query("Select * FROM mci  WHERE last_stable_mci = $1", [Number(status.last_stable_mci)], (data) => {
             if (data.length > 1) {
                 logger.info("searchMci is Error");
@@ -152,6 +166,12 @@ let pageUtility = {
         czr.request.mciBlocks(dbStableMci).then(function (data) {
             if(data.blocks){
                 data.blocks.forEach((item) => {
+                    //写 is_witness
+                    if(WITNESS_ARY.indexOf(item.from)>-1){
+                        item.is_witness = true;
+                    }else{ 
+                        item.is_witness = false;
+                    }
                     unitInsertAry.push(item);
                 });
                 dbStableMci++;//7001
@@ -216,7 +236,12 @@ let pageUtility = {
 
             //DO 处理 parents 数据
             if (blockInfo.parents.length > 0) {
-                parentsTotal[blockInfo.hash] = blockInfo.parents;
+                parentsTotalAry.push({
+                    item:blockInfo.hash,
+                    parent:blockInfo.parents,
+                    is_witness:blockInfo.is_witness,
+                    prototype:""
+                });
             }
 
             // 处理witness
@@ -353,9 +378,10 @@ let pageUtility = {
     searchParentsBaseDb(){
         //处理Parent
         let tempParentsAllAry = [];
-        for (let item in parentsTotal) {
-            tempParentsAllAry.push(item);
-        }
+        parentsTotalAry.forEach(item=>{
+            tempParentsAllAry.push(item.item);//key push 
+        })
+
         let upsertParentSql = {
             text: "select item from parents where item = ANY ($1)",
             values: [tempParentsAllAry]
@@ -365,13 +391,19 @@ let pageUtility = {
             res.forEach((item) => {
                 hashParentObj[item.item] = item.item;
             });
-            logger.info(`合计 Parents:${Object.keys(parentsTotal).length}`);
+            logger.info(`合计 Parents:${Object.keys(parentsTotalAry).length}`);
             logger.info(`已存在 Parents:${Object.keys(hashParentObj).length}`);
             for (let parent in hashParentObj) {
-                delete parentsTotal[parent];
+                // delete parentsTotalAry[parent];
+                parentsTotalAry.forEach((item,index)=>{
+                    if(item.item==parent){
+                        parentsTotalAry.splice(index,1);
+                    }
+                })
             }
-            logger.info(`需处理 Parents:${Object.keys(parentsTotal).length}`);//parentsTotal 是目标数据
-            pageUtility.searchBlockBaseDb();
+            logger.info(`需处理 Parents:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据
+            pageUtility.writePrototype(parentsTotalAry ,'1', pageUtility.searchBlockBaseDb)
+            // pageUtility.searchBlockBaseDb();
         });
     },
     searchBlockBaseDb(){
@@ -434,7 +466,7 @@ let pageUtility = {
             * 批量插入 账户       accountsInsertAry
             * 批量插入 时间       timestampInsertAry
             * 批量插入 时间       timestamp10InsertAry
-            * 批量插入 Parent、   parentsTotal:object
+            * 批量插入 Parent、   parentsTotalAry:Ary
             * 批量插入 Witness    witnessTotal:object
             * 批量插入 Block、    unitInsertAry
             * 批量更新 Block、    unitUpdateAry
@@ -454,9 +486,9 @@ let pageUtility = {
                 logger.info(timestamp10InsertAry);
                 pageUtility.batchInsertTimestamp(timestamp10InsertAry);
             }
-            if (Object.keys(parentsTotal).length > 0) {
-                logger.info("插入 parentsTotal By batchInsertParent");
-                pageUtility.batchInsertParent(parentsTotal);
+            if (parentsTotalAry.length > 0) {
+                logger.info("插入 parentsTotalAry By batchInsertParent");
+                pageUtility.batchInsertParent(parentsTotalAry);
             }
             if (Object.keys(witnessTotal).length > 0) {
                 logger.info("插入 witnessTotal By batchInsertWitness");
@@ -494,7 +526,7 @@ let pageUtility = {
                 //归零数据
                 unitInsertAry = [];
                 accountsTotal = {};
-                parentsTotal = {};
+                parentsTotalAry = [];
                 witnessTotal = {};
                 unitAryForSql = [];//用来从数据库搜索的数组
                 accountsUpdateAry=[];
@@ -536,7 +568,7 @@ let pageUtility = {
     //插入不稳定的Unit ------------------------------------------------ Start
     getUnstableBlocks() {
         unstableUnitHashAry     = [];
-        unstableParentsTotal    = {};
+        unstableParentsAry      = [];
         unstableWitnessTotal    = {};
         unstableInsertBlockAry  = [];
         unstableUpdateBlockAry  = [];
@@ -549,10 +581,21 @@ let pageUtility = {
                 });
                 //@A 拆分数据
                 unstableInsertBlockAry.forEach(blockInfo => {
+                     //写 is_witness
+                     if(WITNESS_ARY.indexOf(blockInfo.from)!=-1){
+                        blockInfo.is_witness = true;
+                    }else{ 
+                        blockInfo.is_witness = false;
+                    }
                     //处理parents
                     if (blockInfo.parents.length > 0) {
                         // {"AAAA":["BBB","CCC"]}
-                        unstableParentsTotal[blockInfo.hash] = blockInfo.parents;
+                        unstableParentsAry.push({
+                            item:blockInfo.hash,
+                            parent:blockInfo.parents,
+                            is_witness:blockInfo.is_witness,
+                            prototype:""
+                        })
                     }
                     //处理witness
                     if (blockInfo.witness_list.length > 0) {
@@ -574,12 +617,13 @@ let pageUtility = {
             }
         })
     },
-    //1.搜索哪些Parents已经存在数据库中,并把 unstableParentsTotal 改为最终需要处理的数据
+    //1.搜索哪些Parents已经存在数据库中,并把 unstableParentsAry 改为最终需要处理的数据
     searchParentsFromDb(){
         let unstableParentsAllAry = [];
-        for (let item in unstableParentsTotal) {
-            unstableParentsAllAry.push(item);//key push 
-        }
+        unstableParentsAry.forEach(item=>{
+            unstableParentsAllAry.push(item.item);//key push 
+        })
+
         let upsertParentSql = {
             text: "select item from parents where item = ANY ($1)",
             values: [unstableParentsAllAry]
@@ -589,14 +633,144 @@ let pageUtility = {
             res.forEach((item) => {
                 hashParentObj[item.item] = item.item;
             });
-            logger.info(`合计有 Parents:${Object.keys(unstableParentsTotal).length}`);
+            logger.info(`合计有 Parents:${unstableParentsAry.length}`);
             for (let parent in hashParentObj) {
-                delete unstableParentsTotal[parent];
+                // delete unstableParentsAry[parent];
+                unstableParentsAry.forEach((item,index)=>{
+                    if(item.item==parent){
+                        unstableParentsAry.splice(index,1);
+                    }
+                })
             }
             logger.info(`已存在 Parents:${Object.keys(hashParentObj).length}`);
-            logger.info(`需处理 Parents:${Object.keys(unstableParentsTotal).length}`);//后面有用
-            pageUtility.searchWitnessFromDb();
+            logger.info(`需处理 Parents:${unstableParentsAry.length}`);//后面有用
+            pageUtility.writePrototype(unstableParentsAry ,'2', pageUtility.searchWitnessFromDb)
+            // pageUtility.searchWitnessFromDb();
         });
+    },
+    writePrototype(sources_ary,flag,fn){
+        //falg : 1=>稳定 2=>不稳定
+        let tempAry=[];
+        let dbParents = [];//已经再数据里的数据
+        let allUnit = [];//当前所有的unit
+        let allParent = [];//当前所有的parent
+        sources_ary.forEach(item=>{
+            item.parent.forEach(childrenItem=>{
+                tempAry.push({
+                    item:item.item,
+                    parent:childrenItem,//单个parents
+                    is_witness:item.is_witness,
+                    prototype:item.prototype
+                });
+                allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
+                allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
+            })
+        })
+        sources_ary = tempAry;
+        logger.info("===================parents=====================")
+        logger.info(`整理后的parents个数:${sources_ary.length}  (${flag=='1'?'稳定的':'不稳定的'})`)
+        /* 
+        写unit对应 prototype 值:
+        1.unit对应parent的是在哪里，可能存在当前数组，也可能在Db中；需要进行分类
+        2.先批量查Db里parents的is_witness
+            T:则unit的 prototype 为 parent
+            F:则unit的 prototype 为 parent.prototype
+        3.再把存在当前数据里的进行处理
+        */
+       sources_ary.forEach((item,index)=>{
+           if(allUnit.indexOf(item.parent)<0){
+               dbParents.push(item.parent);//存在Db里
+           }
+       })
+       let searchParentsSql = {
+            text: "select item,parent,is_witness,prototype from parents where item = ANY ($1)",
+            values: [dbParents]
+        };
+        pgclient.query(searchParentsSql, (parentsRes) => {
+            let itemIndex=0;
+            let dbHashParent = []
+            logger.info(`数据库中存在的parents:${parentsRes.length}`);
+            // logger.info(parentsRes);
+            let hubUnit = [];//需要把is_hub更新为true的unit数组
+            //根据数据库的写当前的prototype
+            if(parentsRes.length>0){
+                logger.info("allUnit",allParent);
+                let hubObj = pageUtility.writeHub(parentsRes);
+                parentsRes.forEach(item=>{
+                    itemIndex = allParent.indexOf(item.item);
+                    allParent[itemIndex]="IS_GET";
+                    dbHashParent.push(item.item);
+                    /* 
+                        TODO：如果DE指向C，C指向AB；
+                        C的is_witness为true，则DE的prototype值均为C；
+                        C的is_witness为false,那么DE的prototype值是C(C此时是枢纽)
+
+                        如果C后面不是DE，而是单独一个F；
+                        C的is_witness为true，则F的prototype值为C；
+                        C的is_witness为false,那么F的prototype为C，此时值是
+                          
+                    */
+                    logger.info("item.item是否存在",itemIndex,item.item)
+                    if(itemIndex>-1){
+                        if(item.is_witness){
+                            //当前是witness
+                            sources_ary[itemIndex].prototype = item.item;
+                        }else{
+                            //非witness
+                            //如果是枢纽，prototype的是item.item;
+                            if(hubObj[item.item].is_hub){
+                                logger.info("item是枢纽unit",hubObj[item.item])
+                                hubUnit.push(item.item)
+                                sources_ary[itemIndex].prototype = item.item; 
+                                //更新tranction的对应item的is_hub属性
+                            }else{
+                                sources_ary[itemIndex].prototype = item.prototype;
+                            }
+                        }
+                    }
+                }); 
+            }
+
+            //根据当前的写当前的prototype
+            let currentItemIndex=0;
+            let targetItem={};
+            sources_ary.forEach((currentItem,index)=>{
+                currentItemIndex = allUnit.indexOf(currentItem.parent); 
+                if(currentItemIndex>-1){
+                    targetItem =sources_ary[currentItemIndex];
+                    if(targetItem.is_witness){
+                        currentItem.prototype = targetItem.item;
+                    }else{
+                        currentItem.prototype = targetItem.prototype;
+                    }
+                }
+
+                //循环当前数组，这一步是处理假设AB同时指向C，C指向D；数据库只能查出的1条C；循环C，只会写A，B的proto会漏写
+                let localItemIndex= dbHashParent.indexOf(currentItem.parent);
+                if(localItemIndex>-1 && (!currentItem.prototype)){
+                    if(parentsRes[localItemIndex].is_witness){
+                        sources_ary[index].prototype = parentsRes[localItemIndex].item; 
+                    }else{
+                        sources_ary[index].prototype = parentsRes[localItemIndex].prototype;  
+                    }
+                }
+            })
+            
+            //赋值对应的数据
+            if(flag == "1"){
+                //赋值稳定的
+                parentsTotalAry = sources_ary;
+            }else if(flag =="2"){
+                //赋值不稳定的
+                unstableParentsAry = sources_ary;
+            }
+            if(hubUnit.length>0){
+                //需要更新枢纽属性
+                pageUtility.updateHub(hubUnit,fn);
+            }else{
+                fn();
+            }
+        })
     },
     //2.搜索哪些Witness已经存在数据库中,并把 unstableWitnessTotal 改为最终需要处理的数据
     searchWitnessFromDb(){
@@ -655,13 +829,13 @@ let pageUtility = {
                 return;
             }
             /*
-            * 批量插入 Parent、   unstableParentsTotal:object
+            * 批量插入 Parent、   unstableParentsAry
             * 批量插入 Witness   unstableWitnessTotal:object
             * 批量插入 Block、    unstableInsertBlockAry
             * 批量更新 Block、    unstableUpdateBlockAry
             * */
-            if (Object.keys(unstableParentsTotal).length > 0) {
-                pageUtility.batchInsertParent(unstableParentsTotal);
+            if (unstableParentsAry > 0) {
+                pageUtility.batchInsertParent(unstableParentsAry);
             }
 
             if (Object.keys(unstableWitnessTotal).length > 0) {
@@ -710,22 +884,24 @@ let pageUtility = {
     },
 
     //批量插入Parent
-    batchInsertParent(parentObj){
-        // let parentObj={
-        //     '5D81C966F0E1B1DFA0F77488FD4A577BB557CBEF4C87DE39141CB0FF7639F583': [ '8281B037A0A930A488B1407AE9AB6425D02D277182488641238F47F6304F604A' ],
-        //     '94960D6352BC14287A68327373B45E0D8F21BC4C434287C893BD0DF9100E4F35':
-        //         [ '2FF3BB4217F640015171CFC207DC8BA831B98BD8160FB8D54A95B5E29BCF74AD',
-        //             '8281B037A0A930A488B1407AE9AB6425D02D277182488641238F47F6304F604A',
-        //             'C469079D2879A0C2F8964D4F07B08424EEB5EF46D6BBA6A9C81D1ADF24F4A140' ]
-        // };
+    batchInsertParent(parentAry){
+        /* 
+        let parentAry=[
+            {
+                item:"xxxx",
+                parent:"AAA",
+                is_witness:true,
+                prototype:""
+            },
+        ];
+        */
+       //
         let tempAry=[];
-        for (let key in parentObj){
-            parentObj[key].forEach((item)=>{
-                tempAry.push("('"+key+"','"+item+"')");
-            });
-        }
+        parentAry.forEach(item=>{
+            tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','"+ item.prototype  +"')");
+        })        
         let batchInsertSql = {
-            text: "INSERT INTO parents (item,parent) VALUES"+tempAry.toString()
+            text: "INSERT INTO parents (item,parent,is_witness,prototype) VALUES "+tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -807,6 +983,7 @@ let pageUtility = {
                 (Number(item.exec_timestamp) || 0) + ",'" +
                 item.signature + "'," +
                 (item.is_free === '1') + ",'" +
+                item.is_witness + "','" +
                 item.level + "','" +
                 item.witnessed_level + "','" +
                 item.best_parent + "'," +
@@ -833,7 +1010,7 @@ let pageUtility = {
         });
 
         let batchInsertSql = {
-            text: 'INSERT INTO transaction(hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp) VALUES' + tempAry.toString()
+            text: 'INSERT INTO transaction(hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp) VALUES' + tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -927,6 +1104,64 @@ let pageUtility = {
         });
     },
 
+    writeHub(arr) {
+        let obj = {};
+        for (let i = 0; i < arr.length; i++) {
+            let currentItem = arr[i];
+            if (!obj[currentItem.item]) {
+                obj[currentItem.item] = {
+                    item:currentItem.item,
+                    prototype:[currentItem.prototype],
+                    proto_total:1,
+                    is_hub:false
+                };
+            } else {
+                obj[currentItem.item].prototype.forEach(item=>{
+                    if(currentItem.is_witness===false){
+                        obj[currentItem.item].is_hub = true;//此时是枢纽
+                    }
+                });
+                obj[currentItem.item].prototype.push(currentItem.prototype);
+                obj[currentItem.item].proto_total++;
+            }
+    
+        }
+        /* 
+        { '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63': 
+                { item: '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63',
+                    prototype: [ 
+                        'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88',
+                        'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88' 
+                    ],
+                    proto_total: 2,
+                    is_hub: false 
+                } 
+        }
+        */
+        return obj;
+    },
+    updateHub(ary,fn){
+        logger.info(`需要更新的枢纽unit数量为:`)
+        logger.info(ary);
+        let tempAry=[];
+        ary.forEach(item=>{
+            tempAry.push(
+                "('" + 
+                item + "'," +
+                true +
+                ")"
+            )
+        });
+        let updateSql = 'update transaction set is_hub=tmp.is_hub from (values ' + tempAry.toString() +
+        ') as tmp (hash,is_hub) where transaction.hash=tmp.hash';
+        pgclient.query(updateSql, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "updateHub")) {
+                return;
+            }
+            fn();
+        });
+    },
     shouldAbort(err, sources) {
         let typeVal = Object.prototype.toString.call(err);
         if (typeVal === '[object Error]') {
