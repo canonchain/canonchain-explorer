@@ -238,12 +238,14 @@ var firstParameters = {
     is_free: "",
     exec_timestamp: "",
     level: "",
+    is_prototype: false,
     pkid: ""
 };
 var lastParameters = {
     direction: "down",
     is_free: "",
     exec_timestamp: "",
+    is_prototype: false,
     level: "",
     pkid: ""
 };
@@ -281,7 +283,7 @@ var bWaitingForNext = false,
 var timerInfoMessage;
 var self;
 
-var isWt = false;
+var isPt = false;
 
 //优化unit渲染
 var storageUnitAry = [];
@@ -331,10 +333,10 @@ export default {
     },
     created() {
         self = this;
-        if (window.location.hash.indexOf("?wt=") > 1) {
-            isWt = true;
+        if (window.location.hash.indexOf("pt=") > 1) {
+            isPt = true;
         } else {
-            isWt = false;
+            isPt = false;
         }
     },
     mounted() {
@@ -374,6 +376,7 @@ export default {
                 is_free: firstItem.is_free,
                 exec_timestamp: firstItem.exec_timestamp,
                 level: firstItem.level,
+                is_prototype: isPt,
                 pkid: firstItem.pkid
             };
             lastParameters = {
@@ -381,6 +384,7 @@ export default {
                 is_free: lastItem.is_free,
                 exec_timestamp: lastItem.exec_timestamp,
                 level: lastItem.level,
+                is_prototype: isPt,
                 pkid: lastItem.pkid
             };
 
@@ -504,6 +508,7 @@ export default {
                         active_unit: searchUnit,
                         parameters: {
                             direction: "center",
+                            is_prototype: isPt,
                             active_unit: searchUnit
                         }
                     }
@@ -622,28 +627,28 @@ export default {
                     // 12个见证人
                     {
                         selector:
-                            ".czr_2xSo8RHWhPwGtRUVF1q6f2AksFdC2dsL1YXF4rLaas7dqGJ24N",
+                            ".czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS",
                         style: {
                             "border-color": "#ff0000"
                         }
                     },
                     {
                         selector:
-                            ".czr_3A5dwJa2pDAcYgkasdFNmGMeddGtEesE4bduAJKG7M4H1qh7Sn",
+                            ".czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3",
                         style: {
                             "border-color": "#00ff78"
                         }
                     },
                     {
                         selector:
-                            ".czr_3BdVwpo7jQkjjv8wtW2wVWokhhopCn8geHy4okDRuo2HSacN4c",
+                            ".czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU",
                         style: {
                             "border-color": "#00626b"
                         }
                     },
                     {
                         selector:
-                            ".czr_3Gz2a5RUvhY8hdwbKqDxGCMC3uZac3SghKYBzQgXcyAchffD8B",
+                            ".czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf",
                         style: {
                             "border-color": "#ff0089"
                         }
@@ -651,28 +656,28 @@ export default {
 
                     {
                         selector:
-                            ".czr_3NABwspcEqCzmUYvoMYa9YGmsrjy4ecZWSniVFcwrDNoUZ89RH",
+                            ".czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z",
                         style: {
                             "border-color": "#a6ff0a"
                         }
                     },
                     {
                         selector:
-                            ".czr_3XcnHaweAPubE4a5V3J2oFEZZCytYaJ6sKgLaAa6ddXBFu86R8",
+                            ".czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7",
                         style: {
                             "border-color": "#130162"
                         }
                     },
                     {
                         selector:
-                            ".czr_455WUtrji5ybVokTS1SY7qwWEcuW4UVxGG44hWnQ7vk3Zru2Yk",
+                            ".czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii",
                         style: {
                             "border-color": "#e9aee0"
                         }
                     },
                     {
                         selector:
-                            ".czr_49k66vc83hAA8JnQ8Y1KmTsbpfURUAWbzh7nGNBdSWSNqxGgEN",
+                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
                         style: {
                             "border-color": "#ab420c"
                         }
@@ -680,28 +685,28 @@ export default {
 
                     {
                         selector:
-                            ".czr_4ZNah9gnVSyGv4tL5B3jMcj1q54b1Q6XEkat2ADFCQ19sCdFeh",
+                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
                         style: {
                             "border-color": "#631083"
                         }
                     },
                     {
                         selector:
-                            ".czr_4aX86VPL8eaepDF1wd5sY6HvvdBsJVJsNBQpEMqniWb3uuF1M9",
+                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
                         style: {
                             "border-color": "#00b6eb"
                         }
                     },
                     {
                         selector:
-                            ".czr_4eJg3fGEKyikgiuH3vR3NkqX9EeRbyGKNE6moAdqCCDfkSAtaj",
+                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
                         style: {
                             "border-color": "#959595"
                         }
                     },
                     {
                         selector:
-                            ".czr_4swFXWhvv7veRidPE8XZpZ1snmNozGTxK7EBoeJW2btU6JyHuT",
+                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
                         style: {
                             "border-color": "#fff300"
                         }
@@ -745,12 +750,12 @@ export default {
             //鼠标点击
             _cy.on("click", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isWt ? "?wt=1" : "");
+                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");;
             });
 
             _cy.on("tap", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isWt ? "?wt=1" : "");
+                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");
             });
 
             //拖动事件
@@ -816,9 +821,9 @@ export default {
                     if (_node.is_minor) {
                         classes += "is_minor ";
                     }
-                    if (isWt) {
+                    // if (isWt) {
                         classes += _node.witness_from + " ";
-                    }
+                    // }
                     if (_node.is_stable) {
                         classes += "is_stable ";
                     }
@@ -985,9 +990,9 @@ export default {
                     classes = "";
                     if (_node.is_on_main_chain) classes += "is_on_main_chain ";
                     if (_node.is_minor) classes += "is_minor ";
-                    if (isWt) {
+                    // if (isWt) {
                         classes += _node.witness_from + " ";
-                    }
+                    // }
                     if (_node.is_stable) classes += "is_stable ";
                     if (_node.sequence === "final-bad") classes += "finalBad";
                     if (_node.sequence === "temp-bad") classes += "tempBad";
@@ -1103,6 +1108,7 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
+                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1158,6 +1164,7 @@ export default {
                                 is_free: lastItem.is_free,
                                 exec_timestamp: lastItem.exec_timestamp,
                                 level: lastItem.level,
+                                is_prototype: isPt,
                                 pkid: lastItem.pkid
                             };
 
@@ -1213,6 +1220,7 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
+                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1352,7 +1360,7 @@ export default {
                     }
                 );
             }
-            location.hash = "#/dag" + (isWt ? "?wt=1" : "");
+            location.hash = "#/dag" + (isPt ? "?pt=1" : "");;
             if (activeNode) {
                 _cy.getElementById(activeNode).removeClass("active");
             }
@@ -1638,7 +1646,7 @@ export default {
             var text = $inputSearch.val();
             text = text.replace(/\s+/g, "");
             if (text.length == 64) {
-                location.hash = "#/dag/" + text + (isWt ? "?wt=1" : "");
+                location.hash = "#/dag/" + text + (isPt ? "?pt=1" : "");
             } else if (text.length === 0) {
                 return;
             } else {
@@ -1667,7 +1675,7 @@ export default {
         //
         goBlockHash(hash) {
             self.loadingInfoSwitch = true;
-            location.hash = "#/dag/" + hash + (isWt ? "?wt=1" : "");
+            location.hash = "#/dag/" + hash + (isPt ? "?pt=1" : "");
         }
     },
     filters: {

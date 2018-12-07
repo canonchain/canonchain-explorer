@@ -990,7 +990,7 @@ let pageUtility = {
                 (item.is_stable === '1') + "," +
                 Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
-                (Number(item.mci) || 0) + "," +//item.mci可能为null
+                (Number(item.mci) || -1) + "," +//item.mci可能为null
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
                 (Number(item.mc_timestamp) || 0) +
                 ")");

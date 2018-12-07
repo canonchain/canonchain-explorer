@@ -155,7 +155,6 @@ export default {
         self.getMci();
         let reg= /^#\/+\?+\w+=(\d{14})$/;
         let restlt = reg.exec(window.location.hash);
-        console.log(restlt);
         if(!!restlt){
             this.start_data = this.toTimestamp(restlt[1]);
         }
