@@ -542,8 +542,8 @@ router.get("/get_previous_units", function (req, res, next) {
             is_prototype:""
         } 
     */
-   logger.info(req.query.parameters)
-    var searchParameter = JSON.parse(req.query.parameters);
+    var searchParameter = req.query;
+    logger.info(req.query)
 
     let filterFirstUnitSql = '' ;
     let filterOtherUnitSql = '' ;
@@ -613,9 +613,11 @@ router.get("/get_previous_units", function (req, res, next) {
         sqlOptions = 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction ' + filterFirstUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100';
     }
 
+    logger.info("搜索语句:",sqlOptions)
     pgclient.query(sqlOptions, (data) => {
         var tempEdges = {};
         //TODO catch
+        logger.info(data);
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -667,8 +669,21 @@ router.get("/get_previous_units", function (req, res, next) {
                         res.json(responseData);
                     } else {
                         //筛选parent数据，把不是 dataAryDiff 里的parent都移除
-                        result.forEach(resItem => {
-                            // if ( dataAryDiff.indexOf(resItem.parent) > -1) {
+                        if(searchItem === 'prototype'){
+                            result.forEach(resItem => {
+                                let protyAry = resItem[searchItem].split(',');
+                                protyAry.forEach(proItem=>{
+                                    tempEdges[resItem.item + '_' + proItem] = {
+                                        "data": {
+                                            "source": resItem.item,
+                                            "target": proItem
+                                        },
+                                        "best_parent_unit": ''
+                                    }
+                                })
+                            })
+                        }else{
+                            result.forEach(resItem => {
                                 tempEdges[resItem.item + '_' + resItem[searchItem]] = {
                                     "data": {
                                         "source": resItem.item,
@@ -676,8 +691,8 @@ router.get("/get_previous_units", function (req, res, next) {
                                     },
                                     "best_parent_unit": isBastParent(resItem,data)
                                 }
-                            // }
-                        })
+                            })
+                        }
                         responseData = {
                             units: {
                                 nodes: formatUnits(data),
