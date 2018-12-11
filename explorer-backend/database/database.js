@@ -31,12 +31,14 @@ let getRpcTimer = null,
 let dbStableMci,        //本地数据库的最高稳定MCI
     rpcStableMci;       //RPC接口请求到的最高稳定MCI
 let cartMci = 0;        //大量数据分批存储时候，用来记录MCI
-let cartStep = 10;      //如果数据过多时候，每批处理地数据
+let cartStep = 0;       //如果数据过多时候，每批处理地数据，0是每次获取一个
 let tempMci;            //大量数据分批存储时候，临时MCI
 let isStableDone = false;//稳定的MCI是否插入完成
 //辅助数据 End
 
 // 操作稳定Unit相关变量 Start
+let next_index          = '';
+let MCI_LIMIT           = 1000;
 let unitInsertAry       = [];//不存在unit,插入[Db]
 let unitUpdateAry       = [];//存在的unit,更新[Db]
 let accountsInsertAry   = [];//不存在的账户,插入[Db]
@@ -57,6 +59,7 @@ let timestamp10UpdateAry   = [];//存在的timestamp,更新[Db]
 // 操作稳定Unit相关变量 End
 
 // 批量操作不稳定Unit相关变量 Start
+let unstable_next_index     = '';
 let unstableUnitHashAry     = [];//不稳定Unit Hash组成的数组
 let unstableParentsAry      = [];//需要插入的Parents
 let unstableWitnessTotal    = {};//需要预处理的Witness
@@ -133,8 +136,8 @@ let pageUtility = {
                     logger.info("searchMci 数据库无Mci，第一次插入");
                     pageUtility.insertMci(status);
                 } else if (data.length === 1) {
-                    logger.info("searchMci 判断是否最新的MCI",currentMci.last_mci,status.last_mci);
-                    if(Number(currentMci.last_mci)!==Number(status.last_mci)){
+                    logger.info("searchMci 判断是否最新的MCI",currentMci.last_stable_mci,status.last_stable_mci);
+                    if(Number(currentMci.last_stable_mci)!==Number(status.last_stable_mci)){
                         logger.info("searchMci 插入最新MCI");
                         pageUtility.insertMci(status);
                     }else{
@@ -162,8 +165,8 @@ let pageUtility = {
     },
     //插入稳定的Unit ------------------------------------------------ Start
     getUnitByMci(){
-        logger.info(`通过稳定MCI值 ${dbStableMci} 获取网络中block信息 BY czr.request.mciBlocks`);
-        czr.request.mciBlocks(dbStableMci).then(function (data) {
+        logger.info(`通过稳定MCI值 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取网络中block信息 BY czr.request.mciBlocks`);
+        czr.request.mciBlocks(dbStableMci,MCI_LIMIT,next_index).then(function (data) {
             if(data.blocks){
                 data.blocks.forEach((item) => {
                     //写 is_witness
@@ -174,24 +177,33 @@ let pageUtility = {
                     }
                     unitInsertAry.push(item);
                 });
-                dbStableMci++;//7001
-    
-                //当前是否完成，控制一次插入多少
-                if (isStableDone) {
-                    tempMci = rpcStableMci;
-                } else {
-                    tempMci = cartMci;
-                }
-    
-                if (dbStableMci <= tempMci) {
+                if(data.next_index){
+                    //没有获取完
+                    next_index = data.next_index;
                     pageUtility.getUnitByMci();
-                    // logger.info(`dbStableMci <= tempMci  true`);
-                } else {
-                    logger.info(`dbStableMci <= tempMci  false`);
-                    pageUtility.filterData();
+                }else{
+                    //当前Blocks已经获取完了
+                    next_index = '';
+                    dbStableMci++;//7001
+    
+                    //当前是否完成，控制一次插入多少
+                    if (isStableDone) {
+                        tempMci = rpcStableMci;
+                    } else {
+                        tempMci = cartMci;
+                    }
+        
+                    if (dbStableMci <= tempMci) {
+                        pageUtility.getUnitByMci();
+                        // logger.info(`dbStableMci <= tempMci  true`);
+                    } else {
+                        logger.info(`dbStableMci <= tempMci  false`);
+                        pageUtility.filterData();
+                    }
                 }
             }else{
                 logger.info(`mciBlocks : data.blocks => false`);
+                logger.info(data);
                 pageUtility.getRPC();
             }
         }).catch((err)=>{
@@ -572,8 +584,15 @@ let pageUtility = {
         unstableWitnessTotal    = {};
         unstableInsertBlockAry  = [];
         unstableUpdateBlockAry  = [];
-        czr.request.unstableBlocks().then(function (data) {
+        czr.request.unstableBlocks(MCI_LIMIT,unstable_next_index).then(function (data) {
             unstableInsertBlockAry = data.blocks;
+            if(data.next_index){
+                //没有获取完
+                unstable_next_index = data.next_index;
+            }else{
+                //已经获取完了
+                unstable_next_index = '';
+            }
             if(unstableInsertBlockAry.length>0){
                 //排序 level 由小到大
                 unstableInsertBlockAry.sort(function (a, b) {
@@ -614,6 +633,9 @@ let pageUtility = {
                 筛选好需要插入的Block
                 */
                 pageUtility.searchParentsFromDb();
+            }else{
+                logger.info("unstable的blocks是空的")
+                logger.info(data);
             }
         })
     },
@@ -691,7 +713,7 @@ let pageUtility = {
             let dbHashParent = []
             logger.info(`数据库中存在的parents:${parentsRes.length}`);
             // logger.info(parentsRes);
-            let hubUnit = [];//需要把is_hub更新为true的unit数组
+            // let hubUnit = [];//需要把is_hub更新为true的unit数组
             //根据数据库的写当前的prototype
             if(parentsRes.length>0){
                 logger.info("allUnit",allParent);
@@ -708,7 +730,6 @@ let pageUtility = {
                         如果C后面不是DE，而是单独一个F；
                         C的is_witness为true，则F的prototype值为C；
                         C的is_witness为false,那么F的prototype为C，此时值是
-                          
                     */
                     logger.info("item.item是否存在",itemIndex,item.item)
                     if(itemIndex>-1){
@@ -720,10 +741,11 @@ let pageUtility = {
                             //如果是枢纽，prototype的是item.item;
                             if(hubObj[item.item].is_hub){
                                 logger.info("item是枢纽unit",hubObj[item.item])
-                                hubUnit.push(item.item)
-                                sources_ary[itemIndex].prototype = item.item; 
+                                // hubUnit.push(item.item)
+                                sources_ary[itemIndex].prototype = hubObj[item.item].prototype; 
                                 //更新tranction的对应item的is_hub属性
                             }else{
+                                //如果当前是witness，需要展开;;;这里不展开了
                                 sources_ary[itemIndex].prototype = item.prototype;
                             }
                         }
@@ -742,6 +764,21 @@ let pageUtility = {
                         currentItem.prototype = targetItem.item;
                     }else{
                         currentItem.prototype = targetItem.prototype;
+                        /* 
+                            需要判断是否为枢纽，
+                                1.非见证人
+                                2.多个原型
+                            =如果多个原型，则取出对应的原型
+                                fn(sources_ary , targetItem.item) => 'B,C,D'
+                            =如果是空字符串则代表不是枢纽
+                        */
+                       //如果是枢纽，prototype的是item.item;
+                       let protoInfo = pageUtility.getLocalHubInfo(sources_ary,targetItem.prototype);
+                       if(protoInfo){
+                            currentItem.prototype = protoInfo;
+                       }else{
+                            currentItem.prototype = targetItem.prototype;
+                       }
                     }
                 }
 
@@ -764,12 +801,13 @@ let pageUtility = {
                 //赋值不稳定的
                 unstableParentsAry = sources_ary;
             }
-            if(hubUnit.length>0){
-                //需要更新枢纽属性
-                pageUtility.updateHub(hubUnit,fn);
-            }else{
-                fn();
-            }
+            // if(hubUnit.length>0){
+            //     //需要更新枢纽属性
+            //     pageUtility.updateHub(hubUnit,fn);
+            // }else{
+            //     fn();
+            // }
+            fn();
         })
     },
     //2.搜索哪些Witness已经存在数据库中,并把 unstableWitnessTotal 改为最终需要处理的数据
@@ -850,7 +888,13 @@ let pageUtility = {
             }
             pgclient.query('COMMIT', (err) => {
                 logger.info("批量操作不稳定 Unit End", err);
-                pageUtility.readyGetData();
+                if(unstable_next_index){
+                    //没有获取完，需要获取
+                    pageUtility.getUnstableBlocks();
+                }else{
+                    //已经获取完毕了
+                    pageUtility.readyGetData();
+                }
             })
         })
     },
@@ -1108,59 +1152,92 @@ let pageUtility = {
         let obj = {};
         for (let i = 0; i < arr.length; i++) {
             let currentItem = arr[i];
+            //currentItem.prototype 可能是 'AAA,BBB'
+            let protoAry = currentItem.prototype.split(',');
+
             if (!obj[currentItem.item]) {
                 obj[currentItem.item] = {
                     item:currentItem.item,
-                    prototype:[currentItem.prototype],
-                    proto_total:1,
+                    prototype: (protoAry.length>1 ? protoAry :[currentItem.prototype]),
+                    proto_total:protoAry.length,
                     is_hub:false
                 };
+                if((protoAry.length>1)&&(currentItem.is_witness===false)){
+                    obj[currentItem.item].is_hub = true;//此时是枢纽
+                }
             } else {
                 obj[currentItem.item].prototype.forEach(item=>{
                     if(currentItem.is_witness===false){
                         obj[currentItem.item].is_hub = true;//此时是枢纽
                     }
                 });
-                obj[currentItem.item].prototype.push(currentItem.prototype);
-                obj[currentItem.item].proto_total++;
+                protoAry.forEach(item=>{
+                    if(obj[currentItem.item].prototype.indexOf(item)<0){
+                        obj[currentItem.item].prototype.push(item);
+                    }
+                    obj[currentItem.item].proto_total++;
+                })
             }
     
         }
         /* 
         { '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63': 
-                { item: '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63',
+                { 
+                    item: '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63',
                     prototype: [ 
                         'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88',
                         'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88' 
                     ],
                     proto_total: 2,
-                    is_hub: false 
+                    is_hub: true 
                 } 
         }
         */
+       for(let key in obj){
+           obj[key].prototype = obj[key].prototype.join(',');
+       }
         return obj;
     },
-    updateHub(ary,fn){
-        logger.info(`需要更新的枢纽unit数量为:`)
-        logger.info(ary);
-        let tempAry=[];
+    // updateHub(ary,fn){
+    //     logger.info(`需要更新的枢纽unit数量为:`)
+    //     logger.info(ary);
+    //     let tempAry=[];
+    //     ary.forEach(item=>{
+    //         tempAry.push(
+    //             "('" + 
+    //             item + "'," +
+    //             true +
+    //             ")"
+    //         )
+    //     });
+    //     let updateSql = 'update transaction set is_hub=tmp.is_hub from (values ' + tempAry.toString() +
+    //     ') as tmp (hash,is_hub) where transaction.hash=tmp.hash';
+    //     pgclient.query(updateSql, (res) => {
+    //         //ROLLBACK
+    //         if (pageUtility.shouldAbort(res, "updateHub")) {
+    //             return;
+    //         }
+    //         fn();
+    //     });
+    // },
+    getLocalHubInfo(ary,hash){
+        let tempProto=[];
         ary.forEach(item=>{
-            tempAry.push(
-                "('" + 
-                item + "'," +
-                true +
-                ")"
-            )
-        });
-        let updateSql = 'update transaction set is_hub=tmp.is_hub from (values ' + tempAry.toString() +
-        ') as tmp (hash,is_hub) where transaction.hash=tmp.hash';
-        pgclient.query(updateSql, (res) => {
-            //ROLLBACK
-            if (pageUtility.shouldAbort(res, "updateHub")) {
-                return;
+            if(item.item===hash){
+                let proAry = item.prototype.split(",");
+                proAry.forEach(childItem=>{
+                    //没有的前提下，再push
+                    if(tempProto.indexOf(childItem)<0){
+                        tempProto.push(childItem);
+                    }
+                })
             }
-            fn();
-        });
+        })
+        if(tempProto.length>1){
+            return tempProto.join(",");
+        }else{
+            return '';
+        }
     },
     shouldAbort(err, sources) {
         let typeVal = Object.prototype.toString.call(err);

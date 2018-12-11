@@ -277,23 +277,77 @@ last_stable_mci: 100,
 last_mci:122}
  */
 
- //传入的mci值,返回mci下所有block的信息
-HttpRequest.prototype.mciBlocks = async function(mci) {
-    var opt = {
-        "action": "mci_blocks",
-        "mci": mci
-    };
-    let ret = await asyncfunc(opt);
-    return ret;
+//传入的mci值,返回mci下所有block的信息
+/* 
+{
+    "action"    :"mci_blocks",
+    "mci"       :"121",
+    "limit"     :"50",
+    "next_index":'',    //第一次传空字符串，后续的值取上一次结果中 next_index
+} 
+-> 
+{
+    blocks:[],
+    "next_index": "XXX" // ""或者一串字符串,如果 next_index == ""  这个mci下的block请求结束
+};
+*/
+HttpRequest.prototype.mciBlocks = async function(mci, limit, next_index) { 
+    if(!limit){
+        return 1//没有参数 
+    }
+    let opt ;
+    if(next_index){
+        opt={
+            "action"    :"mci_blocks",
+            "mci"       :mci,
+            "limit"     :limit,
+            "next_index":next_index
+        };
+    }else{
+        opt = {
+            "action"    :"mci_blocks",
+            "mci"       :mci,
+            "limit"     :limit
+        };
+    }
+    return await asyncfunc(opt);
 };
 
 //当前不稳定的所有block的信息
-HttpRequest.prototype.unstableBlocks = async function() {
-    var opt = {
-        "action": "unstable_blocks"
-    };
-    let ret = await asyncfunc(opt);
-    return ret;
+/* 
+{
+    "action"    :"unstable_blocks",
+    "mci"       :"121",
+    "limit"     :"50",
+    "next_index":'',    //第一次传空字符串，后续的值取上一次结果中 next_index
+} 
+-> 
+{
+    blocks:[],
+    "next_index": "XXX" // ""或者一串字符串,如果 next_index == ""  这个mci下的block请求结束
+};
+*/
+HttpRequest.prototype.unstableBlocks = async function(limit, next_index) {
+    if(!limit){
+        return 0//没有参数 
+    }
+    let opt ;
+    if(next_index){
+        opt={
+            "action"    :"unstable_blocks",
+            "mci"       :mci,
+            "limit"     :limit,
+            "next_index":next_index
+        };
+    }else{
+        opt = {
+            "action"    :"unstable_blocks",
+            "mci"       :mci,
+            "limit"     :limit
+        };
+    }
+
+    return await asyncfunc(opt);
 };
 
 //最后一个稳定点的mci，block信息

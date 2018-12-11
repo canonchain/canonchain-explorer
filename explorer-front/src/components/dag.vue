@@ -333,7 +333,7 @@ export default {
     },
     created() {
         self = this;
-        if (window.location.hash.indexOf("pt=") > 1) {
+        if (window.location.hash.indexOf("?pt=") > 1) {
             isPt = true;
         } else {
             isPt = false;
@@ -505,12 +505,9 @@ export default {
             self.$axios
                 .get("/api/get_previous_units", {
                     params: {
-                        active_unit: searchUnit,
-                        parameters: {
-                            direction: "center",
-                            is_prototype: isPt,
-                            active_unit: searchUnit
-                        }
+                        direction: "center",
+                        is_prototype: isPt,
+                        active_unit: searchUnit
                     }
                 })
                 .then(function(response) {
@@ -1085,9 +1082,7 @@ export default {
                 bWaitingForNew = true;
                 self.$axios
                     .get("/api/get_previous_units", {
-                        params: {
-                            parameters: firstParameters
-                        }
+                        params: firstParameters
                     })
                     .then(function(response) {
                         response = self.filterParent(response)
@@ -1139,9 +1134,7 @@ export default {
                 bWaitingForNext = true;
                 self.$axios
                     .get("/api/get_previous_units", {
-                        params: {
-                            parameters: lastParameters
-                        }
+                        params: lastParameters
                     })
                     .then(function(response) {
                         response = self.filterParent(response,"down");
@@ -1193,9 +1186,7 @@ export default {
 
                 self.$axios
                     .get("/api/get_previous_units", {
-                        params: {
-                            parameters: firstParameters
-                        }
+                        params: firstParameters
                     })
                     .then(function(response) {
                         response = self.filterParent(response,'up');
