@@ -30,15 +30,13 @@ let getRpcTimer = null,
     getUnstableTimer = null;
 let dbStableMci,        //本地数据库的最高稳定MCI
     rpcStableMci;       //RPC接口请求到的最高稳定MCI
-let cartMci = 0;        //大量数据分批存储时候，用来记录MCI
-let cartStep = 0;       //如果数据过多时候，每批处理地数据，0是每次获取一个
-let tempMci;            //大量数据分批存储时候，临时MCI
+// let cartStep = 0;       //如果数据过多时候，每批处理地数据，0是每次获取一个 ====> 需求改了，数据过大，不能一次插入多个MCI下的blocks 
 let isStableDone = false;//稳定的MCI是否插入完成
 //辅助数据 End
 
 // 操作稳定Unit相关变量 Start
 let next_index          = '';
-let MCI_LIMIT           = 1000;
+let MCI_LIMIT           = 10;
 let unitInsertAry       = [];//不存在unit,插入[Db]
 let unitUpdateAry       = [];//存在的unit,更新[Db]
 let accountsInsertAry   = [];//不存在的账户,插入[Db]
@@ -84,7 +82,7 @@ let pageUtility = {
                 logger.info("get dataCurrentMai is Error");
                 return;
             }
-            logger.info(`应该使用的稳定MCI-dbStableMci : ${dbStableMci}`);
+            logger.info(`当前数据库稳定MCI : ${dbStableMci-1} ， 需要拿 ${dbStableMci} 去获取最新数据`);
             pageUtility.readyGetData();
         });
     },
@@ -105,16 +103,8 @@ let pageUtility = {
         })
         .then(function (status) {
             rpcStableMci = Number(status.status.last_stable_mci);
-            if ((dbStableMci < rpcStableMci) || (dbStableMci ===0)) {
-                if ((dbStableMci + cartStep) < rpcStableMci) {
-                    //数量太多，需要分批插入
-                    cartMci = dbStableMci + cartStep;
-                    isStableDone = false;
-                } else {
-                    //一次可以插入完
-                    isStableDone = true;
-                }
-                logger.info(`dbStableMci:${dbStableMci} , rpcStableMci:${rpcStableMci}, 开始准备插入数据 ${dbStableMci < rpcStableMci}`);
+            if ((dbStableMci <= rpcStableMci) || (dbStableMci ===0)) {
+                isStableDone = dbStableMci < rpcStableMci ? false : true;
                 pageUtility.searchMci(status.status);
             } else {
                 getUnstableTimer = setTimeout(function () {
@@ -141,7 +131,6 @@ let pageUtility = {
                         logger.info("searchMci 插入最新MCI");
                         pageUtility.insertMci(status);
                     }else{
-                        logger.info("searchMci 无需插入最新MCI,直接更新吧老铁!");
                         pageUtility.getUnitByMci();//查询所有稳定 block 信息
                     }
                 } 
@@ -165,7 +154,7 @@ let pageUtility = {
     },
     //插入稳定的Unit ------------------------------------------------ Start
     getUnitByMci(){
-        logger.info(`通过稳定MCI值 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取网络中block信息 BY czr.request.mciBlocks`);
+        logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks BY czr.request.mciBlocks`);
         czr.request.mciBlocks(dbStableMci,MCI_LIMIT,next_index).then(function (data) {
             if(data.blocks){
                 data.blocks.forEach((item) => {
@@ -180,27 +169,12 @@ let pageUtility = {
                 if(data.next_index){
                     //没有获取完
                     next_index = data.next_index;
-                    pageUtility.getUnitByMci();
+                    // pageUtility.getUnitByMci();
                 }else{
                     //当前Blocks已经获取完了
                     next_index = '';
-                    dbStableMci++;//7001
-    
-                    //当前是否完成，控制一次插入多少
-                    if (isStableDone) {
-                        tempMci = rpcStableMci;
-                    } else {
-                        tempMci = cartMci;
-                    }
-        
-                    if (dbStableMci <= tempMci) {
-                        pageUtility.getUnitByMci();
-                        // logger.info(`dbStableMci <= tempMci  true`);
-                    } else {
-                        logger.info(`dbStableMci <= tempMci  false`);
-                        pageUtility.filterData();
-                    }
                 }
+                pageUtility.filterData();
             }else{
                 logger.info(`mciBlocks : data.blocks => false`);
                 logger.info(data);
@@ -555,17 +529,18 @@ let pageUtility = {
 
 
                 //Other
-                logger.info(`数据库稳定MCI:${dbStableMci}, RPC稳定Mci:${rpcStableMci}, 本次操作的最后一个Mci:${tempMci}，是否完成稳定MCI的操作:${isStableDone}`);
+                logger.info(`数据库稳定MCI:${dbStableMci}, RPC稳定Mci:${rpcStableMci},是否完成稳定MCI的操作:${isStableDone}`);
                 if (!isStableDone) {
-                    //没有完成,处理 cartMci 和 isDone
-                    if ((cartMci + cartStep) < rpcStableMci) {
-                        //数量太多，需要分批插入
-                        cartMci += cartStep;
-                        isStableDone = false;
-                    } else {
-                        //下一次可以插入完
-                        cartMci = rpcStableMci;
-                        isStableDone = true;
+                    if(!next_index){
+                        //处理 xxx 和 isDone
+                        dbStableMci++;
+                        if (dbStableMci  <= rpcStableMci) {
+                            //数量太多，需要分批插入
+                            isStableDone = false;
+                        } else {
+                            //下一次可以插入完
+                            isStableDone = true;
+                        }
                     }
                     pageUtility.getUnitByMci();
                 } else {
@@ -716,7 +691,6 @@ let pageUtility = {
             // let hubUnit = [];//需要把is_hub更新为true的unit数组
             //根据数据库的写当前的prototype
             if(parentsRes.length>0){
-                logger.info("allUnit",allParent);
                 let hubObj = pageUtility.writeHub(parentsRes);
                 parentsRes.forEach(item=>{
                     itemIndex = allParent.indexOf(item.item);
@@ -731,7 +705,7 @@ let pageUtility = {
                         C的is_witness为true，则F的prototype值为C；
                         C的is_witness为false,那么F的prototype为C，此时值是
                     */
-                    logger.info("item.item是否存在",itemIndex,item.item)
+                    // logger.info("item.item是否存在",itemIndex,item.item)
                     if(itemIndex>-1){
                         if(item.is_witness){
                             //当前是witness
@@ -740,7 +714,7 @@ let pageUtility = {
                             //非witness
                             //如果是枢纽，prototype的是item.item;
                             if(hubObj[item.item].is_hub){
-                                logger.info("item是枢纽unit",hubObj[item.item])
+                                // logger.info("item是枢纽unit",hubObj[item.item])
                                 // hubUnit.push(item.item)
                                 sources_ary[itemIndex].prototype = hubObj[item.item].prototype; 
                                 //更新tranction的对应item的is_hub属性
