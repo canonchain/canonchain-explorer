@@ -549,13 +549,13 @@ router.get("/get_previous_units", function (req, res, next) {
     let filterOtherUnitSql = '' ;
     let searchParentsSql=' item,parent ';
     let searchItem = 'parent';
-    if(searchParameter.is_prototype){
+    if(searchParameter.is_prototype==='true'){
         filterFirstUnitSql = ' WHERE is_witness = true ';
         filterOtherUnitSql = ' and (is_witness = true ) ';
         searchParentsSql = ' item,prototype ';
         searchItem = 'prototype';
     }
-
+    logger.info(searchParameter,filterFirstUnitSql,filterOtherUnitSql,searchParentsSql,searchItem);
     if (searchParameter.direction === 'down') {
         //下一个
         //PKID find row (isFREE / / / )  select * from transaction where hash = $1
@@ -613,11 +613,10 @@ router.get("/get_previous_units", function (req, res, next) {
         sqlOptions = 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction ' + filterFirstUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100';
     }
 
-    logger.info("搜索语句:",sqlOptions)
+    // logger.info("搜索语句:",sqlOptions)
     pgclient.query(sqlOptions, (data) => {
         var tempEdges = {};
         //TODO catch
-        logger.info(data);
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -652,7 +651,7 @@ router.get("/get_previous_units", function (req, res, next) {
                 })
                 var dataAryStr = dataAry.join(",");
 
-                logger.info("Select "+searchParentsSql+" FROM parents WHERE item in (" + dataAryStr + ")");
+                // logger.info("Select "+searchParentsSql+" FROM parents WHERE item in (" + dataAryStr + ")");
                 //"Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")"
                 pgclient.query("Select "+searchParentsSql+" FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
                     let resultTypeVal = Object.prototype.toString.call(result);

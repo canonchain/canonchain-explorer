@@ -335,14 +335,12 @@ HttpRequest.prototype.unstableBlocks = async function(limit, next_index) {
     if(next_index){
         opt={
             "action"    :"unstable_blocks",
-            "mci"       :mci,
             "limit"     :limit,
             "next_index":next_index
         };
     }else{
         opt = {
             "action"    :"unstable_blocks",
-            "mci"       :mci,
             "limit"     :limit
         };
     }

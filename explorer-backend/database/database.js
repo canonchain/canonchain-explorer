@@ -2,6 +2,7 @@ let BigNumber = require('bignumber.js').default;
 
 let Czr = require("../czr/index");
 let czr = new Czr();
+let profiler = require("./profiler");
 
 let pgclient = require('./PG');// 引用上述文件
 pgclient.getConnection();
@@ -119,16 +120,16 @@ let pageUtility = {
         pgclient.query("Select * FROM mci  WHERE last_stable_mci = $1", [Number(status.last_stable_mci)], (data) => {
             if (data.length > 1) {
                 logger.info("searchMci is Error");
+                logger.info(data);
                 return;
             }else{
                 let currentMci = data[0];
                 if (data.length === 0) {
-                    logger.info("searchMci 数据库无Mci，第一次插入");
+                    logger.info("数据库无Mci，第一次插入");
                     pageUtility.insertMci(status);
                 } else if (data.length === 1) {
-                    logger.info("searchMci 判断是否最新的MCI",currentMci.last_stable_mci,status.last_stable_mci);
                     if(Number(currentMci.last_stable_mci)!==Number(status.last_stable_mci)){
-                        logger.info("searchMci 插入最新MCI");
+                        logger.info("需要更新MCI");
                         pageUtility.insertMci(status);
                     }else{
                         pageUtility.getUnitByMci();//查询所有稳定 block 信息
@@ -144,8 +145,7 @@ let pageUtility = {
         pgclient.query(mciText,mciValues,(res) => {
             let typeVal = Object.prototype.toString.call(res);
             if (typeVal === '[object Error]') {
-                logger.info(`MCI插入失败`);
-                logger.info(res);
+                logger.info(`MCI插入失败 ${res}`);
             } else {
                 logger.info(`MCI插入成功`);
                 pageUtility.getUnitByMci();//查询所有稳定 block 信息
@@ -154,8 +154,11 @@ let pageUtility = {
     },
     //插入稳定的Unit ------------------------------------------------ Start
     getUnitByMci(){
-        logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks BY czr.request.mciBlocks`);
+        logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks ===============================`);
+        profiler.start();
         czr.request.mciBlocks(dbStableMci,MCI_LIMIT,next_index).then(function (data) {
+            profiler.stop('RPC=> mciBlocks');
+            profiler.start();
             if(data.blocks){
                 data.blocks.forEach((item) => {
                     //写 is_witness
@@ -166,14 +169,8 @@ let pageUtility = {
                     }
                     unitInsertAry.push(item);
                 });
-                if(data.next_index){
-                    //没有获取完
-                    next_index = data.next_index;
-                    // pageUtility.getUnitByMci();
-                }else{
-                    //当前Blocks已经获取完了
-                    next_index = '';
-                }
+                next_index = data.next_index ? data.next_index : '';
+                profiler.stop('mciBlocks后Blocks重写');
                 pageUtility.filterData();
             }else{
                 logger.info(`mciBlocks : data.blocks => false`);
@@ -185,10 +182,8 @@ let pageUtility = {
         })
     },
     filterData(){
+        profiler.start(); 
         //2、根据稳定Units数据，筛选Account Parent Witness Timestamp，方便后续储存
-        unitInsertAry.sort(function (a, b) {
-            return Number(a.level) - Number(b.level);
-        });
         unitInsertAry.forEach(blockInfo => {
             //DO 处理账户，发款方不在当前 accountsTotal 时 （以前已经储存在数据库了）
             if (!accountsTotal.hasOwnProperty(blockInfo.from)) {
@@ -263,7 +258,6 @@ let pageUtility = {
 
             }else{
                 logger.info(`mc_timestamp-Error`);
-                logger.info(blockInfo);
             }
 
         });
@@ -273,7 +267,7 @@ let pageUtility = {
         * 处理Parent
         * 处理Block
         * */
-       logger.info(`pageUtility.searchAccountBaseDb();`);
+       profiler.stop('mciBlocks后数据组装');
        pageUtility.searchAccountBaseDb();
     },
     searchAccountBaseDb(){
@@ -287,7 +281,10 @@ let pageUtility = {
             text: "select account from accounts where account = ANY ($1)",
             values: [tempAccountAllAry]
         };
+        profiler.start();
         pgclient.query(upsertSql, (accountRes) => {
+            profiler.stop('SQL=> selectAccountFromAccounts');
+            profiler.start();
             accountRes.forEach(item => {
                 if (accountsTotal.hasOwnProperty(item.account)) {
                     accountsUpdateAry.push(accountsTotal[item.account]);
@@ -297,9 +294,8 @@ let pageUtility = {
             for (let item in accountsTotal) {
                 accountsInsertAry.push(accountsTotal[item]);
             }
-            logger.info(`合计 Account:${tempAccountAllAry.length}`);
-            logger.info(`更新 Account:${accountsUpdateAry.length}`);//有用
-            logger.info(`插入 Account:${accountsInsertAry.length}`);//有用
+            profiler.stop('selectAccount后数据处理');
+            logger.info(`Account 合计:${tempAccountAllAry.length} 更新:${accountsUpdateAry.length} 插入:${accountsInsertAry.length}`);
             pageUtility.searchTimestampBaseDb()
 
         });
@@ -315,7 +311,10 @@ let pageUtility = {
             text: "select timestamp from timestamp where timestamp = ANY ($1)",
             values: [tempTimesAllAry]
         };
+        profiler.start();
         pgclient.query(upsertSql, (timestampRes) => {
+            profiler.stop('SQL=> searchTimestamp');
+            profiler.start();
             timestampRes.forEach(item => {
                 if (timestampTotal.hasOwnProperty(item.timestamp)) {
                     timestampUpdateAry.push(timestampTotal[item.timestamp]);
@@ -325,9 +324,8 @@ let pageUtility = {
             for (let item in timestampTotal) {
                 timestampInsertAry.push(timestampTotal[item]);
             }
-            logger.info(`合计 Timestamp:${tempTimesAllAry.length}`);
-            logger.info(`更新 Timestamp:${timestampUpdateAry.length}`);//有用
-            logger.info(`插入 Timestamp:${timestampInsertAry.length}`);//有用
+            profiler.stop('searchTimestamp后的处理');
+            logger.info(`Timestamp 合计:${tempTimesAllAry.length} 更新:${timestampUpdateAry.length} 插入:${timestampInsertAry.length}`);
             //处理Timestamp 结束
 
             //处理 10Timestamp 开始
@@ -340,7 +338,10 @@ let pageUtility = {
                 text: "select timestamp from timestamp where timestamp = ANY ($1)",
                 values: [tempTimes10AllAry]
             };
+            profiler.start();
             pgclient.query(upsert10Sql, (timestampRes) => {
+                profiler.stop('SQL=> searchTimestamp10');
+                profiler.start();
                 timestampRes.forEach(item => {
                     if (timestamp10Total.hasOwnProperty(item.timestamp)) {
                         timestamp10UpdateAry.push(timestamp10Total[item.timestamp]);
@@ -350,19 +351,18 @@ let pageUtility = {
                 for (let item in timestamp10Total) {
                     timestamp10InsertAry.push(timestamp10Total[item]);
                 }
-                logger.info(`合计 Timestamp10:${tempTimes10AllAry.length}`);
-                logger.info(`更新 Timestamp10:${timestamp10UpdateAry.length}`);//有用
-                logger.info(`插入 Timestamp10:${timestamp10InsertAry.length}`);//有用
+                profiler.stop('searchTimestamp10后的处理');
+                logger.info(`Timestamp10 合计:${tempTimes10AllAry.length} 更新:${timestamp10UpdateAry.length} 插入:${timestamp10InsertAry.length}`);
 
                 //处理 10Timestamp 结束
-                pageUtility.searchParentsBaseDb()
+                pageUtility.searchParentsBaseDb() //unBlock插入后，在mci插入，可能有些是插入后的
     
             });
 
         });
     },
     searchParentsBaseDb(){
-        //处理Parent
+        //处理Parent 不需要搜索哪些在数据库，直接插入即可啊；
         let tempParentsAllAry = [];
         parentsTotalAry.forEach(item=>{
             tempParentsAllAry.push(item.item);//key push 
@@ -372,35 +372,37 @@ let pageUtility = {
             text: "select item from parents where item = ANY ($1)",
             values: [tempParentsAllAry]
         };
+        profiler.start();
         pgclient.query(upsertParentSql, (res) => {
+            profiler.stop('SQL=> searchParentsBaseDb');
+            profiler.start();
             let hashParentObj = {};
             res.forEach((item) => {
                 hashParentObj[item.item] = item.item;
             });
-            logger.info(`合计 Parents:${Object.keys(parentsTotalAry).length}`);
-            logger.info(`已存在 Parents:${Object.keys(hashParentObj).length}`);
+            let beforParentLeng = Object.keys(parentsTotalAry).length;
             for (let parent in hashParentObj) {
-                // delete parentsTotalAry[parent];
                 parentsTotalAry.forEach((item,index)=>{
                     if(item.item==parent){
                         parentsTotalAry.splice(index,1);
                     }
                 })
             }
-            logger.info(`需处理 Parents:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据
+            profiler.stop('searchParents后数据处理');
+            logger.info(`Parents 合计:${beforParentLeng}, 已存在:${Object.keys(hashParentObj).length}, 需处理:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据 
             pageUtility.writePrototype(parentsTotalAry ,'1', pageUtility.searchBlockBaseDb)
-            // pageUtility.searchBlockBaseDb();
         });
     },
     searchBlockBaseDb(){
-        //处理Block
+        //处理Block unBlock插入后，在mci插入，可能有些是插入后的
         let upsertBlockSql = {
             text: "select hash from transaction where hash = ANY ($1)",
             values: [unitAryForSql]
         };
+        profiler.start();
         pgclient.query(upsertBlockSql, (blockRes) => {
-            logger.info(`合计  Block:${unitAryForSql.length}`);
-            logger.info(`已存在 Block:${blockRes.length}`);
+            profiler.stop('SQL=> searchBlockBaseDb');
+            profiler.start();
             blockRes.forEach(dbItem => {
                 for (let i= 0;i<unitInsertAry.length;i++){
                     if(unitInsertAry[i].hash === dbItem.hash){
@@ -411,8 +413,8 @@ let pageUtility = {
                 }
             });
             unitInsertAry = [].concat(unitInsertAry);
-            logger.info(`更新Block数量:${unitUpdateAry.length}`);
-            logger.info(`插入Block数量:${unitInsertAry.length}`);
+            profiler.stop('searchBlock后续处理');
+            logger.info(`Block 合计:${unitAryForSql.length}, 需更新:${unitUpdateAry.length}, 需插入:${unitInsertAry.length}`);
             pageUtility.searchWitnessBaseDb();
         });
     },
@@ -426,25 +428,29 @@ let pageUtility = {
             text: "select item from witness where item = ANY ($1)",
             values: [witnessAllAry]
         };
+        profiler.start();
         pgclient.query(upsertWitnessSql, (witnessRes) => {
+            profiler.stop('SQL=> searchWitnessBaseDb');
+            profiler.start();
             let hashWitnessObj = {};
             witnessRes.forEach((item) => {
                 hashWitnessObj[item.item] = item.item;
             });
-            logger.info(`合计有 Witness:${Object.keys(witnessTotal).length}`);
+            let beforeWitnsLeng = Object.keys(witnessTotal).length;
             for (let witness in hashWitnessObj) {
                 delete witnessTotal[witness];
             }
-            logger.info(`已存在 Witness:${Object.keys(hashWitnessObj).length}`);
-            logger.info(`需处理 Witness:${Object.keys(witnessTotal).length}`);
+            profiler.stop('searchWitness后续操作');
+            logger.info(`合计有 Witness:${beforeWitnsLeng}, 已存在:${Object.keys(hashWitnessObj).length} 需处理:${Object.keys(witnessTotal).length}`);
+            
             pageUtility.batchInsertStable();
         })
     },
     batchInsertStable(){
         //批量提交
-        logger.info("****** 准备批量插入稳定账户、Parent、Block，并批量更新Block ******");
+        logger.info("准备批量插入稳定账户、Parent、Block，并批量更新Block **");
+        profiler.start();
         pgclient.query('BEGIN', (res) => {
-            logger.info("操作稳定 Block Start", res);
             if (pageUtility.shouldAbort(res, "操作稳定BlockStart")) {
                 return;
             }
@@ -459,46 +465,36 @@ let pageUtility = {
             * */
            
             if (accountsInsertAry.length > 0) {
-                logger.info("插入 accountsInsertAry By batchInsertAccount");
                 pageUtility.batchInsertAccount(accountsInsertAry);
             }
             if (timestampInsertAry.length > 0) {
-                logger.info("插入 timestampInsertAry By batchInsertTimestamp");
-                logger.info(timestampInsertAry);
                 pageUtility.batchInsertTimestamp(timestampInsertAry);
             }
             if (timestamp10InsertAry.length > 0) {
-                logger.info("插入 timestamp10InsertAry By batchInsertTimestamp");
-                logger.info(timestamp10InsertAry);
                 pageUtility.batchInsertTimestamp(timestamp10InsertAry);
             }
             if (parentsTotalAry.length > 0) {
-                logger.info("插入 parentsTotalAry By batchInsertParent");
                 pageUtility.batchInsertParent(parentsTotalAry);
             }
             if (Object.keys(witnessTotal).length > 0) {
-                logger.info("插入 witnessTotal By batchInsertWitness");
                 pageUtility.batchInsertWitness(witnessTotal);
             }
 
             if (unitInsertAry.length > 0) {
-                logger.info("插入 unitInsertAry By batchInsertBlock");
                 pageUtility.batchInsertBlock(unitInsertAry);
             }
 
             if (unitUpdateAry.length > 0) {
-                logger.info("插入 unitUpdateAry By batchUpdateBlock");
                 pageUtility.batchUpdateBlock(unitUpdateAry);
             }
 
             pgclient.query('COMMIT', (err) => {
-                logger.info("操作插入稳定 Block End", err);
-                logger.info("需要更新的Account数量 ", accountsUpdateAry.length);
-                logger.info("需要更新的timestamp数量 ", timestampUpdateAry.length);
-                logger.info("需要更新的timestamp数量 ", timestamp10UpdateAry.length);
+                profiler.stop('SQL批量=> batchInsertStable');
+                logger.info(`批量插入稳结束, 需更新Account:${accountsUpdateAry.length} 需更新timestamp:${timestampUpdateAry.length} 需更新timestamp10:${timestamp10UpdateAry.length}`);
                 /* 
                 批量更新账户、       accountsUpdateAry
                 */
+               profiler.start();
                 accountsUpdateAry.forEach(account => {
                     pageUtility.aloneUpdateAccount(account)
                 });
@@ -508,7 +504,7 @@ let pageUtility = {
                 timestamp10UpdateAry.forEach(timestamp => {
                     pageUtility.aloneUpdateTimestamp(timestamp);
                 });
-
+                profiler.stop('SQL=> updateAccountTimestamp');
                 //归零数据
                 unitInsertAry = [];
                 accountsTotal = {};
@@ -529,7 +525,13 @@ let pageUtility = {
 
 
                 //Other
-                logger.info(`数据库稳定MCI:${dbStableMci}, RPC稳定Mci:${rpcStableMci},是否完成稳定MCI的操作:${isStableDone}`);
+                isStableDone = dbStableMci < rpcStableMci ? false : true;
+                logger.info(`本次操作数据库稳定MCI:${dbStableMci}, RPC稳定Mci:${rpcStableMci},是否完成稳定MCI的操作:${isStableDone}`);
+
+                if((dbStableMci%1000==0)&&dbStableMci!==0){
+                    console.log(dbStableMci);
+                    profiler.print();
+                }
                 if (!isStableDone) {
                     if(!next_index){
                         //处理 xxx 和 isDone
@@ -559,20 +561,11 @@ let pageUtility = {
         unstableWitnessTotal    = {};
         unstableInsertBlockAry  = [];
         unstableUpdateBlockAry  = [];
+        logger.info("插入不稳定的Unit-----------++++++",MCI_LIMIT,unstable_next_index)
         czr.request.unstableBlocks(MCI_LIMIT,unstable_next_index).then(function (data) {
             unstableInsertBlockAry = data.blocks;
-            if(data.next_index){
-                //没有获取完
-                unstable_next_index = data.next_index;
-            }else{
-                //已经获取完了
-                unstable_next_index = '';
-            }
+            unstable_next_index = data.next_index ? data.next_index : '';
             if(unstableInsertBlockAry.length>0){
-                //排序 level 由小到大
-                unstableInsertBlockAry.sort(function (a, b) {
-                    return Number(a.level) - Number(b.level);
-                });
                 //@A 拆分数据
                 unstableInsertBlockAry.forEach(blockInfo => {
                      //写 is_witness
@@ -609,8 +602,9 @@ let pageUtility = {
                 */
                 pageUtility.searchParentsFromDb();
             }else{
-                logger.info("unstable的blocks是空的")
+                logger.info("unstable的blocks是空的,需要从头跑")
                 logger.info(data);
+                pageUtility.readyGetData();
             }
         })
     },
@@ -630,22 +624,21 @@ let pageUtility = {
             res.forEach((item) => {
                 hashParentObj[item.item] = item.item;
             });
-            logger.info(`合计有 Parents:${unstableParentsAry.length}`);
+            let beforUnParentLen = unstableParentsAry.length;
             for (let parent in hashParentObj) {
-                // delete unstableParentsAry[parent];
                 unstableParentsAry.forEach((item,index)=>{
                     if(item.item==parent){
                         unstableParentsAry.splice(index,1);
                     }
                 })
             }
-            logger.info(`已存在 Parents:${Object.keys(hashParentObj).length}`);
-            logger.info(`需处理 Parents:${unstableParentsAry.length}`);//后面有用
+            logger.info(`Parents 合计有:${beforUnParentLen} 已存在:${Object.keys(hashParentObj).length} 需处理:${unstableParentsAry.length}`);
             pageUtility.writePrototype(unstableParentsAry ,'2', pageUtility.searchWitnessFromDb)
             // pageUtility.searchWitnessFromDb();
         });
     },
     writePrototype(sources_ary,flag,fn){
+        profiler.start();
         //falg : 1=>稳定 2=>不稳定
         let tempAry=[];
         let dbParents = [];//已经再数据里的数据
@@ -664,8 +657,6 @@ let pageUtility = {
             })
         })
         sources_ary = tempAry;
-        logger.info("===================parents=====================")
-        logger.info(`整理后的parents个数:${sources_ary.length}  (${flag=='1'?'稳定的':'不稳定的'})`)
         /* 
         写unit对应 prototype 值:
         1.unit对应parent的是在哪里，可能存在当前数组，也可能在Db中；需要进行分类
@@ -679,16 +670,18 @@ let pageUtility = {
                dbParents.push(item.parent);//存在Db里
            }
        })
+       profiler.stop("writePrototype前置处理");
        let searchParentsSql = {
             text: "select item,parent,is_witness,prototype from parents where item = ANY ($1)",
             values: [dbParents]
         };
+        profiler.start();
         pgclient.query(searchParentsSql, (parentsRes) => {
+            profiler.stop("SQL=> SearchFromParents");
+            profiler.start();
             let itemIndex=0;
             let dbHashParent = []
-            logger.info(`数据库中存在的parents:${parentsRes.length}`);
-            // logger.info(parentsRes);
-            // let hubUnit = [];//需要把is_hub更新为true的unit数组
+            logger.info(`展开后需插表parents:${sources_ary.length}  (${flag=='1'?'稳定的':'不稳定的'}) 数据库中存在parents:${parentsRes.length}`)
             //根据数据库的写当前的prototype
             if(parentsRes.length>0){
                 let hubObj = pageUtility.writeHub(parentsRes);
@@ -705,23 +698,13 @@ let pageUtility = {
                         C的is_witness为true，则F的prototype值为C；
                         C的is_witness为false,那么F的prototype为C，此时值是
                     */
-                    // logger.info("item.item是否存在",itemIndex,item.item)
                     if(itemIndex>-1){
                         if(item.is_witness){
                             //当前是witness
                             sources_ary[itemIndex].prototype = item.item;
                         }else{
                             //非witness
-                            //如果是枢纽，prototype的是item.item;
-                            if(hubObj[item.item].is_hub){
-                                // logger.info("item是枢纽unit",hubObj[item.item])
-                                // hubUnit.push(item.item)
-                                sources_ary[itemIndex].prototype = hubObj[item.item].prototype; 
-                                //更新tranction的对应item的is_hub属性
-                            }else{
-                                //如果当前是witness，需要展开;;;这里不展开了
-                                sources_ary[itemIndex].prototype = item.prototype;
-                            }
+                            sources_ary[itemIndex].prototype = hubObj[item.item].prototype;
                         }
                     }
                 }); 
@@ -747,12 +730,7 @@ let pageUtility = {
                             =如果是空字符串则代表不是枢纽
                         */
                        //如果是枢纽，prototype的是item.item;
-                       let protoInfo = pageUtility.getLocalHubInfo(sources_ary,targetItem.prototype);
-                       if(protoInfo){
-                            currentItem.prototype = protoInfo;
-                       }else{
-                            currentItem.prototype = targetItem.prototype;
-                       }
+                       currentItem.prototype = pageUtility.getLocalHubInfo(sources_ary,targetItem.prototype);
                     }
                 }
 
@@ -760,9 +738,9 @@ let pageUtility = {
                 let localItemIndex= dbHashParent.indexOf(currentItem.parent);
                 if(localItemIndex>-1 && (!currentItem.prototype)){
                     if(parentsRes[localItemIndex].is_witness){
-                        sources_ary[index].prototype = parentsRes[localItemIndex].item; 
+                        sources_ary[index].prototype = parentsRes[localItemIndex].item;
                     }else{
-                        sources_ary[index].prototype = parentsRes[localItemIndex].prototype;  
+                        sources_ary[index].prototype = parentsRes[localItemIndex].prototype;
                     }
                 }
             })
@@ -775,12 +753,7 @@ let pageUtility = {
                 //赋值不稳定的
                 unstableParentsAry = sources_ary;
             }
-            // if(hubUnit.length>0){
-            //     //需要更新枢纽属性
-            //     pageUtility.updateHub(hubUnit,fn);
-            // }else{
-            //     fn();
-            // }
+            profiler.stop('SearchParents后续操作');
             fn();
         })
     },
@@ -799,12 +772,11 @@ let pageUtility = {
             witnessRes.forEach((item) => {
                 hashWitnessObj[item.item] = item.item;
             });
-            logger.info(`合计有 Witness:${Object.keys(unstableWitnessTotal).length}`);
+            let beforeUnWitLen = Object.keys(unstableWitnessTotal).length;
             for (let witness in hashWitnessObj) {
                 delete unstableWitnessTotal[witness];
             }
-            logger.info(`已存在 Witness:${Object.keys(hashWitnessObj).length}`);
-            logger.info(`需处理 Witness:${Object.keys(unstableWitnessTotal).length}`);
+            logger.info(`Witness 合计有:${beforeUnWitLen} 已存在${Object.keys(hashWitnessObj).length} 需处理:${Object.keys(unstableWitnessTotal).length}`);
             pageUtility.searchHashFromDb();
         })
     },
@@ -816,8 +788,6 @@ let pageUtility = {
             values: [unstableUnitHashAry]
         };
         pgclient.query(upsertBlockSql, (blockRes) => {
-            logger.info(`合计有 BlockHash:${unstableUnitHashAry.length}`);
-            logger.info(`表里有 BlockHash:${blockRes.length}`);
             blockRes.forEach(dbItem => {
                 for (let i= 0;i<unstableInsertBlockAry.length;i++){
                     if(unstableInsertBlockAry[i].hash === dbItem.hash){
@@ -827,8 +797,7 @@ let pageUtility = {
                     }
                 }
             });
-            logger.info(`更新不稳定Block数量:${unstableUpdateBlockAry.length}`);//这个后面有用
-            logger.info(`插入不稳定Block数量:${unstableInsertBlockAry.length}`);//这个后面有用
+            logger.info(`不稳定BlockHash 合计有:${unstableUnitHashAry.length} 表里有:${blockRes.length} 更新:${unstableUpdateBlockAry.length} 需插入:${unstableInsertBlockAry.length}`);
             pageUtility.batchInsertUnstable();
         });
     },
@@ -836,7 +805,7 @@ let pageUtility = {
     batchInsertUnstable(){
         //开始插入数据库
         pgclient.query('BEGIN', (res) => {
-            logger.info("批量操作不稳定 Unit Start", res);
+            logger.info("++ 批量操作不稳定 Unit Start ++");
             if (pageUtility.shouldAbort(res, "操作不稳定BlockStart")) {
                 return;
             }
@@ -846,7 +815,7 @@ let pageUtility = {
             * 批量插入 Block、    unstableInsertBlockAry
             * 批量更新 Block、    unstableUpdateBlockAry
             * */
-            if (unstableParentsAry > 0) {
+            if (unstableParentsAry.length > 0) {
                 pageUtility.batchInsertParent(unstableParentsAry);
             }
 
@@ -862,6 +831,7 @@ let pageUtility = {
             }
             pgclient.query('COMMIT', (err) => {
                 logger.info("批量操作不稳定 Unit End", err);
+
                 if(unstable_next_index){
                     //没有获取完，需要获取
                     pageUtility.getUnstableBlocks();
@@ -914,6 +884,7 @@ let pageUtility = {
         ];
         */
        //
+       logger.info("批量插入了")
         let tempAry=[];
         parentAry.forEach(item=>{
             tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','"+ item.prototype  +"')");
@@ -1093,8 +1064,6 @@ let pageUtility = {
                     logger.info(res);
                     logger.info(`Account再次更新 ${accountObj.account}`);
                     pageUtility.aloneUpdateAccount(accountObj);
-                } else {
-                    // logger.info(`Account更新成功 ${accountObj.account}`);
                 }
             });
         });
@@ -1115,8 +1084,6 @@ let pageUtility = {
                     logger.info(res);
                     logger.info(`timestamp 再次更新 ${timestampObj.timestamp}`);
                     pageUtility.aloneUpdateTimestamp(timestampObj);
-                } else {
-                    // logger.info(`timestamp 更新成功 ${timestampObj.timestamp}`);
                 }
             });
         });
@@ -1128,28 +1095,16 @@ let pageUtility = {
             let currentItem = arr[i];
             //currentItem.prototype 可能是 'AAA,BBB'
             let protoAry = currentItem.prototype.split(',');
-
             if (!obj[currentItem.item]) {
                 obj[currentItem.item] = {
                     item:currentItem.item,
-                    prototype: (protoAry.length>1 ? protoAry :[currentItem.prototype]),
-                    proto_total:protoAry.length,
-                    is_hub:false
+                    prototype: (protoAry.length>1 ? protoAry :[currentItem.prototype])
                 };
-                if((protoAry.length>1)&&(currentItem.is_witness===false)){
-                    obj[currentItem.item].is_hub = true;//此时是枢纽
-                }
             } else {
-                obj[currentItem.item].prototype.forEach(item=>{
-                    if(currentItem.is_witness===false){
-                        obj[currentItem.item].is_hub = true;//此时是枢纽
-                    }
-                });
                 protoAry.forEach(item=>{
                     if(obj[currentItem.item].prototype.indexOf(item)<0){
                         obj[currentItem.item].prototype.push(item);
                     }
-                    obj[currentItem.item].proto_total++;
                 })
             }
     
@@ -1161,9 +1116,7 @@ let pageUtility = {
                     prototype: [ 
                         'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88',
                         'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88' 
-                    ],
-                    proto_total: 2,
-                    is_hub: true 
+                    ]
                 } 
         }
         */
@@ -1172,28 +1125,6 @@ let pageUtility = {
        }
         return obj;
     },
-    // updateHub(ary,fn){
-    //     logger.info(`需要更新的枢纽unit数量为:`)
-    //     logger.info(ary);
-    //     let tempAry=[];
-    //     ary.forEach(item=>{
-    //         tempAry.push(
-    //             "('" + 
-    //             item + "'," +
-    //             true +
-    //             ")"
-    //         )
-    //     });
-    //     let updateSql = 'update transaction set is_hub=tmp.is_hub from (values ' + tempAry.toString() +
-    //     ') as tmp (hash,is_hub) where transaction.hash=tmp.hash';
-    //     pgclient.query(updateSql, (res) => {
-    //         //ROLLBACK
-    //         if (pageUtility.shouldAbort(res, "updateHub")) {
-    //             return;
-    //         }
-    //         fn();
-    //     });
-    // },
     getLocalHubInfo(ary,hash){
         let tempProto=[];
         ary.forEach(item=>{
@@ -1207,11 +1138,7 @@ let pageUtility = {
                 })
             }
         })
-        if(tempProto.length>1){
-            return tempProto.join(",");
-        }else{
-            return '';
-        }
+        return tempProto.join(",");
     },
     shouldAbort(err, sources) {
         let typeVal = Object.prototype.toString.call(err);
