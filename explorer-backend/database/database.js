@@ -529,9 +529,6 @@ let pageUtility = {
                 isStableDone = dbStableMci < rpcStableMci ? false : true;
                 logger.info(`本次小结：Db稳定MCI:${dbStableMci}, next_index:${next_index} ,RPC稳定Mci:${rpcStableMci},是否完成稳定MCI的插入:${isStableDone} 
                 `);
-                if(dbStableMci>300){
-                    return;
-                }
 
                 if((dbStableMci%1000==0)&&dbStableMci!==0){
                     console.log(dbStableMci);
@@ -1006,7 +1003,6 @@ let pageUtility = {
         let allUnit     = [];//当前所有的unit
         let allParent   = [];//当前所有的parent
         sources_ary.forEach(item=>{
-            allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
             //展开parents
             item.parent.forEach(childrenItem=>{
                 tempAry.push({
@@ -1015,6 +1011,7 @@ let pageUtility = {
                     is_witness:item.is_witness,
                     prototype:item.prototype
                 });
+                allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
                 allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
             })
         })
@@ -1046,15 +1043,19 @@ let pageUtility = {
             let itemIndex=0;//索引
             let dbHashParent = [];//数据库查出来的
             let targetDbParent = {};
-            logger.info(`当前操作Unit:${allUnit.length} 再数据库中数据条数${inDbParents.length} 展开后需插表parents:${sources_ary.length}  (${flag=='1'?'稳定的':'不稳定的'}) 数据库中存在parents:${parentsRes.length}`)
+            logger.info(`展开后需插表parents:${allUnit.length} 预估数据库中存在Parent的Item数${inDbParents.length} (${flag=='1'?'稳定的':'不稳定的'}) 数据库中存在parent条数:${parentsRes.length}`)
+            logger.info("parent Start")
             //根据数据库的写当前的prototype
             if(parentsRes.length>0){
                 //测试的START
-                let hubObj = pageUtility.writeHub(parentsRes);//解决dbHashParent里可能多条相同parent
-                parentsRes.forEach(item=>{
+                let hubObj = pageUtility.writeHub(parentsRes);//解决dbHashParent里可能多条相同parent TODO 需要优化，现在3S时间
+                logger.info("   hubObj End")
+                parentsRes.forEach(item=>{//4W- 3ms
                     dbHashParent.push(item.item);
                 });
-                sources_ary.forEach((currentItem,index)=>{
+                logger.info("   dbHashParent End")
+                //TODO 下面时间是2S
+                sources_ary.forEach((currentItem,index)=>{//0.64
                     /* 
                         如果DE指向C，C指向AB；
                         C的is_witness为true，则DE的prototype值均为C；
@@ -1072,22 +1073,25 @@ let pageUtility = {
                         targetDbParent = parentsRes[itemIndex]
                         if(targetDbParent.is_witness){
                             //当前是witness
-                            sources_ary[itemIndex].prototype = targetDbParent.item;
+                            sources_ary[index].prototype = targetDbParent.item;
                         }else{
                             //非witness
-                            sources_ary[itemIndex].prototype = hubObj[targetDbParent.item].prototype.join(',');
+                            sources_ary[index].prototype = hubObj[targetDbParent.item].prototype;
                         }
                     }
 
                 }) 
+                logger.info("   sources_ary End")
                 //测试的END
             }
+            logger.info("parent End")
 
             //根据当前的写当前的prototype
             let currentItemIndex=0;
             let targetLocItem={};
-            sources_ary.forEach((currentItem,index)=>{
-                currentItemIndex = allUnit.indexOf(currentItem.parent); 
+            logger.info("local Start")
+            sources_ary.forEach((currentItem,index)=>{//0.64
+                currentItemIndex = allUnit.indexOf(currentItem.parent);
                 if(currentItemIndex>-1){
                     targetLocItem =sources_ary[currentItemIndex];
                     if(currentItem.prototype){
@@ -1104,11 +1108,11 @@ let pageUtility = {
                                 fn(sources_ary , targetLocItem.item) => 'B,C,D'
                         */
                        //如果是枢纽，prototype的是item.item;
-                       currentItem.prototype = pageUtility.getLocalHubInfo(sources_ary,targetLocItem.prototype);
+                       currentItem.prototype = pageUtility.getLocalHubInfo(sources_ary,targetLocItem.prototype);//0.64
                     }
                 }
             })
-            
+            logger.info("local End") 
             //赋值对应的数据
             if(flag == "1"){
                 //赋值稳定的
@@ -1118,12 +1122,12 @@ let pageUtility = {
                 unstableParentsAry = sources_ary;
             }
             // profiler.stop('SearchParents后续操作');
-
             logger.info(`写原型数据 End`)
             fn();
         })
     },
     writeHub(arr) {
+        logger.info("writeHub Start")
         let obj = {};
         for (let i = 0; i < arr.length; i++) {
             let currentItem = arr[i];
@@ -1155,9 +1159,11 @@ let pageUtility = {
                 } 
         }
         */
-    //    for(let key in obj){
-    //        obj[key].prototype = obj[key].prototype.join(',');
-    //    }
+       logger.info("writeHub End")
+       for(let key in obj){
+           obj[key].prototype = obj[key].prototype.join(',');
+       }
+       logger.info("writeHub 格式化")
         return obj;
     },
     getLocalHubInfo(ary,hash){
