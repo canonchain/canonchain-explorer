@@ -12,18 +12,18 @@ let log4js = require('./log_config');
 let logger = log4js.getLogger('write_db');//此处使用category的值
 let self; 
 const WITNESS_ARY=[
-    "czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS",
-    "czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3",
-    "czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU",
-    "czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf",
-    "czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z",
-    "czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7",
-    "czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii",
-    "czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
-    "czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
-    "czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
-    "czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
-    "czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP"
+    'czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS',
+    'czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3',
+    'czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU',
+    'czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf',
+    'czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z',
+    'czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7',
+    'czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii',
+    'czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS',
+    'czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd',
+    'czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb',
+    'czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE',
+    'czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP'
 ];
 
 //辅助数据 Start
@@ -534,7 +534,7 @@ let pageUtility = {
                     console.log(dbStableMci);
                     profiler.print();
                 }
-                if (!isStableDone) {
+                if ((!isStableDone) || (next_index)) {
                     if(!next_index){
                         //处理 xxx 和 isDone
                         dbStableMci++;
@@ -700,7 +700,7 @@ let pageUtility = {
                 pageUtility.batchUpdateBlock(unstableUpdateBlockAry);
             }
             pgclient.query('COMMIT', (err) => {
-                logger.info(`批量插入不稳定 END  ${Boolean(unstable_next_index)}`);
+                logger.info(`批量插入不稳定 END  ${Boolean(unstable_next_index)} \n`);
                 if(unstable_next_index){
                     //没有获取完，需要获取
                     pageUtility.getUnstableBlocks();
@@ -753,10 +753,11 @@ let pageUtility = {
         */
         let tempAry=[];
         parentAry.forEach(item=>{
-            tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','"+ item.prototype  +"')");
+            // tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','"+ item.prototype  +"')");
+            tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "')");
         })        
         let batchInsertSql = {
-            text: "INSERT INTO parents (item,parent,is_witness,prototype) VALUES "+tempAry.toString()
+            text: "INSERT INTO parents (item,parent,is_witness) VALUES "+tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -845,11 +846,10 @@ let pageUtility = {
                 (item.is_stable === '1') + "," +
                 Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
-                (Number(item.mci) || -1) + "," +//item.mci可能为null
+                Number(Boolean(item.mci!='null') ? item.mci : -1) + "," +//item.mci可能为null
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
                 (Number(item.mc_timestamp) || 0) +
                 ")");
-
             if (!Number(item.exec_timestamp)) {
                 logger.log("exec_timestamp 错了", item.mci, item.hash, item.latest_included_mci)
             }
@@ -870,6 +870,7 @@ let pageUtility = {
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchInsertBlock")) {
+                logger.info(batchInsertSql)
                 return;
             }
         });
@@ -1016,118 +1017,19 @@ let pageUtility = {
             })
         })
         sources_ary = tempAry;
-        /* 
-        写unit对应 prototype 值:
-        1.unit对应parent的是在哪里，可能存在当前数组，也可能在Db中；需要进行分类
-        2.先批量查Db里parents的is_witness
-            T:则unit的 prototype 为 parent
-            F:则unit的 prototype 为 parent.prototype
-        3.再把存在当前数据里的进行处理
-        */
-       sources_ary.forEach((item,index)=>{
-           if(allUnit.indexOf(item.parent)<0){
-               if(inDbParents.indexOf(item.parent)<0){
-                    inDbParents.push(item.parent);//存在Db里
-               }
-           }
-       })
-        //profiler.stop("writePrototype前置处理");
-       let searchParentsSql = {
-            text: "select item,parent,is_witness,prototype from parents where item = ANY ($1)",
-            values: [inDbParents]
-        };
-        // profiler.start();
-        pgclient.query(searchParentsSql, (parentsRes) => {
-            // profiler.stop("SQL=> SearchFromParents");
-            // profiler.start();
-            let itemIndex=0;//索引
-            let dbHashParent = [];//数据库查出来的
-            let targetDbParent = {};
-            logger.info(`展开后需插表parents:${allUnit.length} 预估数据库中存在Parent的Item数${inDbParents.length} (${flag=='1'?'稳定的':'不稳定的'}) 数据库中存在parent条数:${parentsRes.length}`)
-            logger.info("parent Start")
-            //根据数据库的写当前的prototype
-            if(parentsRes.length>0){
-                //测试的START
-                let hubObj = pageUtility.writeHub(parentsRes);//解决dbHashParent里可能多条相同parent TODO 需要优化，现在3S时间
-                logger.info("   hubObj End")
-                parentsRes.forEach(item=>{//4W- 3ms
-                    dbHashParent.push(item.item);
-                });
-                logger.info("   dbHashParent End")
-                //TODO 下面时间是2S
-                sources_ary.forEach((currentItem,index)=>{//0.64
-                    /* 
-                        如果DE指向C，C指向AB；
-                        C的is_witness为true，则DE的prototype值均为C；
-                        C的is_witness为false,那么
-                            D的prototype值是AB;
-                            E的prototype值是AB;
-
-                        如果C后面不是DE，而是单独一个F；
-                        C的is_witness为true，则F的prototype值为C；
-                        C的is_witness为false,
-                            那么F的prototype为AB
-                    */
-                    itemIndex = dbHashParent.indexOf(currentItem.parent);
-                    if(itemIndex>-1){
-                        targetDbParent = parentsRes[itemIndex]
-                        if(targetDbParent.is_witness){
-                            //当前是witness
-                            sources_ary[index].prototype = targetDbParent.item;
-                        }else{
-                            //非witness
-                            sources_ary[index].prototype = hubObj[targetDbParent.item].prototype;
-                        }
-                    }
-
-                }) 
-                logger.info("   sources_ary End")
-                //测试的END
-            }
-            logger.info("parent End")
-
-            //根据当前的写当前的prototype
-            let currentItemIndex=0;
-            let targetLocItem={};
-            logger.info("local Start")
-            sources_ary.forEach((currentItem,index)=>{//0.64
-                currentItemIndex = allUnit.indexOf(currentItem.parent);
-                if(currentItemIndex>-1){
-                    targetLocItem =sources_ary[currentItemIndex];
-                    if(currentItem.prototype){
-                        logger.info(`currentItem.prototype可能是空的:${currentItem.prototype} 断言成功？成功就要改代码`)
-                    }
-                    if(targetLocItem.is_witness){
-                        currentItem.prototype = targetLocItem.item;//TODO 感觉有BUG，currentItem.prototype可能已经有值了
-                    }else{
-                        /* 
-                            需要判断是否为枢纽，
-                                1.非见证人
-                                2.多个原型
-                            =如果多个原型，则取出对应的原型
-                                fn(sources_ary , targetLocItem.item) => 'B,C,D'
-                        */
-                       //如果是枢纽，prototype的是item.item;
-                       currentItem.prototype = pageUtility.getLocalHubInfo(sources_ary,targetLocItem.prototype);//0.64
-                    }
-                }
-            })
-            logger.info("local End") 
-            //赋值对应的数据
-            if(flag == "1"){
-                //赋值稳定的
-                parentsTotalAry = sources_ary;
-            }else if(flag =="2"){
-                //赋值不稳定的
-                unstableParentsAry = sources_ary;
-            }
-            // profiler.stop('SearchParents后续操作');
-            logger.info(`写原型数据 End`)
-            fn();
-        })
+        if(flag == "1"){
+            //赋值稳定的
+            parentsTotalAry = sources_ary;
+        }else if(flag =="2"){
+            //赋值不稳定的
+            unstableParentsAry = sources_ary;
+        }
+        // profiler.stop('SearchParents后续操作');
+        // logger.info(`写原型数据 End`)
+        fn();
     },
     writeHub(arr) {
-        logger.info("writeHub Start")
+        // logger.info("writeHub Start")
         let obj = {};
         for (let i = 0; i < arr.length; i++) {
             let currentItem = arr[i];
@@ -1159,11 +1061,11 @@ let pageUtility = {
                 } 
         }
         */
-       logger.info("writeHub End")
+    //    logger.info("writeHub End")
        for(let key in obj){
            obj[key].prototype = obj[key].prototype.join(',');
        }
-       logger.info("writeHub 格式化")
+    //    logger.info("writeHub 格式化")
         return obj;
     },
     getLocalHubInfo(ary,hash){
