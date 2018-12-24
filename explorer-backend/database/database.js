@@ -91,7 +91,7 @@ let pageUtility = {
                 logger.info("get dataCurrentMai is Error");
                 return;
             }
-            logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
+            // logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
             pageUtility.readyGetData();
         });
     },
@@ -180,7 +180,7 @@ let pageUtility = {
                 });
                 next_index = data.next_index ? data.next_index : '';
                 profiler.stop('mciBlocks后Blocks重写');
-                pageUtility.filterData();
+                pageUtility.validateBlocks();
             }else{
                 logger.info(`mciBlocks : data.blocks => false`);
                 logger.info(data);
@@ -191,6 +191,23 @@ let pageUtility = {
         })
     },
     validateBlocks(){
+        //如果是已经存在并且稳定的Block，需要移除掉(否则金额对不上)
+        unitInsertAry.forEach(blockInfo => {
+            unitAryForSql.push(blockInfo.hash);
+        })
+        let upsertBlockSql = {
+            text: "select hash from transaction where is_stable=true and hash = ANY ($1)",
+            values: [unitAryForSql]
+        };
+        let curIndex= 0;
+        pgclient.query(upsertBlockSql, (blockRes) => {
+            blockRes.forEach(dbItem => {
+                curIndex = unitAryForSql.indexOf(dbItem.hash)
+                unitInsertAry.splice(curIndex,1);
+                unitAryForSql.splice(curIndex,1);
+            });
+            pageUtility.filterData();
+        });
 
     },
     filterData(){
@@ -241,9 +258,6 @@ let pageUtility = {
             if (blockInfo.witness_list.length > 0) {
                 witnessTotal[blockInfo.hash] = blockInfo.witness_list;
             }
-
-            //DO 交易
-            unitAryForSql.push(blockInfo.hash);
 
             //DO timestamp 1秒
             //DO timestamp 10秒 timestamp10Total
@@ -493,19 +507,6 @@ let pageUtility = {
             pgclient.query('COMMIT', (err) => {
                 logger.info("准备批量插入 END");
                 profiler.stop('SQL批量=> batchInsertStable');
-                // logger.info(`批量插入稳结束, 需更新Account:${accountsUpdateAry.length} 需更新timestamp:${timestampUpdateAry.length} 需更新timestamp10:${timestamp10UpdateAry.length}`);
-
-                // profiler.start();
-                // accountsUpdateAry.forEach(account => {
-                //     pageUtility.aloneUpdateAccount(account)
-                // });
-                // timestampUpdateAry.forEach(timestamp => {
-                //     pageUtility.aloneUpdateTimestamp(timestamp)
-                // });
-                // timestamp10UpdateAry.forEach(timestamp => {
-                //     pageUtility.aloneUpdateTimestamp(timestamp);
-                // });
-                // profiler.stop('SQL=> updateAccountTimestamp');
                 //归零数据
                 unitInsertAry = [];
                 accountsTotal = {};
@@ -563,9 +564,9 @@ let pageUtility = {
         unstableParentsAry      = [];//不稳定的parents
         unstableWitnessTotal    = {};
         unstableUpdateBlockAry  = [];
-        logger.info(MCI_LIMIT,unstable_next_index,"获取不稳定的Unit**********************************");
+        logger.info(`获取不稳定的Unit ${MCI_LIMIT} ${unstable_next_index} **********************************`);
         czr.request.unstableBlocks(MCI_LIMIT,unstable_next_index).then(function (data) {
-            logger.info(`拿到了结果`)
+            logger.info(`拿到了结果 ${data.next_index}`)
             unstableInsertBlockAry = data.blocks;
             unstable_next_index = data.next_index ? data.next_index : '';
             if(unstableInsertBlockAry.length>0){
@@ -850,18 +851,6 @@ let pageUtility = {
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
                 (Number(item.mc_timestamp) || 0) +
                 ")");
-            if (!Number(item.exec_timestamp)) {
-                logger.log("exec_timestamp 错了", item.mci, item.hash, item.latest_included_mci)
-            }
-            if (!Number(item.mci)) {
-                logger.log("mci 错了", item.mci, item.hash, item.mci)
-            }
-            if (!Number(item.latest_included_mci)) {
-                logger.log("latest_included_mci 错了", item.mci, item.hash, item.latest_included_mci)
-            }
-            if (!Number(item.mc_timestamp)) {
-                logger.log("mc_timestamp 错了", item.mci, item.hash, item.mc_timestamp)
-            }
         });
 
         let batchInsertSql = {
@@ -949,48 +938,6 @@ let pageUtility = {
             if (pageUtility.shouldAbort(res, "batchUpdateTimestamp")) {
                 return;
             }
-        });
-    },
-
-    //单独更新
-    aloneUpdateAccount(accountObj) {
-        //需要先获取金额，然后再进行相加
-        pgclient.query("Select * FROM accounts  WHERE account = $1", [accountObj.account], (data) => {
-            let currentAccount = data[0];
-            let targetBalance = BigNumber(currentAccount.balance).plus(accountObj.balance).toString(10);
-            const sqlOptions = {
-                text: "UPDATE accounts SET balance=$2 WHERE account=$1",
-                values: [accountObj.account, targetBalance]
-            };
-            pgclient.query(sqlOptions, (res) => {
-                let typeVal = Object.prototype.toString.call(res);
-                if (typeVal === '[object Error]') {
-                    logger.info(`Account更新失败 ${accountObj.account}`);
-                    logger.info(res);
-                    logger.info(`Account再次更新 ${accountObj.account}`);
-                    pageUtility.aloneUpdateAccount(accountObj);
-                }
-            });
-        });
-    },
-    aloneUpdateTimestamp(timestampObj){
-        //需要先获取time,然后再进行相加
-        pgclient.query("Select * FROM timestamp  WHERE timestamp = $1", [timestampObj.timestamp], (data) => {
-            let currentTime = data[0];
-            let targetCount = BigNumber(currentTime.count).plus(timestampObj.count).toString(10);
-            const sqlOptions = {
-                text: "UPDATE timestamp SET count=$2 WHERE timestamp=$1",
-                values: [timestampObj.timestamp, targetCount]
-            };
-            pgclient.query(sqlOptions, (res) => {
-                let typeVal = Object.prototype.toString.call(res);
-                if (typeVal === '[object Error]') {
-                    logger.info(`timestamp 更新失败 ${timestampObj.timestamp}`);
-                    logger.info(res);
-                    logger.info(`timestamp 再次更新 ${timestampObj.timestamp}`);
-                    pageUtility.aloneUpdateTimestamp(timestampObj);
-                }
-            });
         });
     },
 
