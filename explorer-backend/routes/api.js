@@ -774,7 +774,7 @@ router.get("/get_timestamp", function (req, res, next) {
                 let count=[];
                 data.forEach(item=>{
                     timestamp.unshift(item.timestamp)
-                    count.unshift(item.count)
+                    count.unshift(item.count / Number(queryType))
                 })
                 responseData = {
                     timestamp:timestamp,

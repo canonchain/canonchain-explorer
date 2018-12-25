@@ -2,7 +2,7 @@ let BigNumber = require('bignumber.js').default;
 
 let Czr = require("../czr/index");
 let czr = new Czr();
-let profiler = require("./profiler");
+// let profiler = require("./profiler");
 
 let pgclient = require('./PG');// 引用上述文件
 pgclient.getConnection();
@@ -163,11 +163,11 @@ let pageUtility = {
     //插入稳定的Unit ------------------------------------------------ Start
     getUnitByMci(){
         logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks ===============================`);
-        profiler.start();
+        // profiler.start();
         czr.request.mciBlocks(dbStableMci,MCI_LIMIT,next_index).then(function (data) {
             logger.info(`拿到了结果 ${dbStableMci} ${MCI_LIMIT} => ${data.next_index}`);
-            profiler.stop('RPC=> mciBlocks');
-            profiler.start();
+            // profiler.stop('RPC=> mciBlocks');
+            // profiler.start();
             if(data.blocks){
                 data.blocks.forEach((item) => {
                     //写 is_witness
@@ -179,7 +179,7 @@ let pageUtility = {
                     unitInsertAry.push(item);
                 });
                 next_index = data.next_index ? data.next_index : '';
-                profiler.stop('mciBlocks后Blocks重写');
+                // profiler.stop('mciBlocks后Blocks重写');
                 pageUtility.validateBlocks();
             }else{
                 logger.info(`mciBlocks : data.blocks => false`);
@@ -211,7 +211,7 @@ let pageUtility = {
 
     },
     filterData(){
-        profiler.start(); 
+        // profiler.start(); 
         //2、根据稳定Units数据，筛选Account Parent Witness Timestamp，方便后续储存
         unitInsertAry.forEach(blockInfo => {
             //DO 处理账户，发款方不在当前 accountsTotal 时 （以前已经储存在数据库了）
@@ -291,8 +291,8 @@ let pageUtility = {
         * 处理Parent
         * 处理Block
         * */
-       profiler.stop('mciBlocks后数据组装');
-       profiler.start();
+       // profiler.stop('mciBlocks后数据组装');
+       // profiler.start();
        logger.info(`数据过滤分装完成，开始发送异步操作`);
        pageUtility.searchBlockBaseDb();
        pageUtility.searchAccountBaseDb();
@@ -307,10 +307,10 @@ let pageUtility = {
             text: "select account from accounts where account = ANY ($1)",
             values: [tempAccountAllAry]
         };
-        // profiler.start();
+        // // profiler.start();
         pgclient.query(upsertSql, (accountRes) => {
-            // profiler.stop('SQL=> selectAccountFromAccounts');
-            // profiler.start();
+            // // profiler.stop('SQL=> selectAccountFromAccounts');
+            // // profiler.start();
             accountRes.forEach(item => {
                 if (accountsTotal.hasOwnProperty(item.account)) {
                     accountsUpdateAry.push(accountsTotal[item.account]);
@@ -320,7 +320,7 @@ let pageUtility = {
             Object.keys(accountsTotal).forEach(function(key){
                 accountsInsertAry.push(accountsTotal[key]);
             });
-            // profiler.stop('selectAccount后数据处理');
+            // // profiler.stop('selectAccount后数据处理');
             logger.info(`Account完成     合计:${tempAccountAllAry.length} 更新:${accountsUpdateAry.length} 插入:${accountsInsertAry.length}`);
             pageUtility.stableInsertControl();
         });
@@ -332,10 +332,10 @@ let pageUtility = {
             text: "select timestamp from timestamp where timestamp = ANY ($1)",
             values: [tempTimesAllAry]
         };
-        // profiler.start();
+        // // profiler.start();
         pgclient.query(upsertSql, (timestampRes) => {
-            // profiler.stop('SQL=> searchTimestamp');
-            // profiler.start();
+            // // profiler.stop('SQL=> searchTimestamp');
+            // // profiler.start();
             timestampRes.forEach(item => {
                 if (timestampTotal.hasOwnProperty(item.timestamp)) {
                     timestampUpdateAry.push(timestampTotal[item.timestamp]);
@@ -345,7 +345,7 @@ let pageUtility = {
             Object.keys(timestampTotal).forEach(function(key){
                 timestampInsertAry.push(timestampTotal[key]);
             });
-            // profiler.stop('searchTimestamp后的处理');
+            // // profiler.stop('searchTimestamp后的处理');
             logger.info(`Timestamp完成   合计:${tempTimesAllAry.length} 更新:${timestampUpdateAry.length} 插入:${timestampInsertAry.length}`);
             //处理Timestamp 结束
             pageUtility.stableInsertControl();
@@ -358,10 +358,10 @@ let pageUtility = {
             text: "select timestamp from timestamp where timestamp = ANY ($1)",
             values: [tempTimes10AllAry]
         };
-        // profiler.start();
+        // // profiler.start();
         pgclient.query(upsert10Sql, (timestampRes) => {
-            // profiler.stop('SQL=> searchTimestamp10');
-            // profiler.start();
+            // // profiler.stop('SQL=> searchTimestamp10');
+            // // profiler.start();
             timestampRes.forEach(item => {
                 if (timestamp10Total.hasOwnProperty(item.timestamp)) {
                     timestamp10UpdateAry.push(timestamp10Total[item.timestamp]);
@@ -371,7 +371,7 @@ let pageUtility = {
             Object.keys(timestamp10Total).forEach(function(key){
                 timestamp10InsertAry.push(timestamp10Total[key]);
             }); 
-            // profiler.stop('searchTimestamp10后的处理');
+            // // profiler.stop('searchTimestamp10后的处理');
             logger.info(`Timestamp10完成 合计:${tempTimes10AllAry.length} 更新:${timestamp10UpdateAry.length} 插入:${timestamp10InsertAry.length}`);
             //处理 10Timestamp 结束
             pageUtility.stableInsertControl();
@@ -386,10 +386,10 @@ let pageUtility = {
                 text: "select item from witness where item = ANY ($1)",
                 values: [witnessAllAry]
             };
-            // profiler.start();
+            // // profiler.start();
             pgclient.query(upsertWitnessSql, (witnessRes) => {
-                // profiler.stop('SQL=> searchWitnessBaseDb');
-                // profiler.start();
+                // // profiler.stop('SQL=> searchWitnessBaseDb');
+                // // profiler.start();
                 let hashWitnessObj = {};
                 witnessRes.forEach((item) => {
                     hashWitnessObj[item.item] = item.item;
@@ -398,7 +398,7 @@ let pageUtility = {
                 for (let witness in hashWitnessObj) {
                     delete witnessTotal[witness];
                 }
-                // profiler.stop('searchWitness后续操作');
+                // // profiler.stop('searchWitness后续操作');
                 logger.info(`Witness完成     合计:${beforeWitnsLeng}, 已存在:${Object.keys(hashWitnessObj).length} 需处理:${Object.keys(witnessTotal).length}`);
                 pageUtility.stableInsertControl();
             })
@@ -413,10 +413,10 @@ let pageUtility = {
             text: "select hash from transaction where hash = ANY ($1)",
             values: [unitAryForSql]
         };
-        // profiler.start();
+        // // profiler.start();
         pgclient.query(upsertBlockSql, (blockRes) => {
-            // profiler.stop('SQL=> searchBlockBaseDb');
-            // profiler.start();
+            // // profiler.stop('SQL=> searchBlockBaseDb');
+            // // profiler.start();
             let beforParentLeng = Object.keys(parentsTotalAry).length;
             let hashParentObj = [];
             blockRes.forEach(dbItem => {
@@ -433,7 +433,7 @@ let pageUtility = {
                 }
             });
             unitInsertAry = [].concat(unitInsertAry);
-            // profiler.stop('searchBlock后处理Block和parents');
+            // // profiler.stop('searchBlock后处理Block和parents');
             logger.info(`Block完成       合计:${unitAryForSql.length}, 需更新:${unitUpdateAry.length}, 需插入:${unitInsertAry.length}`);
             logger.info(`Parents完成     合计:${beforParentLeng}, 已存在:${hashParentObj.length}, 需处理:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据 
             pageUtility.writePrototype(parentsTotalAry ,'1', pageUtility.stableInsertControl)
@@ -442,14 +442,14 @@ let pageUtility = {
     stableInsertControl(){
         stableCount++;
         if(stableCount === 5){
-            profiler.stop('异步需要的时间');
+            // profiler.stop('异步需要的时间');
             stableCount = 0;
             pageUtility.batchInsertStable();
         }
     },
     batchInsertStable(){
         //批量提交
-        profiler.start();
+        // profiler.start();
         logger.info("准备批量插入 START");
         pgclient.query('BEGIN', (res) => {
             if (pageUtility.shouldAbort(res, "操作稳定BlockStart")) {
@@ -506,7 +506,7 @@ let pageUtility = {
 
             pgclient.query('COMMIT', (err) => {
                 logger.info("准备批量插入 END");
-                profiler.stop('SQL批量=> batchInsertStable');
+                // profiler.stop('SQL批量=> batchInsertStable');
                 //归零数据
                 unitInsertAry = [];
                 accountsTotal = {};
@@ -533,7 +533,7 @@ let pageUtility = {
 
                 if((dbStableMci%1000==0)&&dbStableMci!==0){
                     console.log(dbStableMci);
-                    profiler.print();
+                    // profiler.print();
                 }
                 if ((!isStableDone) || (next_index)) {
                     if(!next_index){
@@ -891,10 +891,11 @@ let pageUtility = {
                 Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
                 (item.mc_timestamp) +
+                (item.mci) +
                 ")");
         });
-        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp from (values ' + tempAry.toString() +
-            ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp) where transaction.hash=tmp.hash';
+        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestam , mci=tmp.mci from (values ' + tempAry.toString() +
+            ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,mci) where transaction.hash=tmp.hash';
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchUpdateBlock")) {
@@ -943,7 +944,7 @@ let pageUtility = {
 
     //写原型
     writePrototype(sources_ary,flag,fn){
-        // profiler.start();
+        // // profiler.start();
         //falg : 1=>稳定 2=>不稳定
         logger.info(`写原型数据 Start`)
         let tempAry     = [];//辅助展开parents作用
@@ -971,7 +972,7 @@ let pageUtility = {
             //赋值不稳定的
             unstableParentsAry = sources_ary;
         }
-        // profiler.stop('SearchParents后续操作');
+        // // profiler.stop('SearchParents后续操作');
         // logger.info(`写原型数据 End`)
         fn();
     },
