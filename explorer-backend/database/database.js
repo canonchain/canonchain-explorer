@@ -249,8 +249,7 @@ let pageUtility = {
                 parentsTotalAry.push({
                     item:blockInfo.hash,
                     parent:blockInfo.parents,
-                    is_witness:blockInfo.is_witness,
-                    prototype:""
+                    is_witness:blockInfo.is_witness
                 });
             }
 
@@ -584,8 +583,7 @@ let pageUtility = {
                         unstableParentsAry.push({
                             item:blockInfo.hash,
                             parent:blockInfo.parents,
-                            is_witness:blockInfo.is_witness,
-                            prototype:""
+                            is_witness:blockInfo.is_witness
                         })
                     }
                     //处理witness
@@ -747,14 +745,12 @@ let pageUtility = {
             {
                 item:"xxxx",
                 parent:"AAA",
-                is_witness:true,
-                prototype:""
+                is_witness:true
             },
         ];
         */
         let tempAry=[];
         parentAry.forEach(item=>{
-            // tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','"+ item.prototype  +"')");
             tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "')");
         })        
         let batchInsertSql = {
@@ -957,8 +953,7 @@ let pageUtility = {
                 tempAry.push({
                     item:item.item,
                     parent:childrenItem,//单个parents
-                    is_witness:item.is_witness,
-                    prototype:item.prototype
+                    is_witness:item.is_witness
                 });
                 allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
                 allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
@@ -975,61 +970,6 @@ let pageUtility = {
         // // profiler.stop('SearchParents后续操作');
         // logger.info(`写原型数据 End`)
         fn();
-    },
-    writeHub(arr) {
-        // logger.info("writeHub Start")
-        let obj = {};
-        for (let i = 0; i < arr.length; i++) {
-            let currentItem = arr[i];
-            //currentItem.prototype 可能是 'AAA,BBB'
-            let protoAry = currentItem.prototype.split(',');
-            if (!obj[currentItem.item]) {
-                obj[currentItem.item] = {
-                    item:currentItem.item,
-                    // prototype: (protoAry.length>1 ? protoAry :[currentItem.prototype])
-                    prototype : protoAry
-                };
-            } else {
-                protoAry.forEach(item=>{
-                    if(obj[currentItem.item].prototype.indexOf(item)<0){
-                        obj[currentItem.item].prototype.push(item);
-                    }
-                })
-            }
-    
-        }
-        /* 
-        { '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63': 
-                { 
-                    item: '2319A50CBBAE851327E2B411430EE5718EB6415AC85FC6123853813C5F0F1D63',
-                    prototype: [ 
-                        'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88',
-                        'ECE786885C9985104DB676A22442784DB1C7CBCC719CC3527B01417A950A4F88' 
-                    ]
-                } 
-        }
-        */
-    //    logger.info("writeHub End")
-       for(let key in obj){
-           obj[key].prototype = obj[key].prototype.join(',');
-       }
-    //    logger.info("writeHub 格式化")
-        return obj;
-    },
-    getLocalHubInfo(ary,hash){
-        let tempProto=[];
-        ary.forEach(item=>{
-            if(item.item===hash){
-                let proAry = item.prototype.split(",");
-                proAry.forEach(childItem=>{
-                    //没有的前提下，再push
-                    if(tempProto.indexOf(childItem)<0){
-                        tempProto.push(childItem);
-                    }
-                })
-            }
-        })
-        return tempProto.join(",");
     },
     shouldAbort(err, sources) {
         let typeVal = Object.prototype.toString.call(err);
