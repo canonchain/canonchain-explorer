@@ -530,10 +530,10 @@ let pageUtility = {
                 logger.info(`本次小结：Db稳定MCI:${dbStableMci}, next_index:${next_index} ,RPC稳定Mci:${rpcStableMci},是否完成稳定MCI的插入:${isStableDone} 
                 `);
 
-                if((dbStableMci%1000==0)&&dbStableMci!==0){
-                    console.log(dbStableMci);
-                    // profiler.print();
-                }
+                // if((dbStableMci%1000==0)&&dbStableMci!==0){
+                //     console.log(dbStableMci);
+                //     // profiler.print();
+                // }
                 if ((!isStableDone) || (next_index)) {
                     if(!next_index){
                         //处理 xxx 和 isDone
@@ -751,10 +751,10 @@ let pageUtility = {
         */
         let tempAry=[];
         parentAry.forEach(item=>{
-            tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "')");
+            tempAry.push("('"+item.item+"','"+item.parent+ "','"+ item.is_witness + "','')");
         })        
         let batchInsertSql = {
-            text: "INSERT INTO parents (item,parent,is_witness) VALUES "+tempAry.toString()
+            text: "INSERT INTO parents (item,parent,is_witness,prototype) VALUES "+tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -886,11 +886,11 @@ let pageUtility = {
                 (item.is_stable === '1') + "," +
                 Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
-                (item.mc_timestamp) +
+                (item.mc_timestamp) + "," +
                 (item.mci) +
                 ")");
         });
-        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestam , mci=tmp.mci from (values ' + tempAry.toString() +
+        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , mci=tmp.mci from (values ' + tempAry.toString() +
             ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,mci) where transaction.hash=tmp.hash';
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
