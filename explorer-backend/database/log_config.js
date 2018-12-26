@@ -5,6 +5,7 @@ let fs = require('fs');
 let basePath = path.join(__dirname, '../data_logs/');
 let defaultPath = path.join(basePath, '/default_database/');
 let writeDbPath = path.join(basePath, '/write_database/');
+let prototypeDbPath = path.join(basePath, '/write_prototype/');
 let readDbPath = path.join(basePath, '/read_database/');
 let sqlPath = path.join(basePath, '/pg_sql/');
 
@@ -19,6 +20,7 @@ if (basePath) {
     //根据不同的logType创建不同的文件目录
     confirmPath(defaultPath);
     confirmPath(writeDbPath);
+    confirmPath(prototypeDbPath);
     confirmPath(readDbPath);
 }
 
@@ -34,6 +36,12 @@ log4js.configure({
         write_db: {
             type: 'dateFile',
             filename: writeDbPath,
+            "pattern": "yyyy-MM-dd-hh.log",
+            alwaysIncludePattern: true
+        },
+        write_prototype: {
+            type: 'dateFile',
+            filename: prototypeDbPath,
             "pattern": "yyyy-MM-dd-hh.log",
             alwaysIncludePattern: true
         },
@@ -57,6 +65,10 @@ log4js.configure({
         },
         write_db: {
             appenders: ['write_db'],
+            level: 'info'
+        },
+        write_prototype: {
+            appenders: ['write_prototype'],
             level: 'info'
         },
         read_db: {

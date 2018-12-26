@@ -15,7 +15,6 @@ let NEXT_TIME = 10;
 let WAITE_TIME = 5000;
 let dbLastPkid = 0;
 let currentPkid = 0;
-let DEV = 0;
 
 // 读数据
 let LIMITVAL = 10;//每页显示条数
@@ -159,10 +158,9 @@ let pageUtility = {
                             sources_ary[index].prototype = targetDbParent.item;
                         } else {
                             //非witness
-                            sources_ary[index].prototype = hubObj[targetDbParent.item];
+                            sources_ary[index].prototype = hubObj[targetDbParent.item].prototype;
                         }
                     }
-
                 })
                 logger.info("   sources_ary End")
                 //测试的END
@@ -204,7 +202,9 @@ let pageUtility = {
                         if (!currentItem.prototype) {
                             currentItem.prototype = targetLocItem.prototype;
                         } else {
-                            currentItem.prototype += ("," + targetLocItem.prototype)
+                            if(currentItem.prototype.indexOf(targetLocItem.prototype)<0){
+                                currentItem.prototype += ("," + targetLocItem.prototype)
+                            }
                         }
                     })
                 }
@@ -266,8 +266,8 @@ let pageUtility = {
             if (typeVal === '[object Error]') {
                 logger.info(`last_pkid插入失败 ${res}`);
             } else {
-                DEV++;
                 logger.info(`last_pkid插入成功`);
+                pageUtility.init(NEXT_TIME);
             }
         })
     },
