@@ -516,6 +516,9 @@ let pageUtility = {
 
 
             pgclient.query('COMMIT', (err) => {
+                if (pageUtility.shouldAbort(err, "操作不稳定BlockStart")) {
+                    return;
+                }
                 logger.info("准备批量插入 END");
                 // profiler.stop('SQL批量=> batchInsertStable');
                 //归零数据
@@ -711,6 +714,9 @@ let pageUtility = {
                 pageUtility.batchUpdateBlock(unstableUpdateBlockAry);
             }
             pgclient.query('COMMIT', (err) => {
+                if (pageUtility.shouldAbort(err, "操作不稳定BlockStart")) {
+                    return;
+                }
                 logger.info(`批量插入不稳定 END  ${Boolean(unstable_next_index)} \n`);
                 if(unstable_next_index){
                     //没有获取完，需要获取
