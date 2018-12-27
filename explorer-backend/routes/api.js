@@ -334,7 +334,7 @@ router.get("/get_transactions", function (req, res, next) {
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
                 // *,balance/sum(balance) 
-                pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
+                pgclient.query('Select exec_timestamp,mc_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -543,7 +543,7 @@ router.get("/get_previous_units", function (req, res, next) {
         } 
     */
     var searchParameter = req.query;
-    logger.info(req.query)
+    // logger.info(req.query)
 
     let filterFirstUnitSql = '' ;
     let filterOtherUnitSql = '' ;
@@ -555,7 +555,7 @@ router.get("/get_previous_units", function (req, res, next) {
         searchParentsSql = ' item,prototype ';
         searchItem = 'prototype';
     }
-    logger.info(searchParameter,filterFirstUnitSql,filterOtherUnitSql,searchParentsSql,searchItem);
+    // logger.info(searchParameter,filterFirstUnitSql,filterOtherUnitSql,searchParentsSql,searchItem);
     if (searchParameter.direction === 'down') {
         //下一个
         //PKID find row (isFREE / / / )  select * from transaction where hash = $1
@@ -713,7 +713,7 @@ router.get("/get_previous_units", function (req, res, next) {
 */
 //获取MCI
 router.get("/get_mci", function (req, res, next) {
-    pgclient.query("Select last_stable_mci,last_mci FROM mci order by last_stable_mci desc LIMIT 1", (data) => {
+    pgclient.query("select key,value from global where key='last_mci' or key ='last_stable_mci'", (data) => {
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -723,9 +723,13 @@ router.get("/get_mci", function (req, res, next) {
                 message: "get_mci FROM mci Error"
             }
         } else {
-            if (data.length === 1) {
+            if (data.length === 2) {
+                let mciObj = {};
+                data.forEach(item=>{
+                    mciObj[item.key] =item.value;
+                })
                 responseData = {
-                    mci: data[0],
+                    mci: mciObj,
                     code: 200,
                     success: true,
                     message: "success"

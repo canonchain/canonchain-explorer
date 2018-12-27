@@ -125,40 +125,52 @@ let pageUtility = {
 
     //插入Mci信息
     searchMci(status) {
-        pgclient.query("Select * FROM mci  WHERE last_stable_mci = $1", [Number(status.last_stable_mci)], (data) => {
+        pgclient.query("Select * FROM global WHERE key = $1", ["last_stable_mci"], (data) => {
             if (data.length > 1) {
                 logger.info("searchMci is Error");
                 logger.info(data);
                 return;
             }else{
-                let currentMci = data[0];
                 if (data.length === 0) {
-                    logger.info("数据库无Mci，第一次插入");
+                    logger.info("数据库无 LAST_STABLE_MCI ，第一次创建KEY_VALUE值");
                     pageUtility.insertMci(status);
-                } else if (data.length === 1) {
+                }else{
+                    let currentMci = data[0];
                     if(Number(currentMci.last_stable_mci)!==Number(status.last_stable_mci)){
-                        logger.info("需要更新MCI");
-                        pageUtility.insertMci(status);
+                        logger.info("需要更新 LAST_STABLE_MCI");
+                        pageUtility.updateMci(status);
                     }else{
                         pageUtility.getUnitByMci();//查询所有稳定 block 信息
                     }
-                } 
+                }
             }
-            
         });
     },
     insertMci(status){
-        const mciText = 'INSERT INTO mci(last_mci,last_stable_mci) VALUES($1,$2)';
-        const mciValues = [Number(status.last_mci),Number(status.last_stable_mci)];
-        pgclient.query(mciText,mciValues,(res) => {
+        const insertVal = "('last_mci',"+Number(status.last_mci)+"),('last_stable_mci',"+Number(status.last_stable_mci)+")";
+        let globalFirstInsert = "INSERT INTO global (key,value) VALUES " + insertVal;
+        pgclient.query(globalFirstInsert,(res) => {
             let typeVal = Object.prototype.toString.call(res);
             if (typeVal === '[object Error]') {
-                logger.info(`MCI插入失败 ${res}`);
+                logger.info(`第一次LAST_MCI插入失败 ${res}`);
             } else {
-                logger.info(`MCI插入成功`);
+                logger.info(`第一次LAST_MCI插入成功`);
                 pageUtility.getUnitByMci();//查询所有稳定 block 信息
             }
         })
+    },
+    updateMci(status){
+        let globalUpdateMci = "update global set value=temp.value from (values ('last_mci',"+Number(status.last_mci)+"),('last_stable_mci',"+Number(status.last_stable_mci)+")) as temp(key,value) where global.key = temp.key"
+        pgclient.query(globalUpdateMci,(res) => {
+            let typeVal = Object.prototype.toString.call(res);
+            if (typeVal === '[object Error]') {
+                logger.info(`MCI插更新败 ${res}`);
+            } else {
+                logger.info(`MCI更新成功`);
+                pageUtility.getUnitByMci();//查询所有稳定 block 信息
+            }
+        })
+
     },
     //插入稳定的Unit ------------------------------------------------ Start
     getUnitByMci(){
