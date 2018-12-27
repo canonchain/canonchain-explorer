@@ -1,10 +1,3 @@
-/* 
-status - 
-mci - 判断is_witness
-组装prototype
-检索服务器有的数据，写原形；
-*/
-
 let pgclient = require('./PG');// 引用上述文件
 pgclient.getConnection();
 let log4js = require('./log_config');
@@ -21,6 +14,21 @@ let LIMITVAL = 10;//每页显示条数
 let currentHashAry = [];//当前操作的Blocks
 let sources_ary = [];//当前要写prototype的item
 
+// 辅助变量
+let inDbParentsAry = [];//已经在数据里的数据
+let currentAllUnit = [];//当前所有的unit 可能很多重复的
+let parentItemIndex;
+let dbAllHashAry;
+let targetDbParentObj;
+let parentHubObj;
+let targetLocObj,localHubObj,localItemIndexs,helpProtoPush;
+
+//SQL
+let SQL_search_pkid = { text: "select last_pkid from prototype_pkid order by proto_id desc limit 1" };
+let SQL_search_hash_base_trans = 'Select pkid,hash FROM transaction where pkid > $1 order by pkid LIMIT $2';
+let searchParentsSql;
+
+
 let pageUtility = {
     init(time) {
         timer = setTimeout(function () {
@@ -28,11 +36,8 @@ let pageUtility = {
         }, time)
     },
     //获取已经写过原型的Pkid
-    getPrototypePkid() {
-        let SearchOptions = {
-            text: "select last_pkid from prototype_pkid order by proto_id desc limit 1"
-        };
-        pgclient.query(SearchOptions, (data) => {
+    getPrototypePkid() { 
+        pgclient.query(SQL_search_pkid, (data) => {
             if (data.length === 0) {
                 dbLastPkid = 0;
             } else if (data.length === 1) {
@@ -41,27 +46,22 @@ let pageUtility = {
                 logger.info("get getPrototypePkid is Error");
                 return;
             }
-            logger.info(`dbLastPkid:${dbLastPkid}`);
             pageUtility.getBlocksByDb();
         })
     },
 
     //从过Pkid从交易表获取Items
     getBlocksByDb() {
-        currentHashAry =[];
-        pgclient.query('Select pkid,hash FROM transaction where pkid > $1 order by pkid LIMIT $2', [dbLastPkid, LIMITVAL], (blockData) => {
-            logger.info("从交易表拿到了Block")
+        pgclient.query(SQL_search_hash_base_trans, [dbLastPkid, LIMITVAL], (blockData) => {
             if (!blockData.length) {
                 //已经写完了，等几秒再开始写
                 pageUtility.init(WAITE_TIME);
             } else {
                 currentPkid = blockData[blockData.length - 1].pkid;
-                logger.info(`最后一项pkid:${currentPkid}`)
+                logger.info(`拿到了数据，并且最后一项pkid:${currentPkid}`)
                 blockData.forEach(element => {
                     currentHashAry.push(element.hash);
                 });
-                logger.info("currentHashAry为搜索parents表准备")
-                logger.info(currentHashAry);
                 pageUtility.getParentsByDb();
             }
         })
@@ -70,26 +70,18 @@ let pageUtility = {
     //从Parents表获取对应Parents
     getParentsByDb() {
         pgclient.query('Select item,parent,is_witness,prototype FROM parents where item = any ($1)', [currentHashAry], (parentsRes) => {
+            currentHashAry =[];
             sources_ary = parentsRes;
             logger.info("从parents表拿到了需要处理的源数据")
-            logger.info(sources_ary)
             pageUtility.writePrototype();
         })
     },
 
     //写原型
-    writePrototype() {
-        let inDbParents = [];//已经在数据里的数据
-        let allUnit = [];//当前所有的unit 可能很多重复的
-        let allParent = [];//当前所有的parent 可能很多重复的
+    writePrototype() { 
         sources_ary.forEach(item => {//4W- 3ms
-            allUnit.push(item.item);
-            allParent.push(item.parent);
+            currentAllUnit.push(item.item);
         });
-        logger.info("allunit")
-        logger.info(allUnit);
-        logger.info("allParent");
-        logger.info(allParent);
 
         /* 
         写unit对应 prototype 值:
@@ -100,41 +92,36 @@ let pageUtility = {
         3.再把存在当前数据里的进行处理
         */
         sources_ary.forEach((item, index) => {
-            if (allUnit.indexOf(item.parent) < 0) {
-                if (inDbParents.indexOf(item.parent) < 0) {
-                    inDbParents.push(item.parent);//存在Db里
+            if (currentAllUnit.indexOf(item.parent) < 0) {
+                if (inDbParentsAry.indexOf(item.parent) < 0) {
+                    inDbParentsAry.push(item.parent);//存在Db里
                 }
             }
         })
-        logger.info("in db parents")
-        logger.info(inDbParents);
         //profiler.stop("writePrototype前置处理");
-        let searchParentsSql = {
+        searchParentsSql = {
             text: "select item,parent,is_witness,prototype from parents where item = ANY ($1)",
-            values: [inDbParents]
+            values: [inDbParentsAry]
         };
         // profiler.start();
         pgclient.query(searchParentsSql, (parentsRes) => {
             // profiler.stop("SQL=> SearchFromParents");
             // profiler.start();
-            let itemIndex = 0;//索引
-            let dbHashParent = [];//数据库查出来的，可能很多重复的
-            let targetDbParent = {};
-            // logger.info(parentsRes);
-            logger.info(`需更新prototype:${allUnit.length} DB存在Parent的item数${inDbParents.length} DB中存在parent条数:${parentsRes.length}`)
-            logger.info(parentsRes);
-            logger.info("parent Start")
+            parentItemIndex = 0;//索引
+            dbAllHashAry = [];//数据库查出来的，可能很多重复的
+            targetDbParentObj = {};
+            logger.info(`需更新prototype:${currentAllUnit.length} DB存在Parent的item数${inDbParentsAry.length} DB中存在parent条数:${parentsRes.length}`)
+            inDbParentsAry =[];
+            currentAllUnit =[];
+
             //根据数据库的写当前的prototype
             if (parentsRes.length > 0) {
                 //测试的START
-                let hubObj = pageUtility.writeHub(parentsRes);//解决dbHashParent里可能多条相同parent TODO 需要优化，现在3S时间
-                logger.info(hubObj);
-                logger.info("   hubObj End")
+                parentHubObj = pageUtility.writeHub(parentsRes);//解决dbHashParent里可能多条相同parent
                 parentsRes.forEach(item => {//4W- 3ms
-                    dbHashParent.push(item.item);//可能很多重复的item
+                    dbAllHashAry.push(item.item);//可能很多重复的item
                 });
-                logger.info("   dbHashParent End")
-                //TODO 下面时间是2S
+                
                 sources_ary.forEach((currentItem, index) => {
                     /* 
                         如果DE指向C，C指向AB；
@@ -147,18 +134,16 @@ let pageUtility = {
                         C的is_witness为false,
                             那么F的prototype为AB
                     */
-                    itemIndex = dbHashParent.indexOf(currentItem.parent);
-                    if (itemIndex > -1) {
-                        targetDbParent = parentsRes[itemIndex]
-                        // dbHashParent[itemIndex] = 'IS_GET';//不能该写，可能多个Unit指向同一个数据库搜出的原型的
-                        // console.log(targetDbParent.item);
-                        // console.log(hubObj[targetDbParent.item]);
-                        if (targetDbParent.is_witness) {
+                    parentItemIndex = dbAllHashAry.indexOf(currentItem.parent);
+                    if (parentItemIndex > -1) {
+                        targetDbParentObj = parentsRes[parentItemIndex]
+                        // dbAllHashAry[parentItemIndex] = 'IS_GET';//不能该写，可能多个Unit指向同一个数据库搜出的原型的
+                        if (targetDbParentObj.is_witness) {
                             //当前是witness
-                            sources_ary[index].prototype = targetDbParent.item;
+                            sources_ary[index].prototype = targetDbParentObj.item;
                         } else {
                             //非witness
-                            sources_ary[index].prototype = hubObj[targetDbParent.item].prototype;
+                            sources_ary[index].prototype = parentHubObj[targetDbParentObj.item].prototype;
                         }
                     }
                 })
@@ -168,47 +153,42 @@ let pageUtility = {
             logger.info("parent End")
 
             //根据当前的写当前的prototype
-            let targetLocItem = {};
-            let localHubObj = pageUtility.helpLocalHub(sources_ary);//{ A: [ 0 ], B: [ 1 ], C: [ 2, 4 ], F: [ 3 ], D: [ 5, 6 ] }
-            let curItemIndexs = [];
-            logger.info(localHubObj);
-            logger.info("local Start")
+            targetLocObj = {};
+            localHubObj = pageUtility.helpLocalHub(sources_ary);//{ A: [ 0 ], B: [ 1 ], C: [ 2, 4 ], F: [ 3 ], D: [ 5, 6 ] }
+            localItemIndexs = [];
             sources_ary.forEach((currentItem, index) => {//0.64
-                curItemIndexs = localHubObj[currentItem.parent];// 4 5
-                logger.info(currentItem.item, index , currentItem.parent,curItemIndexs);
-
-                if (!curItemIndexs) {
+                localItemIndexs = localHubObj[currentItem.parent];// 4 5
+                if (!localItemIndexs) {
                     return;
                 }
-                // if (currentItem.prototype!=='null') {
-                //     logger.info(`currentItem.prototype可能非空的:${currentItem.prototype} 断言成功？如果看到这句输出就要改代码逻辑`)
-                // }
-
-                targetLocItem = sources_ary[curItemIndexs[0]];//*******
-                logger.info(targetLocItem)
-                if (targetLocItem.is_witness) {
-                    currentItem.prototype = targetLocItem.item;
+                targetLocObj = sources_ary[localItemIndexs[0]];
+                if (targetLocObj.is_witness) {
+                    currentItem.prototype = targetLocObj.item;
                 } else {
                     /* 
                         需要判断是否为枢纽，
                             1.非见证人
                             2.多个原型
                         =如果多个原型，则取出对应的原型
-                            fn(sources_ary , targetLocItem.item) => 'B,C,D'
+                            fn(sources_ary , targetLocObj.item) => 'B,C,D'
                     */
                     //如果是枢纽，prototype的是item.item;
-                    curItemIndexs.forEach(indeItem => {
-                        targetLocItem = sources_ary[indeItem];
+                    localItemIndexs.forEach(indeItem => {
+                        targetLocObj = sources_ary[indeItem];
                         if (!currentItem.prototype) {
-                            currentItem.prototype = targetLocItem.prototype;
+                            currentItem.prototype = targetLocObj.prototype;
                         } else {
-                            if(currentItem.prototype.indexOf(targetLocItem.prototype)<0){
-                                currentItem.prototype += ("," + targetLocItem.prototype)
+                            if(currentItem.prototype.indexOf(targetLocObj.prototype)<0){
+                                helpProtoPush = targetLocObj.prototype.split(",");
+                                helpProtoPush.forEach(proItem=>{
+                                    if(currentItem.prototype.indexOf(proItem)<0){
+                                        currentItem.prototype += (","+ proItem)
+                                    }
+                                });
                             }
                         }
                     })
                 }
-                logger.info(currentItem.prototype)
             })
             logger.info("local End")
             pageUtility.writePrototypeToDb();
@@ -235,17 +215,13 @@ let pageUtility = {
                 item.prototype + "'" +
                 ")");
         });
-        logger.info("写原型 开始")
-        logger.info(sources_ary)
+        sources_ary =[];
+        console.log(tempAry.length);
         if (tempAry.length) {
             let batchUpdateSql = 'update parents set prototype=tmp.prototype from (values' + tempAry.toString() +
                 ') as tmp (item,parent,prototype) where parents.item=tmp.item and parents.parent=tmp.parent';
-                logger.info(tempAry)
-                logger.info(batchUpdateSql)
             pgclient.query(batchUpdateSql, (res) => {
-                logger.info("写原型 结束")
-                let typeVal = Object.prototype.toString.call(res);
-                if (typeVal === '[object Error]') {
+                if (Object.prototype.toString.call(res) === '[object Error]') {
                     logger.info(`writePrototypeToDb 失败 ${res}`);
                 } else {
                     logger.info(`writePrototypeToDb 成功`);
@@ -259,11 +235,8 @@ let pageUtility = {
 
     //写Pkid进Db
     writePkidToDb() {
-        const mciText = 'INSERT INTO prototype_pkid(last_pkid) VALUES($1)';
-        const pkidValues = [Number(currentPkid)];
-        pgclient.query(mciText, pkidValues, (res) => {
-            let typeVal = Object.prototype.toString.call(res);
-            if (typeVal === '[object Error]') {
+        pgclient.query('INSERT INTO prototype_pkid(last_pkid) VALUES($1)', [Number(currentPkid)], (res) => { 
+            if (Object.prototype.toString.call(res) === '[object Error]') {
                 logger.info(`last_pkid插入失败 ${res}`);
             } else {
                 logger.info(`last_pkid插入成功`);
@@ -274,7 +247,6 @@ let pageUtility = {
 
     writeHub(arr) {
         let obj = {};
-        logger.info("writeHub")
         for (let i = 0; i < arr.length; i++) {
             let currentItem = arr[i];
             //currentItem.prototype 可能是 'AAA,BBB'
@@ -304,12 +276,9 @@ let pageUtility = {
                 } 
         }
         */
-       logger.info("writeHub End")
        for(let key in obj){
            obj[key].prototype = obj[key].prototype.join(',');
        }
-       logger.info(obj);
-       logger.info("writeHub 格式化")
         return obj;
     },
     helpLocalHub(ary) {
