@@ -720,7 +720,7 @@ router.get("/get_mci", function (req, res, next) {
                 mci: {},
                 code: 500,
                 success: false,
-                message: "get_mci FROM mci Error"
+                message: "get_mci FROM global Error"
             }
         } else {
             if (data.length === 2) {
@@ -739,7 +739,7 @@ router.get("/get_mci", function (req, res, next) {
                     mci: {},
                     code: 404,
                     success: false,
-                    message: "no mci found"
+                    message: "no global found"
                 }
             }
         }
