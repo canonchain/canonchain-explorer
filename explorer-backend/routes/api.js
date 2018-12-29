@@ -126,8 +126,8 @@ router.get("/get_accounts", function (req, res, next) {
                     var basePage = Number(queryPage) - 1; // 1 2
                     var accounts = data;
                     accounts.forEach((element, index) => {
-                        //占比 element.balance / 1618033988
-                        element.proportion = ((element.balance / (970820392.8 * 1000000000000000000)) * 100).toFixed(10) + " %";
+                        //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
+                        element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
                         //并保留6位精度
                         let tempVal = element.balance
                         var reg = /(\d+(?:\.)?)(\d{0,6})/;
