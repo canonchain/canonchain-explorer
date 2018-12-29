@@ -98,7 +98,7 @@ let pageUtility = {
     readyGetData() {
         getRpcTimer = setTimeout(function () {
             pageUtility.getRPC()
-        }, 1000)
+        }, 5000)
     },
     getRPC() {
         //获取网络中最新稳定的MCI
