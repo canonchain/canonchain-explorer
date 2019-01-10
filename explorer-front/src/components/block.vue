@@ -262,7 +262,7 @@ export default {
     }
     .bui-dlist-tit {
         float: left;
-        width: 20%; /* 默认值, 具体根据视觉可改 */
+        width: 45%; /* 默认值, 具体根据视觉可改 */
         text-align: right;
         margin: 0;
     }

@@ -59,7 +59,7 @@
                         <el-table-column label="发款方" width="200">
                             <template slot-scope="scope">
                                 <template v-if="scope.row.mci <= 0">
-                                    <span class="table-long-item">Gene</span>
+                                    <span class="table-long-item">GENESIS</span>
                                 </template>
                                 <template v-else>
                                     <el-button @click="goAccountPath(scope.row.from)" type="text">

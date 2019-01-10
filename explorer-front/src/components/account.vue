@@ -48,7 +48,7 @@
                                         </template>
                                         <template v-else>
                                             <template v-if="Number(scope.row.level) <= 0">
-                                                <span class="table-long-item">Gene</span>
+                                                <span class="table-long-item">GENESIS</span>
                                             </template>
                                             <template v-else>
                                                 <span class="table-long-item">{{scope.row.from}}</span>
@@ -332,7 +332,7 @@ export default {
     }
     .bui-dlist-tit {
         float: left;
-        width: 20%; /* 默认值, 具体根据视觉可改 */
+        width: 45%; /* 默认值, 具体根据视觉可改 */
         text-align: right;
         margin: 0;
     }
