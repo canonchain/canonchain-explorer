@@ -12,7 +12,7 @@ module.exports = {
     assetsPublicPath: '/',
     //利用proxyTable我们能够将外部的请求通过webpack转发给本地，也就能够将跨域请求变成同域请求了。
     proxyTable: {
-      '/api':{
+      '/api': {
         target: 'http://localhost:50616/',
         changeOrigin: true,
         pathRewrite: {
@@ -29,7 +29,7 @@ module.exports = {
     notifyOnErrors: true,
     poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
 
-    
+
     /**
      * Source Maps
      */
@@ -74,6 +74,25 @@ module.exports = {
     // View the bundle analyzer report after build finishes:
     // `npm run build --report`
     // Set to `true` or `false` to always turn it on or off
-    bundleAnalyzerReport: process.env.npm_config_report
+    bundleAnalyzerReport: process.env.npm_config_report,
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          commons: {
+            chunks: 'initial',
+            minChunks: 2, maxInitialRequests: 5,
+            minSize: 0
+          },
+          vendor: {
+            test: /node_modules/,
+            chunks: 'initial',
+            name: 'vendor',
+            priority: 10,
+            enforce: true
+          }
+        }
+      },
+      runtimeChunk: true
+    }
   }
 }
