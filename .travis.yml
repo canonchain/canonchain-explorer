@@ -8,6 +8,6 @@ install:
   - cd ../explorer-front && npm install
 before_script:
   - npm run-script build
-  - cd ../explorer-backend && npm run-script start
+  # - cd ../explorer-backend && npm run-script start
 script: 
   - exit 0 
