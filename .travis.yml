@@ -3,10 +3,11 @@ os:
   - windows
 node_js:
   - "8.15.0" 
+install: 
+  - cd explorer-backend && npm install
+  - cd ../explorer-front && npm install
 before_script:
-  - cd explorer-front && npm install && npm run-script build
+  - npm run-script build
+  - cd ../explorer-backend && npm run-script start
 script: 
   - exit 0 
-after_script:
-  - cd explorer-backend && npm install && npm run-script start
-#   - npm run-script test
