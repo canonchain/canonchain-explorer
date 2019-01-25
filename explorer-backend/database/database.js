@@ -74,7 +74,9 @@ let pageUtility = {
     init() {
         self =this;
         let SearchOptions = {
-            text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
+            // TODO PKID改为基于MCI，索引时候需要考虑
+            // text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
+            text: "select mci from transaction where (is_stable = $1) order by mci desc limit 1",
             values: [true]
         };
         pgclient.query(SearchOptions, (data) => {
@@ -257,13 +259,11 @@ let pageUtility = {
             }
 
             //DO 处理 parents 数据
-            if (blockInfo.parents.length > 0) {
-                parentsTotalAry.push({
-                    item:blockInfo.hash,
-                    parent:blockInfo.parents,
-                    is_witness:blockInfo.is_witness
-                });
-            }
+            parentsTotalAry.push({
+                item:blockInfo.hash,
+                parent:blockInfo.parents,
+                is_witness:blockInfo.is_witness
+            });
 
             // 处理witness
             if (blockInfo.witness_list.length > 0) {
@@ -580,8 +580,8 @@ let pageUtility = {
         unstableUpdateBlockAry  = [];
         logger.info(`获取不稳定的Unit ${MCI_LIMIT} ${unstable_next_index} **********************************`);
         czr.request.unstableBlocks(MCI_LIMIT,unstable_next_index).then(function (data) {
-            logger.info(`拿到了结果 ${data.next_index}`)
             unstableInsertBlockAry = data.blocks;
+            logger.info(`拿到了结果 Blocks.length:${unstableInsertBlockAry.length}  next_index: ${data.next_index}`)
             unstable_next_index = data.next_index ? data.next_index : '';
             if(unstableInsertBlockAry.length>0){
                 //@A 拆分数据
@@ -593,14 +593,13 @@ let pageUtility = {
                         blockInfo.is_witness = false;
                     }
                     //处理parents
-                    if (blockInfo.parents.length > 0) {
-                        // {"AAAA":["BBB","CCC"]}
-                        unstableParentsAry.push({
-                            item:blockInfo.hash,
-                            parent:blockInfo.parents,
-                            is_witness:blockInfo.is_witness
-                        })
-                    }
+                    // if (blockInfo.parents.length > 0) {}//不能加if，否则可能有问题啊；
+                    unstableParentsAry.push({
+                        item:blockInfo.hash,
+                        parent:blockInfo.parents,
+                        is_witness:blockInfo.is_witness
+                    })
+                        
                     //处理witness
                     if (blockInfo.witness_list.length > 0) {
                         // {"AAAA":["BBB","CCC"]}
@@ -638,6 +637,7 @@ let pageUtility = {
             blockRes.forEach(dbItem => {
                 for (let i= 0;i<unstableInsertBlockAry.length;i++){
                     if(unstableInsertBlockAry[i].hash === dbItem.hash){
+                        //已经存在的,好像没有移除干净
                         unstableUpdateBlockAry.push(unstableInsertBlockAry[i]);
                         unstableInsertBlockAry.splice(i,1);
 
@@ -777,6 +777,8 @@ let pageUtility = {
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
             if(pageUtility.shouldAbort(res,"batchInsertParent")){
+                logger.info(`batchInsertSql发生错误的sql如下`)
+                logger.info(batchInsertSql);
                 return;
             }
         });
@@ -905,7 +907,7 @@ let pageUtility = {
                 Number(item.status) + "," +
                 (item.is_on_mc === '1') + "," +
                 (item.mc_timestamp) + "," +
-                (item.mci) +
+                Number(Boolean(item.mci!='null') ? item.mci : -1) + //item.mci可能为null
                 ")");
         });
         let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , mci=tmp.mci from (values ' + tempAry.toString() +
@@ -967,15 +969,17 @@ let pageUtility = {
         let allParent   = [];//当前所有的parent
         sources_ary.forEach(item=>{
             //展开parents
-            item.parent.forEach(childrenItem=>{
-                tempAry.push({
-                    item:item.item,
-                    parent:childrenItem,//单个parents
-                    is_witness:item.is_witness
-                });
-                allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
-                allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
-            })
+            if(item.parent.length>0){
+                item.parent.forEach(childrenItem=>{
+                    tempAry.push({
+                        item:item.item,
+                        parent:childrenItem,//单个parents
+                        is_witness:item.is_witness
+                    });
+                    allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
+                    allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
+                })
+            }
         })
         sources_ary = tempAry;
         if(flag == "1"){
@@ -999,7 +1003,8 @@ let pageUtility = {
                     logger.error(`Error rolling back client ${sources}`);
                     logger.error(roll_err);
                 }
-                logger.info(`已经ROLLBACK了`);
+                logger.info(`已经ROLLBACK了  ${sources}`);
+                //TODO.给改为结束进程
                 // release the client back to the pool
                 // pageUtility.init();
             })
