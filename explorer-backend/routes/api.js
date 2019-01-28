@@ -334,7 +334,7 @@ router.get("/get_transactions", function (req, res, next) {
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
                 // *,balance/sum(balance) 
-                pgclient.query('Select exec_timestamp,mc_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
+                pgclient.query('Select exec_timestamp,mc_timestamp,stable_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -389,7 +389,7 @@ router.get("/get_latest_transactions", function (req, res, next) {
 //获取交易号信息
 router.get("/get_transaction", function (req, res, next) {
     var queryTransaction = req.query.transaction;// ?account=2
-    pgclient.query('Select pkid,hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp FROM transaction  WHERE hash = $1', [queryTransaction], (data) => {
+    pgclient.query('Select pkid,hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp FROM transaction  WHERE hash = $1', [queryTransaction], (data) => {
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -416,6 +416,7 @@ router.get("/get_transaction", function (req, res, next) {
                     "mci": "0",
                     "latest_included_mci": "0",
                     "mc_timestamp": "0",
+                    "stable_timestamp": "0",
                     "parents": []
                 },
                 code: 500,
@@ -449,6 +450,7 @@ router.get("/get_transaction", function (req, res, next) {
                         "mci": "0",
                         "latest_included_mci": "0",
                         "mc_timestamp": "0",
+                        "stable_timestamp": "0",
                         "parents": []
                     },
                     code: 404,
@@ -485,6 +487,7 @@ router.get("/get_transaction", function (req, res, next) {
                                 "mci": "0",
                                 "latest_included_mci": "0",
                                 "mc_timestamp": "0",
+                                "stable_timestamp": "0",
                                 "parents": []
                             },
                             code: 500,
