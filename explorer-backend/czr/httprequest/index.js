@@ -17,6 +17,7 @@ var HttpRequest = function (host, timeout, apiVersion) {
 
 
 var client = new rpc.Client(options);
+
 function asyncfunc(opt) {
     return new Promise((resolve, reject) => {
         client.call(opt,
@@ -50,13 +51,13 @@ HttpRequest.prototype.client = client;
 @return:
     {account:""}
 */
-HttpRequest.prototype.accountCreate = async function(pwd) {
-    if(!pwd){
+HttpRequest.prototype.accountCreate = async function (pwd) {
+    if (!pwd) {
         return 100
     }
     var opt = {
         "action": "account_create",
-        "password":pwd
+        "password": pwd
     };
     let ret = await asyncfunc(opt);
     return ret;
@@ -70,17 +71,17 @@ HttpRequest.prototype.accountCreate = async function(pwd) {
 @return:
     {success:"1"}
 */
-HttpRequest.prototype.accountRemove = async function(account,pwd) {
-    if(!account){
+HttpRequest.prototype.accountRemove = async function (account, pwd) {
+    if (!account) {
         return 100
     }
-    if(!pwd){
+    if (!pwd) {
         return 101
     }
     var opt = {
         "action": "account_remove",
-        "account":account,
-        "password":pwd
+        "account": account,
+        "password": pwd
     };
     let ret = await asyncfunc(opt);
     return ret;
@@ -94,13 +95,13 @@ HttpRequest.prototype.accountRemove = async function(account,pwd) {
 @return:
     {success:"1"}   //如果success为0，account为空 account:""
 */
-HttpRequest.prototype.accountImport = async function(jsonFile) {
-    if(!jsonFile){
+HttpRequest.prototype.accountImport = async function (jsonFile) {
+    if (!jsonFile) {
         return 100
     }
     var opt = {
         "action": "account_import",
-        "json":jsonFile
+        "json": jsonFile
     };
     let ret = await asyncfunc(opt);
     return ret;
@@ -115,18 +116,18 @@ HttpRequest.prototype.accountImport = async function(jsonFile) {
     {json:""}
 */
 
-HttpRequest.prototype.accountExport = async function(account) {
-    if(!account){
+HttpRequest.prototype.accountExport = async function (account) {
+    if (!account) {
         return 100
     }
     var opt = {
         "action": "account_export",
-        "account":account
+        "account": account
     };
     let ret = await asyncfunc(opt);
     return ret;
 };
- 
+
 /* 
 账号验证： account_validate
 @parm:
@@ -135,8 +136,8 @@ HttpRequest.prototype.accountExport = async function(account) {
     {valid:"1"} 1->正确 0 不正确
 */
 
-HttpRequest.prototype.accountValidate = async function(accountVal) {
-    if(!accountVal){
+HttpRequest.prototype.accountValidate = async function (accountVal) {
+    if (!accountVal) {
         return 0
     }
     var opt = {
@@ -155,7 +156,7 @@ HttpRequest.prototype.accountValidate = async function(accountVal) {
      {accounts:[]}
 */
 
-HttpRequest.prototype.accountList = async function() {
+HttpRequest.prototype.accountList = async function () {
     var opt = {
         "action": "account_list"
     };
@@ -166,10 +167,9 @@ HttpRequest.prototype.accountList = async function() {
 // Account End
 
 
-
 //获取账号余额
-HttpRequest.prototype.accountBalance = async function(account) {
-    if(!account){
+HttpRequest.prototype.accountBalance = async function (account) {
+    if (!account) {
         return 0//没有参数
     }
     var opt = {
@@ -181,11 +181,11 @@ HttpRequest.prototype.accountBalance = async function(account) {
 };
 
 //批量获取账户余额
-HttpRequest.prototype.accountsBalances = async function(accountAry) {
-    if(!accountAry){
+HttpRequest.prototype.accountsBalances = async function (accountAry) {
+    if (!accountAry) {
         return 0//没有参数
     }
-    if(!accountAry){
+    if (!accountAry) {
         return 1 //格式不正确
     }
     var opt = {
@@ -208,8 +208,8 @@ HttpRequest.prototype.accountsBalances = async function(accountAry) {
 @return:
      {block:""}
 */
-HttpRequest.prototype.send = async function(sendObj) {
-    if(!sendObj){
+HttpRequest.prototype.send = async function (sendObj) {
+    if (!sendObj) {
         return 0//没有参数
     }
     var opt = {
@@ -225,8 +225,8 @@ HttpRequest.prototype.send = async function(sendObj) {
     return ret;
 };
 
-HttpRequest.prototype.getBlock = async function(blockHash) {
-    if(!blockHash){
+HttpRequest.prototype.getBlock = async function (blockHash) {
+    if (!blockHash) {
         return 0//没有参数
     }
     var opt = {
@@ -237,21 +237,21 @@ HttpRequest.prototype.getBlock = async function(blockHash) {
     return ret;
 };
 
-HttpRequest.prototype.blockList = async function(account, limit, last_hash) {
+HttpRequest.prototype.blockList = async function (account, limit, last_hash) {
     var opt;
-    if(!account){
+    if (!account) {
         return 0//没有参数 
     }
-    if(!limit){
+    if (!limit) {
         return 1//没有参数 
     }
-    if(!last_hash){
+    if (!last_hash) {
         opt = {
             "action": "block_list",
             "account": account,
             "limit": limit
         };
-    }else{
+    } else {
         opt = {
             "action": "block_list",
             "account": account,
@@ -291,60 +291,68 @@ last_mci:122}
     "next_index": "XXX" // ""或者一串字符串,如果 next_index == ""  这个mci下的block请求结束
 };
 */
-HttpRequest.prototype.mciBlocks = async function(mci, limit, next_index) { 
-    if(!limit){
+/**
+ * @deprecated
+ * */
+HttpRequest.prototype.mciBlocks = async function (mci, limit, next_index) {
+    if (!limit) {
         return 1//没有参数 
     }
-    let opt ;
-    if(next_index){
-        opt={
-            "action"    :"mci_blocks",
-            "mci"       :mci,
-            "limit"     :limit,
-            "next_index":next_index
-        };
-    }else{
+    let opt;
+    if (next_index) {
         opt = {
-            "action"    :"mci_blocks",
-            "mci"       :mci,
-            "limit"     :limit
+            "action": "mci_blocks",
+            "mci": mci,
+            "limit": limit,
+            "next_index": next_index
+        };
+    } else {
+        opt = {
+            "action": "mci_blocks",
+            "mci": mci,
+            "limit": limit
         };
     }
     return await asyncfunc(opt);
 };
 
-//当前不稳定的所有block的信息
-/* 
-{
-    "action"    :"unstable_blocks",
-    "mci"       :"121",
-    "limit"     :"50",
-    "next_index":'',    //第一次传空字符串，后续的值取上一次结果中 next_index
-} 
--> 
-{
-    blocks:[],
-    "next_index": "XXX" // ""或者一串字符串,如果 next_index == ""  这个mci下的block请求结束
-};
-*/
-HttpRequest.prototype.unstableBlocks = async function(limit, next_index) {
-    if(!limit){
-        return 0//没有参数 
+/**
+ * 获取已稳定的指定mci下的多笔交易。
+ * @param {number} mci - 指定的mci
+ * @param {number} limit - 返回交易上限，如果超过1000，默认1000
+ * @param {string} [index] - （可选）当前查询索引，来自返回结果中next_index，默认为空。
+ * @returns {Promise<{code, msg, blocks, next_index}>}
+ * */
+HttpRequest.prototype.stableBlocks = async function (mci, limit, index) {
+    if (mci < 0) {
+        return {code: 110, msg: `param not valid - mci: ${JSON.stringify(mci)}`}
     }
-    let opt ;
-    if(next_index){
-        opt={
-            "action"    :"unstable_blocks",
-            "limit"     :limit,
-            "next_index":next_index
-        };
-    }else{
-        opt = {
-            "action"    :"unstable_blocks",
-            "limit"     :limit
-        };
+    if (!limit || limit > 1000) {
+        limit = 1000
     }
+    return await asyncfunc({
+        "action": "stable_blocks",
+        "mci": mci,
+        "limit": limit,
+        "next_index": index || ''
+    });
+}
 
+/**
+ * 返回未稳定交易详情。
+ * @param {number} limit - 返回交易上限，如果超过1000，默认1000。
+ * @param {string} [index] - （可选）当前查询索引，来自返回结果中的next_index，默认为空。
+ * @returns {Promise<{code, msg, blocks, next_index}>}
+ * */
+HttpRequest.prototype.unstableBlocks = async function (limit, index) {
+    if (!limit || limit > 1000) {
+        limit = 1000
+    }
+    let opt = {
+        "action": "unstable_blocks",
+        "limit": limit,
+        "index": index || ''
+    };
     return await asyncfunc(opt);
 };
 
@@ -357,7 +365,7 @@ return
     }
 
 */
-HttpRequest.prototype.status = async function() {
+HttpRequest.prototype.status = async function () {
     var opt = {
         "action": "status"
     };

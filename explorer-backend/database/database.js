@@ -113,10 +113,10 @@ let pageUtility = {
             logger.info(`获取网络中最新稳定的MCI-Error : ${err}`);
         })
             .then(function (status) {
-                rpcStableMci = Number(status.status.last_stable_mci);
+                rpcStableMci = Number(status.last_stable_mci);
                 if ((dbStableMci <= rpcStableMci) || (dbStableMci === 0)) {
                     isStableDone = dbStableMci < rpcStableMci ? false : true;
-                    pageUtility.searchMci(status.status);
+                    pageUtility.searchMci(status);
                 } else {
                     getUnstableTimer = setTimeout(function () {
                         pageUtility.getUnstableBlocks();//查询所有不稳定 block 信息
@@ -178,7 +178,7 @@ let pageUtility = {
     getUnitByMci() {
         logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks ===============================`);
         // profiler.start();
-        czr.request.mciBlocks(dbStableMci, MCI_LIMIT, next_index).then(function (data) {
+        czr.request.stableBlocks(dbStableMci, MCI_LIMIT, next_index).then(function (data) {
             logger.info(`拿到了结果 ${dbStableMci} ${MCI_LIMIT} => ${data.next_index}`);
             // profiler.stop('RPC=> mciBlocks');
             // profiler.start();
