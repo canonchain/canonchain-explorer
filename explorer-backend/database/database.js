@@ -860,9 +860,9 @@ let pageUtility = {
                 item.level + "','" +
                 item.witnessed_level + "','" +
                 item.best_parent + "'," +
-                (item.is_stable === '1') + "," +
+                (item.is_stable === 1) + "," +
                 Number(item.status) + "," +
-                (item.is_on_mc === '1') + "," +
+                (item.is_on_mc === 1) + "," +
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + "," +//item.mci可能为null
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
                 (Number(item.mc_timestamp) || 0) + "," +
@@ -904,9 +904,9 @@ let pageUtility = {
                 "('" +
                 item.hash + "'," +
                 (item.is_free === '1') + "," +
-                (item.is_stable === '1') + "," +
+                (item.is_stable === 1) + "," +
                 Number(item.status) + "," +
-                (item.is_on_mc === '1') + "," +
+                (item.is_on_mc === 1) + "," +
                 (item.mc_timestamp) + "," +
                 (item.stable_timestamp) + "," +
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + //item.mci可能为null
@@ -1018,7 +1018,7 @@ let pageUtility = {
     },
     isFail(obj) {
         //true 是失败的
-        return (obj.is_stable === "1") && (obj.status != "0");
+        return (obj.is_stable === 1) && (obj.status !== 0);
     }
 };
 pageUtility.init();
