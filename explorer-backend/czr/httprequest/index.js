@@ -330,12 +330,22 @@ HttpRequest.prototype.stableBlocks = async function (mci, limit, index) {
     if (!limit || limit > 1000) {
         limit = 1000
     }
-    return await asyncfunc({
-        "action": "stable_blocks",
-        "mci": mci,
-        "limit": limit,
-        "next_index": index || ''
-    });
+    let opt;
+    if (index === undefined) {
+        opt = {
+            "action": "stable_blocks",
+            "mci": mci,
+            "limit": limit,
+        }
+    } else {
+        opt = {
+            "action": "stable_blocks",
+            "mci": mci,
+            "limit": limit,
+            "index": index
+        }
+    }
+    return await asyncfunc(opt);
 }
 
 /**
@@ -348,11 +358,19 @@ HttpRequest.prototype.unstableBlocks = async function (limit, index) {
     if (!limit || limit > 1000) {
         limit = 1000
     }
-    let opt = {
-        "action": "unstable_blocks",
-        "limit": limit,
-        "index": index || ''
-    };
+    let opt;
+    if (index === undefined) {
+        opt = {
+            "action": "unstable_blocks",
+            "limit": limit,
+        }
+    } else {
+        opt = {
+            "action": "unstable_blocks",
+            "limit": limit,
+            "index": index
+        }
+    }
     return await asyncfunc(opt);
 };
 
