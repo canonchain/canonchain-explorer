@@ -272,29 +272,29 @@ let pageUtility = {
 
             //DO timestamp 1秒
             //DO timestamp 10秒 timestamp10Total
-            if (blockInfo.hasOwnProperty("mc_timestamp")) {
-                if (!timestampTotal.hasOwnProperty(blockInfo.mc_timestamp)) {
-                    timestampTotal[blockInfo.mc_timestamp] = {
-                        timestamp: blockInfo.mc_timestamp,
+            if (blockInfo.hasOwnProperty("stable_timestamp")) {
+                if (!timestampTotal.hasOwnProperty(blockInfo.stable_timestamp)) {
+                    timestampTotal[blockInfo.stable_timestamp] = {
+                        timestamp: blockInfo.stable_timestamp,
                         type: 1,
                         count: 1
                     }
                 } else {
-                    timestampTotal[blockInfo.mc_timestamp].count += 1;
+                    timestampTotal[blockInfo.stable_timestamp].count += 1;
                 }
                 //10
-                if (!timestamp10Total.hasOwnProperty(self.formatTimestamp(blockInfo.mc_timestamp))) {
-                    timestamp10Total[self.formatTimestamp(blockInfo.mc_timestamp)] = {
-                        timestamp: self.formatTimestamp(blockInfo.mc_timestamp),
+                if (!timestamp10Total.hasOwnProperty(self.formatTimestamp(blockInfo.stable_timestamp))) {
+                    timestamp10Total[self.formatTimestamp(blockInfo.stable_timestamp)] = {
+                        timestamp: self.formatTimestamp(blockInfo.stable_timestamp),
                         type: 10,
                         count: 1
                     }
                 } else {
-                    timestamp10Total[self.formatTimestamp(blockInfo.mc_timestamp)].count += 1;
+                    timestamp10Total[self.formatTimestamp(blockInfo.stable_timestamp)].count += 1;
                 }
 
             } else {
-                logger.info(`mc_timestamp-Error`);
+                logger.info(`stable_timestamp-Error`);
             }
         });
         /*
@@ -912,7 +912,7 @@ let pageUtility = {
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + //item.mci可能为null
                 ")");
         });
-        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , mci=tmp.mci from (values ' + tempAry.toString() +
+        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , stable_timestamp=tmp.stable_timestamp, mci=tmp.mci from (values ' + tempAry.toString() +
             ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci) where transaction.hash=tmp.hash';
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
@@ -1013,8 +1013,8 @@ let pageUtility = {
         }
         return typeVal === '[object Error]'
     },
-    formatTimestamp(mc_timestamp) {
-        return Math.floor(mc_timestamp / 10);
+    formatTimestamp(stable_timestamp) {
+        return Math.floor(stable_timestamp / 10);
     },
     isFail(obj) {
         //true 是失败的
