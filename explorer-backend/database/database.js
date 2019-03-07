@@ -184,6 +184,9 @@ let pageUtility = {
             // profiler.start();
             if (data.blocks) {
                 data.blocks.forEach((item) => {
+                    if (dbStableMci === 0) {
+                        item.type = 1;
+                    }
                     //写 is_witness
                     if (WITNESS_ARY.indexOf(item.from) > -1) {
                         item.is_witness = true;

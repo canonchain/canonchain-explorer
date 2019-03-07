@@ -72,7 +72,6 @@
                         </template>
                         <template v-else>
                             <a href="javascript:;" @click="goBlockHash(activeUnitInfo.best_parent)">{{activeUnitInfo.best_parent}}</a>
-                            </router-link>
                         </template>
                     </span>
                 </div>
@@ -83,7 +82,7 @@
                     <template v-else>
                         <strong :class="['switch',{'switch-show': showParentsLink }]" @click="toggleParents('parent')">Parents</strong>
                     </template>
-                    <div v-for="item in activeUnitInfo.parents" v-show="showParentsLink==true">
+                    <div v-for="item in activeUnitInfo.parents" v-show="showParentsLink==true" :key='item.parent'>
                         <a href="javascript:;" @click="goBlockHash(item.parent)">{{item.parent}}</a>
                     </div>
                 </div>
@@ -145,7 +144,7 @@
                     </template>
                     <span class="info-item-val">
                         <template v-if='activeUnitInfo.witness_list_block === "0000000000000000000000000000000000000000000000000000000000000000"'>
-                            <div v-for="item in activeUnitInfo.witness_list" v-show="showWitnessLink==true">
+                            <div v-for="item in activeUnitInfo.witness_list" v-show="showWitnessLink==true" :key='item'>
                                 <router-link tag="a" :to="'/account/'+item" target="_blank">{{ item }}</router-link>
                             </div>
                         </template>
@@ -283,8 +282,6 @@ var bWaitingForNext = false,
 var timerInfoMessage;
 var self;
 
-var isPt = false;
-
 //优化unit渲染
 var storageUnitAry = [];
 var storageParents = {};
@@ -333,11 +330,6 @@ export default {
     },
     created() {
         self = this;
-        if (window.location.hash.indexOf("?pt=") > 1) {
-            isPt = true;
-        } else {
-            isPt = false;
-        }
     },
     mounted() {
         self.initVar();
@@ -376,7 +368,6 @@ export default {
                 is_free: firstItem.is_free,
                 exec_timestamp: firstItem.exec_timestamp,
                 level: firstItem.level,
-                is_prototype: isPt,
                 pkid: firstItem.pkid
             };
             lastParameters = {
@@ -384,7 +375,6 @@ export default {
                 is_free: lastItem.is_free,
                 exec_timestamp: lastItem.exec_timestamp,
                 level: lastItem.level,
-                is_prototype: isPt,
                 pkid: lastItem.pkid
             };
 
@@ -506,7 +496,6 @@ export default {
                 .get("/api/get_previous_units", {
                     params: {
                         direction: "center",
-                        is_prototype: isPt,
                         active_unit: searchUnit
                     }
                 })
@@ -747,12 +736,12 @@ export default {
             //鼠标点击
             _cy.on("click", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");;
+                    "/#/dag/" + evt.cyTarget.id() ;
             });
 
             _cy.on("tap", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");
+                    "/#/dag/" + evt.cyTarget.id() ;
             });
 
             //拖动事件
@@ -1103,7 +1092,6 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
-                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1157,7 +1145,6 @@ export default {
                                 is_free: lastItem.is_free,
                                 exec_timestamp: lastItem.exec_timestamp,
                                 level: lastItem.level,
-                                is_prototype: isPt,
                                 pkid: lastItem.pkid
                             };
 
@@ -1211,7 +1198,6 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
-                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1351,7 +1337,7 @@ export default {
                     }
                 );
             }
-            location.hash = "#/dag" + (isPt ? "?pt=1" : "");;
+            location.hash = "#/dag" ;
             if (activeNode) {
                 _cy.getElementById(activeNode).removeClass("active");
             }
@@ -1637,7 +1623,7 @@ export default {
             var text = $inputSearch.val();
             text = text.replace(/\s+/g, "");
             if (text.length == 64) {
-                location.hash = "#/dag/" + text + (isPt ? "?pt=1" : "");
+                location.hash = "#/dag/" + text ;
             } else if (text.length === 0) {
                 return;
             } else {
@@ -1666,7 +1652,7 @@ export default {
         //
         goBlockHash(hash) {
             self.loadingInfoSwitch = true;
-            location.hash = "#/dag/" + hash + (isPt ? "?pt=1" : "");
+            location.hash = "#/dag/" + hash ;
         }
     },
     filters: {

@@ -6,7 +6,7 @@ pgclient.query("truncate table accounts ", (res) => {
     console.log("accounts result", res)
 });
 pgclient.query("truncate table global ", (res) => {
-    console.log("mci result", res)
+    console.log("global result", res)
 });
 pgclient.query("truncate table parents ", (res) => {
     console.log("parents result", res)
