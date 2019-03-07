@@ -199,7 +199,14 @@
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <strong>Signature</strong>:
-                    <span class="info-item-val">{{activeUnitInfo.signature}}</span>
+                        <span class="info-item-val">
+                            <template v-if='activeUnitInfo.signature === "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"'>
+                                <span>-</span>
+                            </template>
+                            <template v-else>
+                                <span>{{activeUnitInfo.signature}}</span>
+                            </template>
+                        </span>    
                 </div>
             </div>
         </div>
@@ -663,7 +670,7 @@ export default {
                     },
                     {
                         selector:
-                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
+                            ".czr_49BvoaSgGnyfPdaHfrSdac74fcxV4cUdysskHSQPQ8XisShN3P",
                         style: {
                             "border-color": "#ab420c"
                         }
@@ -671,30 +678,44 @@ export default {
 
                     {
                         selector:
-                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
+                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
                         style: {
                             "border-color": "#631083"
                         }
                     },
                     {
                         selector:
-                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
+                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
                         style: {
                             "border-color": "#00b6eb"
                         }
                     },
                     {
                         selector:
-                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
+                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
                         style: {
                             "border-color": "#959595"
                         }
                     },
                     {
                         selector:
-                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
+                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
                         style: {
                             "border-color": "#fff300"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_4aBXjWXyN7WVGqMKH7FgnSoN9oePeEPiZsrtc2AMYyuTRJoNpb",
+                        style: {
+                            "border-color": "#286901"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
+                        style: {
+                            "border-color": "#136a77"
                         }
                     },
 
