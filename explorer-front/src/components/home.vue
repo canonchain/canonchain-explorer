@@ -23,10 +23,10 @@
                             </el-col>
                         </el-row>
                     </div>
-                    <!-- <div class="dashboard-right">
+                    <div class="dashboard-right">
                         <div id='czr-charts'> </div>
-                    </div> -->
-                    <!-- <div class="dashboard-select">
+                    </div>
+                    <div class="dashboard-select">
                         <el-row>
                             <el-col :span="12">
                                 <div class="grid-content bg-purple">
@@ -39,7 +39,7 @@
                                 </div>
                             </el-col>
                         </el-row>
-                    </div> -->
+                    </div>
                 </div>
                 <h2 class="home-content-tit">最新交易</h2>
                 <template>
@@ -96,11 +96,14 @@
                                     <template v-else-if='scope.row.status == "3"'>
                                         <span class="txt-danger"> 失败(3) </span>
                                     </template>
+                                    <template v-else>
+                                        <span class="xt-info"> - </span>
+                                    </template>
                                 </template>
 
-                                <span v-else class="xt-info">
+                                <!-- <span v-else class="xt-info">
                                     -
-                                </span>
+                                </span> -->
                             </template>
                         </el-table-column>
                         <el-table-column label="金额 / CZR" align="right" width="240">
@@ -159,8 +162,8 @@ export default {
     },
     mounted() {
         // 基于准备好的dom，初始化echarts实例
-        // myChart = echarts.init(document.getElementById('czr-charts'));
-        // self.initEcharts(self.radio);
+        myChart = echarts.init(document.getElementById('czr-charts'));
+        self.initEcharts(self.radio);
     },
     methods: {
         getTransactions() {
@@ -204,53 +207,53 @@ export default {
                 });
         },
         //echarts
-        // initEcharts(vaule){
-        //     let data={
-        //             timestamp:[],
-        //             count:[]
-        //     };
-        //     let opt;
-        //     if( self.start_data>0){
-        //         opt = {
-        //             type: vaule,
-        //             start:self.start_data
-        //         }
-        //     }else{
-        //         opt = {
-        //             type: vaule
-        //         }
-        //     }
-        //     self.$axios
-        //         .get("/api/get_timestamp", {
-        //             params: opt
-        //         })
-        //         .then(function(response) {
-        //             data.timestamp = response.data.timestamp;
-        //             data.count = response.data.count;
-        //             data.timestamp.forEach((item,index)=>{
-        //                 data.timestamp[index]=self.toTime(item);
-        //             })
-        //             // 绘制图表
-        //             myChart.setOption({
-        //                 title: {
-        //                     text: 'CZR TPS'
-        //                 },
-        //                 tooltip: {},
-        //                 xAxis: {
-        //                     data: data.timestamp
-        //                 },
-        //                 yAxis: {},
-        //                 series: [{
-        //                     name: 'TPS',
-        //                     type: 'bar',
-        //                     data: data.count
-        //                 }]
-        //             });
-        //         })
-        //         .catch(function(error) {
-        //             //渲染
-        //         });
-        // },
+        initEcharts(vaule){
+            let data={
+                    timestamp:[],
+                    count:[]
+            };
+            let opt;
+            if( self.start_data>0){
+                opt = {
+                    type: vaule,
+                    start:self.start_data
+                }
+            }else{
+                opt = {
+                    type: vaule
+                }
+            }
+            self.$axios
+                .get("/api/get_timestamp", {
+                    params: opt
+                })
+                .then(function(response) {
+                    data.timestamp = response.data.timestamp;
+                    data.count = response.data.count;
+                    data.timestamp.forEach((item,index)=>{
+                        data.timestamp[index]=self.toTime(item);
+                    })
+                    // 绘制图表
+                    myChart.setOption({
+                        title: {
+                            text: 'CZR TPS'
+                        },
+                        tooltip: {},
+                        xAxis: {
+                            data: data.timestamp
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: 'TPS',
+                            type: 'bar',
+                            data: data.count
+                        }]
+                    });
+                })
+                .catch(function(error) {
+                    //渲染
+                });
+        },
         toTime(timestamp){
            // 简单的一句代码
            // 154330965 
