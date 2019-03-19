@@ -72,7 +72,6 @@
                         </template>
                         <template v-else>
                             <a href="javascript:;" @click="goBlockHash(activeUnitInfo.best_parent)">{{activeUnitInfo.best_parent}}</a>
-                            </router-link>
                         </template>
                     </span>
                 </div>
@@ -83,7 +82,7 @@
                     <template v-else>
                         <strong :class="['switch',{'switch-show': showParentsLink }]" @click="toggleParents('parent')">Parents</strong>
                     </template>
-                    <div v-for="item in activeUnitInfo.parents" v-show="showParentsLink==true">
+                    <div v-for="item in activeUnitInfo.parents" v-show="showParentsLink==true" :key='item.parent'>
                         <a href="javascript:;" @click="goBlockHash(item.parent)">{{item.parent}}</a>
                     </div>
                 </div>
@@ -145,7 +144,7 @@
                     </template>
                     <span class="info-item-val">
                         <template v-if='activeUnitInfo.witness_list_block === "0000000000000000000000000000000000000000000000000000000000000000"'>
-                            <div v-for="item in activeUnitInfo.witness_list" v-show="showWitnessLink==true">
+                            <div v-for="item in activeUnitInfo.witness_list" v-show="showWitnessLink==true" :key='item'>
                                 <router-link tag="a" :to="'/account/'+item" target="_blank">{{ item }}</router-link>
                             </div>
                         </template>
@@ -200,7 +199,14 @@
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <strong>Signature</strong>:
-                    <span class="info-item-val">{{activeUnitInfo.signature}}</span>
+                        <span class="info-item-val">
+                            <template v-if='activeUnitInfo.signature === "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"'>
+                                <span>-</span>
+                            </template>
+                            <template v-else>
+                                <span>{{activeUnitInfo.signature}}</span>
+                            </template>
+                        </span>    
                 </div>
             </div>
         </div>
@@ -283,8 +289,6 @@ var bWaitingForNext = false,
 var timerInfoMessage;
 var self;
 
-var isPt = false;
-
 //优化unit渲染
 var storageUnitAry = [];
 var storageParents = {};
@@ -333,11 +337,6 @@ export default {
     },
     created() {
         self = this;
-        if (window.location.hash.indexOf("?pt=") > 1) {
-            isPt = true;
-        } else {
-            isPt = false;
-        }
     },
     mounted() {
         self.initVar();
@@ -376,7 +375,6 @@ export default {
                 is_free: firstItem.is_free,
                 exec_timestamp: firstItem.exec_timestamp,
                 level: firstItem.level,
-                is_prototype: isPt,
                 pkid: firstItem.pkid
             };
             lastParameters = {
@@ -384,7 +382,6 @@ export default {
                 is_free: lastItem.is_free,
                 exec_timestamp: lastItem.exec_timestamp,
                 level: lastItem.level,
-                is_prototype: isPt,
                 pkid: lastItem.pkid
             };
 
@@ -506,7 +503,6 @@ export default {
                 .get("/api/get_previous_units", {
                     params: {
                         direction: "center",
-                        is_prototype: isPt,
                         active_unit: searchUnit
                     }
                 })
@@ -674,7 +670,7 @@ export default {
                     },
                     {
                         selector:
-                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
+                            ".czr_49BvoaSgGnyfPdaHfrSdac74fcxV4cUdysskHSQPQ8XisShN3P",
                         style: {
                             "border-color": "#ab420c"
                         }
@@ -682,30 +678,44 @@ export default {
 
                     {
                         selector:
-                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
+                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
                         style: {
                             "border-color": "#631083"
                         }
                     },
                     {
                         selector:
-                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
+                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
                         style: {
                             "border-color": "#00b6eb"
                         }
                     },
                     {
                         selector:
-                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
+                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
                         style: {
                             "border-color": "#959595"
                         }
                     },
                     {
                         selector:
-                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
+                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
                         style: {
                             "border-color": "#fff300"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_4aBXjWXyN7WVGqMKH7FgnSoN9oePeEPiZsrtc2AMYyuTRJoNpb",
+                        style: {
+                            "border-color": "#286901"
+                        }
+                    },
+                    {
+                        selector:
+                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
+                        style: {
+                            "border-color": "#136a77"
                         }
                     },
 
@@ -747,12 +757,12 @@ export default {
             //鼠标点击
             _cy.on("click", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");;
+                    "/#/dag/" + evt.cyTarget.id() ;
             });
 
             _cy.on("tap", "node", function(evt) {
                 window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() + (isPt ? "?pt=1" : "");
+                    "/#/dag/" + evt.cyTarget.id() ;
             });
 
             //拖动事件
@@ -1103,7 +1113,6 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
-                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1157,7 +1166,6 @@ export default {
                                 is_free: lastItem.is_free,
                                 exec_timestamp: lastItem.exec_timestamp,
                                 level: lastItem.level,
-                                is_prototype: isPt,
                                 pkid: lastItem.pkid
                             };
 
@@ -1211,7 +1219,6 @@ export default {
                                 is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
-                                is_prototype: isPt,
                                 pkid: firstItem.pkid
                             };
 
@@ -1351,7 +1358,7 @@ export default {
                     }
                 );
             }
-            location.hash = "#/dag" + (isPt ? "?pt=1" : "");;
+            location.hash = "#/dag" ;
             if (activeNode) {
                 _cy.getElementById(activeNode).removeClass("active");
             }
@@ -1637,7 +1644,7 @@ export default {
             var text = $inputSearch.val();
             text = text.replace(/\s+/g, "");
             if (text.length == 64) {
-                location.hash = "#/dag/" + text + (isPt ? "?pt=1" : "");
+                location.hash = "#/dag/" + text ;
             } else if (text.length === 0) {
                 return;
             } else {
@@ -1666,7 +1673,7 @@ export default {
         //
         goBlockHash(hash) {
             self.loadingInfoSwitch = true;
-            location.hash = "#/dag/" + hash + (isPt ? "?pt=1" : "");
+            location.hash = "#/dag/" + hash ;
         }
     },
     filters: {

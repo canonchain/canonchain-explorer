@@ -184,6 +184,9 @@ let pageUtility = {
             // profiler.start();
             if (data.blocks) {
                 data.blocks.forEach((item) => {
+                    if (dbStableMci === 0) {
+                        item.type = 1;
+                    }
                     //写 is_witness
                     if (WITNESS_ARY.indexOf(item.from) > -1) {
                         item.is_witness = true;
@@ -844,7 +847,8 @@ let pageUtility = {
         blockAry.forEach((item) => {
             tempAry.push(
                 "('" +
-                item.hash + "','" +
+                item.hash + "'," +
+                Number(item.type) + ",'" +
                 item.from + "','" +
                 item.to + "','" +
                 item.amount + "','" +
@@ -871,7 +875,7 @@ let pageUtility = {
         });
 
         let batchInsertSql = {
-            text: 'INSERT INTO transaction(hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
+            text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
