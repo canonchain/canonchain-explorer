@@ -4,7 +4,8 @@ let Czr = require("../czr/index");
 let czr = new Czr();
 // let profiler = require("./profiler");
 
-let pgclient = require('./PG');// 引用上述文件
+let pgclient = require('./PG').default;// 引用上述文件
+const client = require('./PG').client;
 pgclient.getConnection();
 
 //写日志
@@ -69,6 +70,93 @@ let unstableInsertBlockAry = [];//需要插入的Block
 let unstableUpdateBlockAry = [];//需要更新的Block
 // 批量操作不稳定Unit相关变量 End
 
+let accountsCount = 0;
+(async function () {
+    let query, res;
+    try {
+        query = {
+            text: 'SELECT value FROM global WHERE key = $1',
+            values: ['accounts_count']
+        }
+        res = await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+    if (res.rows.length === 0) {
+        try {
+            query = {
+                text: 'INSERT INTO global (key, value) VALUES ($1, $2)',
+                values: ['accounts_count', 0]
+            }
+            res = await client.query(query)
+        } catch (e) {
+            logger.error(query, e.stack)
+        }
+    }
+    try {
+        query = {
+            text: 'SELECT COUNT(*) FROM accounts'
+        }
+        res = await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+    if (res.rows.length === 0) return;
+    accountsCount = +res.rows[0].count
+    try {
+        query = {
+            text: 'UPDATE global SET value = $1 WHERE key = $2',
+            values: [accountsCount, 'accounts_count']
+        }
+        await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+})();
+
+let transactionCount = 0;
+(async function () {
+    let query, res;
+    try {
+        query = {
+            text: 'SELECT value FROM global WHERE key = $1',
+            values: ['transaction_count']
+        }
+        res = await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+    if (res.rows.length === 0) {
+        try {
+            query = {
+                text: 'INSERT INTO global (key, value) VALUES ($1, $2)',
+                values: ['transaction_count', 0]
+            }
+            res = await client.query(query)
+        } catch (e) {
+            logger.error(query, e.stack)
+        }
+    }
+    try {
+        query = {
+            text: 'SELECT COUNT(*) FROM transaction'
+        }
+        res = await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+    if (res.rows.length === 0) return;
+    transactionCount = +res.rows[0].count
+    try {
+        query = {
+            text: 'UPDATE global SET value = $1 WHERE key = $2',
+            values: [transactionCount, 'transaction_count']
+        }
+        await client.query(query)
+    } catch (e) {
+        logger.error(query, e.stack)
+    }
+})();
 
 let pageUtility = {
     init() {
@@ -811,6 +899,15 @@ let pageUtility = {
             if (pageUtility.shouldAbort(res, "batchInsertAccount")) {
                 return;
             }
+            accountsCount += tempAry.length
+            pgclient.query("UPDATE global SET value = $1 WHERE key = 'accounts_count'", [accountsCount], rows => {
+                const typeVal = Object.prototype.toString.call(rows)
+                if (typeVal === '[object Error]') {
+                    logger.error("UPDATE global SET value = $1 WHERE key = 'accounts_count'")
+                    logger.error(rows.stack)
+                    return
+                }
+            })
         });
     },
     //批量插入 timestamp
@@ -883,6 +980,15 @@ let pageUtility = {
                 logger.info(batchInsertSql)
                 return;
             }
+            transactionCount += tempAry.length
+            pgclient.query("UPDATE global SET value = $1 WHERE key = 'transaction_count'", [transactionCount], rows => {
+                const typeVal = Object.prototype.toString.call(rows)
+                if (typeVal === '[object Error]') {
+                    logger.error("UPDATE global SET value = $1 WHERE key = 'transaction_count'")
+                    logger.error(rows.stack)
+                    return
+                }
+            })
         });
     },
 

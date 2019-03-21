@@ -1,4 +1,4 @@
-let pgclient = require('./PG');// 引用上述文件
+let pgclient = require('./PG').default;// 引用上述文件
 pgclient.getConnection();
 let log4js = require('./log_config');
 let logger = log4js.getLogger('write_prototype');

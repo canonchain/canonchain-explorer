@@ -1,4 +1,4 @@
-var pgclient = require('./PG');// 引用上述文件
+var pgclient = require('./PG').default;// 引用上述文件
 pgclient.getConnection();
 
 // var account = {

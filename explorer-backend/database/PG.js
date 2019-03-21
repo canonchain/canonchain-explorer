@@ -69,4 +69,5 @@ PG.prototype.query = function (sqlStr, values, cb) {
     }
 
 };
-module.exports = new PG();
+module.exports.default = new PG();
+module.exports.client = client

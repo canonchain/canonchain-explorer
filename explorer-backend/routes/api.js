@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 var responseTime = require("./response-time");
 
-var pgclient = require('../database/PG');// 引用上述文件
+var pgclient = require('../database/PG').default;// 引用上述文件
 pgclient.getConnection();
 
 //写日志
@@ -77,6 +77,7 @@ var isBastParent = function (parentItem, unitsAry) {
 // http://localhost:3000/api/get_accounts
 // 获取账号列表
 router.get("/get_accounts", function (req, res, next) {
+    logger.info(`/get_accounts start: ${Date.now() - req._startTime}`)
     var queryPage = req.query.page;// ?page=2
     var page, //当前页数
         pages, // 合计总页数
@@ -89,7 +90,10 @@ router.get("/get_accounts", function (req, res, next) {
     } else {
         page = Number(queryPage) || 1;
     }
-    pgclient.query("Select COUNT(1) FROM accounts", (count) => {
+    logger.info(`/get_accounts before SQL-1 COUNT(1) accounts: ${Date.now() - req._startTime}`)
+    // pgclient.query("Select COUNT(1) FROM accounts", (count) => {
+    pgclient.query("SELECT value AS count FROM global WHERE key = 'accounts_count'", (count) => {
+        logger.info(`/get_accounts after SQL-1 COUNT(1) accounts: ${Date.now() - req._startTime}`)
         let typeCountVal = Object.prototype.toString.call(count);
         if (typeCountVal === '[object Error]') {
             responseData = {
@@ -109,8 +113,10 @@ router.get("/get_accounts", function (req, res, next) {
             //page 不小于 1
             page = Math.max(page, 1);
             OFFSETVAL = (page - 1) * LIMITVAL;
-            // *,balance/sum(balance) 
+            // *,balance/sum(balance)
+            logger.info(`/get_accounts before SQL-2: ${Date.now() - req._startTime}`)
             pgclient.query("Select account,balance FROM accounts ORDER BY balance DESC LIMIT $1 OFFSET $2", [LIMITVAL, OFFSETVAL], (data) => {
+                logger.info(`/get_accounts after SQL-2: ${Date.now() - req._startTime}`)
                 //改造数据 排名 , 金额，占比
                 let typeVal = Object.prototype.toString.call(data);
                 if (typeVal === '[object Error]') {
@@ -161,8 +167,11 @@ router.get("/get_accounts", function (req, res, next) {
 
 //获取账号信息
 router.get("/get_account", function (req, res, next) {
+    logger.info(`/get_account start: ${Date.now() - req._startTime}`)
     var queryAccount = req.query.account;// ?account=2
+    logger.info(`/get_account before SQL-1: ${Date.now() - req._startTime}`)
     pgclient.query("Select account,balance FROM accounts  WHERE account = $1", [queryAccount], (data) => {
+        logger.info(`/get_account after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -195,6 +204,7 @@ router.get("/get_account", function (req, res, next) {
 
 //获取账号的交易列表
 router.get("/get_account_list", function (req, res, next) {
+    logger.info(`/get_account_list start: ${Date.now() - req._startTime}`)
     var queryAccount = req.query.account;// ?account=2
     var queryPage = req.query.page;// ?page=2
     var page, //当前页数
@@ -208,8 +218,9 @@ router.get("/get_account_list", function (req, res, next) {
     } else {
         page = Number(queryPage) || 1;
     }
-
+    logger.info(`/get_account_list before SQL-1: ${Date.now() - req._startTime}`)
     pgclient.query('Select COUNT(1) FROM transaction WHERE "from" = $1 OR "to"=$1', [queryAccount], (count) => {
+        logger.info(`/get_account_list after SQL-1: ${Date.now() - req._startTime}`)
         let typeCountVal = Object.prototype.toString.call(count);
         if (typeCountVal === '[object Error]') {
             responseData = {
@@ -238,8 +249,10 @@ router.get("/get_account_list", function (req, res, next) {
                 //page 不小于 1
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
-                // *,balance/sum(balance) 
+                // *,balance/sum(balance)
+                logger.info(`/get_account_list before SQL-2: ${Date.now() - req._startTime}`)
                 pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount,mci FROM transaction WHERE "from" = $1 OR "to"=$1 order by exec_timestamp desc, level desc,pkid desc LIMIT $2 OFFSET $3', [queryAccount, LIMITVAL, OFFSETVAL], (data) => {
+                    logger.info(`/get_account_list after SQL-2: ${Date.now() - req._startTime}`)
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -284,11 +297,16 @@ router.get("/get_account_list", function (req, res, next) {
 
 //获取交易列表 TODO 切换查询，避免攻击
 router.get("/get_transactions", function (req, res, next) {
+    logger.info(`/get_transactions start: ${Date.now() - req._startTime}`)
     var queryPage = req.query.page;// ?page=2
     var wt = req.query.wt;// ?page=2
     var filterVal = '';
+    let sql;
     if (!wt) {
-        filterVal = ' WHERE "from" != "to" or is_stable = true or amount != 0 '
+        // filterVal = ' WHERE "from" != "to" or is_stable = true or amount != 0 '
+        sql = 'Select COUNT(1) FROM transaction WHERE "from" != "to" or is_stable = true or amount != 0'
+    }else{
+        sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'"
     }
     var page, //当前页数
         pages, // 合计总页数
@@ -301,8 +319,10 @@ router.get("/get_transactions", function (req, res, next) {
     } else {
         page = Number(queryPage) || 1;
     }
-    //
-    pgclient.query('Select COUNT(1) FROM transaction ' + filterVal, (count) => {
+
+    logger.info(`/get_transactions before SQL-1 COUNT(1) transaction: ${Date.now() - req._startTime}`)
+    pgclient.query(sql, (count) => {
+        logger.info(`/get_transactions after SQL-1 COUNT(1) transaction: ${Date.now() - req._startTime}`)
         let typeCountVal = Object.prototype.toString.call(count);
         if (typeCountVal === '[object Error]') {
             responseData = {
@@ -333,8 +353,10 @@ router.get("/get_transactions", function (req, res, next) {
                 //page 不小于 1
                 page = Math.max(page, 1);
                 OFFSETVAL = (page - 1) * LIMITVAL;
-                // *,balance/sum(balance) 
+                // *,balance/sum(balance)
+                logger.info(`/get_transactions before SQL-2: ${Date.now() - req._startTime}`)
                 pgclient.query('Select exec_timestamp,mc_timestamp,stable_timestamp,level,hash,"type","from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
+                    logger.info(`/get_transactions after SQL-2: ${Date.now() - req._startTime}`)
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
                         responseData = {
@@ -365,7 +387,9 @@ router.get("/get_transactions", function (req, res, next) {
 
 //获取最新的交易
 router.get("/get_latest_transactions", function (req, res, next) {
+    logger.info(`/get_latest_transactions start: ${Date.now() - req._startTime}`)
     pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction where "from" != "to" or is_stable = true or amount != 0 order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
+        logger.info(`/get_latest_transactions after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -388,8 +412,10 @@ router.get("/get_latest_transactions", function (req, res, next) {
 
 //获取交易号信息
 router.get("/get_transaction", function (req, res, next) {
+    logger.info(`/get_transaction before SQL-1: ${Date.now() - req._startTime}`)
     var queryTransaction = req.query.transaction;// ?account=2
     pgclient.query('Select pkid,hash,"type","from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp FROM transaction  WHERE hash = $1', [queryTransaction], (data) => {
+        logger.info(`/get_transaction after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -462,7 +488,9 @@ router.get("/get_transaction", function (req, res, next) {
                 res.json(responseData);
             } else {
                 let currentHash = data[0].hash;
+                logger.info(`/get_transaction before SQL-2: ${Date.now() - req._startTime}`)
                 pgclient.query("Select item,parent FROM parents WHERE item = $1 ORDER BY parents_id DESC", [currentHash], function (result) {
+                    logger.info(`/get_transaction after SQL-2: ${Date.now() - req._startTime}`)
                     let resultTypeVal = Object.prototype.toString.call(result);
                     if (resultTypeVal === '[object Error]') {
                         responseData = {
@@ -513,7 +541,9 @@ router.get("/get_transaction", function (req, res, next) {
                             }
                             res.json(responseData);
                         } else {
+                            logger.info(`/get_transaction before SQL-3: ${Date.now() - req._startTime}`)
                             pgclient.query("Select item,account FROM witness WHERE item = $1 ORDER BY witness_id DESC", [currentHash], function (witnessResult) {
+                                logger.info(`/get_transaction after SQL-3: ${Date.now() - req._startTime}`)
                                 let witnessAry = [];
                                 witnessResult.forEach(currentItem => {
                                     witnessAry.push(currentItem.account);
@@ -537,6 +567,7 @@ router.get("/get_transaction", function (req, res, next) {
 
 //获取以前的unit
 router.get("/get_previous_units", function (req, res, next) {
+    logger.info(`/get_previous_units start: ${Date.now() - req._startTime}`)
     var sqlOptions;
     /*
         parameters={
@@ -617,7 +648,9 @@ router.get("/get_previous_units", function (req, res, next) {
     }
 
     logger.info("搜索语句:",sqlOptions)
+    logger.info(`/get_previous_units before SQL-1: ${Date.now() - req._startTime}`)
     pgclient.query(sqlOptions, (data) => {
+        logger.info(`/get_previous_units after SQL-1: ${Date.now() - req._startTime}`)
         var tempEdges = {};
         //TODO catch
         let typeVal = Object.prototype.toString.call(data);
@@ -656,7 +689,9 @@ router.get("/get_previous_units", function (req, res, next) {
 
                 // logger.info("Select "+searchParentsSql+" FROM parents WHERE item in (" + dataAryStr + ")");
                 //"Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")"
+                logger.info(`/get_previous_units before SQL-2: ${Date.now() - req._startTime}`)
                 pgclient.query("Select " + searchParentsSql + " FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
+                    logger.info(`/get_previous_units after SQL-2: ${Date.now() - req._startTime}`)
                     let resultTypeVal = Object.prototype.toString.call(result);
                     if (resultTypeVal === '[object Error]') {
                         responseData = {
@@ -716,7 +751,9 @@ router.get("/get_previous_units", function (req, res, next) {
 */
 //获取MCI
 router.get("/get_mci", function (req, res, next) {
+    logger.info(`/get_mci before SQL-1: ${Date.now() - req._startTime}`)
     pgclient.query("select key,value from global where key='last_mci' or key ='last_stable_mci'", (data) => {
+        logger.info(`/get_mci after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {
@@ -753,6 +790,7 @@ router.get("/get_mci", function (req, res, next) {
 //获取TPS
 //获取账号信息
 router.get("/get_timestamp", function (req, res, next) {
+    logger.info(`/get_timestamp start: ${Date.now() - req._startTime}`)
     var queryType = req.query.type;// ?type=1
     var queryStart = req.query.start;//end
     var sqlStr;
@@ -766,6 +804,7 @@ router.get("/get_timestamp", function (req, res, next) {
         sqlOpt = [queryType];
     }
     pgclient.query(sqlStr, sqlOpt, (data) => {
+        logger.info(`/get_timestamp after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
             responseData = {

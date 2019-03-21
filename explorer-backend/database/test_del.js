@@ -1,4 +1,4 @@
-let pgclient = require('./PG');// 引用上述文件
+let pgclient = require('./PG').default;// 引用上述文件
 pgclient.getConnection();
 
 //删除 client.query("truncate table test WHERE name=$1", ["xiaoming"])})
