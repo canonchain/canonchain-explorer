@@ -73,6 +73,9 @@ let unstableUpdateBlockAry = [];//需要更新的Block
 const getCount = require('./helper/count').getCount
 const updateCount = require('./helper/count').updateCount
 
+getCount('accountsCount', 'accounts', 'accounts_count');
+getCount('transactionCount', 'transaction', 'transaction_count');
+
 let pageUtility = {
     init() {
         self = this;
@@ -97,8 +100,6 @@ let pageUtility = {
                 return;
             }
             // logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
-            getCount('accountsCount', 'accounts', 'accounts_count');
-            getCount('transactionCount', 'transaction', 'transaction_count');
             pageUtility.readyGetData();
         });
     },
