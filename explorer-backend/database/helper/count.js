@@ -15,11 +15,11 @@ const countHelper = {
 
 /**
  * @param countKey - key in countHelper ['accountsCount', 'transactionCount']
- * @param tableName - which table rows to count
  * @param globalKey - key of count store in global table
+ * @param tableName - which table rows to count
  * @returns {Promise} Promise object
  * */
-async function getCount(countKey, tableName, globalKey) {
+async function getCount(countKey, globalKey) {
     let query, res;
     try {
         query = {
@@ -40,30 +40,33 @@ async function getCount(countKey, tableName, globalKey) {
         } catch (e) {
             logger.error(query, e.stack)
         }
+        countHelper[countKey] = 0
+        return
     }
-    try {
-        query = {
-            text: 'SELECT COUNT(*) FROM ' + tableName
-        };
-        res = await client.query(query)
-    } catch (e) {
-        logger.error(query, e.stack)
-    }
-    if (res.rows.length === 0) return;
-    // if (+res.rows[0].count === 0) return;
     countHelper[countKey] = +res.rows[0].count;
-    try {
-        query = {
-            text: 'UPDATE global SET value = $1 WHERE key = $2',
-            values: [countHelper[countKey], globalKey]
-        };
-        await client.query(query)
-    } catch (e) {
-        logger.error(query, e.stack)
-    }
+    // try {
+    //     query = {
+    //         text: 'SELECT COUNT(*) FROM ' + tableName
+    //     };
+    //     res = await client.query(query)
+    // } catch (e) {
+    //     logger.error(query, e.stack)
+    // }
+    // if (res.rows.length === 0) return;
+    // // if (+res.rows[0].count === 0) return;
+    // countHelper[countKey] = +res.rows[0].count;
+    // try {
+    //     query = {
+    //         text: 'UPDATE global SET value = $1 WHERE key = $2',
+    //         values: [countHelper[countKey], globalKey]
+    //     };
+    //     await client.query(query)
+    // } catch (e) {
+    //     logger.error(query, e.stack)
+    // }
 }
 
-async function updateCount(countKey, num, globalKey) {
+async function updateCount(countKey, globalKey, num) {
     let query;
     countHelper[countKey] += num;
     try {
@@ -74,6 +77,7 @@ async function updateCount(countKey, num, globalKey) {
         await client.query(query)
     } catch (e) {
         logger.error(query, e.stack)
+        throw e
     }
 }
 

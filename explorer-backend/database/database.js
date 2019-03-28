@@ -73,8 +73,8 @@ let unstableUpdateBlockAry = [];//需要更新的Block
 const getCount = require('./helper/count').getCount
 const updateCount = require('./helper/count').updateCount
 
-getCount('accountsCount', 'accounts', 'accounts_count');
-getCount('transactionCount', 'transaction', 'transaction_count');
+getCount('accountsCount', 'accounts_count');
+getCount('transactionCount', 'transaction_count');
 
 let pageUtility = {
     init() {
@@ -812,12 +812,17 @@ let pageUtility = {
         let batchInsertSql = {
             text: "INSERT INTO accounts (account,type,balance) VALUES" + tempAry.toString()
         };
-        pgclient.query(batchInsertSql, (res) => {
+        pgclient.query(batchInsertSql, async (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchInsertAccount")) {
                 return;
             }
-            updateCount('accountsCount', tempAry.length, 'accounts_count')
+            try {
+                await updateCount('accountsCount', 'accounts_count', tempAry.length)
+            } catch (e) {
+                pageUtility.shouldAbort(e, "UPDATE global SET accounts_count")
+            }
+
         });
     },
     //批量插入 timestamp
@@ -884,13 +889,17 @@ let pageUtility = {
         let batchInsertSql = {
             text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
         };
-        pgclient.query(batchInsertSql, (res) => {
+        pgclient.query(batchInsertSql, async (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchInsertBlock")) {
                 logger.info(batchInsertSql)
                 return;
             }
-            updateCount('transactionCount', tempAry.length, 'transaction_count')
+            try {
+                await updateCount('transactionCount', 'transaction_count', tempAry.length)
+            } catch (e) {
+                pageUtility.shouldAbort(res, "UPDATE global SET transaction_count")
+            }
         });
     },
 
