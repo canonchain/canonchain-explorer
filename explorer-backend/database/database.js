@@ -71,7 +71,7 @@ let unstableUpdateBlockAry = [];//需要更新的Block
 // 批量操作不稳定Unit相关变量 End
 
 const getCount = require('./helper/count').getCount
-const updateCount = require('./helper/count').updateCount
+// const updateCount = require('./helper/count').updateCount
 
 getCount('accountsCount', 'accounts_count');
 getCount('transactionCount', 'transaction_count');
@@ -80,29 +80,105 @@ let pageUtility = {
     init() {
         self = this;
         let SearchOptions = {
-            // TODO PKID改为基于MCI，索引时候需要考虑
-            // text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
-            text: "select mci from transaction where (is_stable = $1) order by mci desc limit 1",
-            values: [true]
+            text: `
+                select 
+                    value 
+                from 
+                    global 
+                where 
+                    "key" = $1
+            `,
+            values: ["mci"]
         };
         pgclient.query(SearchOptions, (data) => {
             if (data.length === 0) {
-                dbStableMci = 0;
+                //undefined_column，需要插入mci
+                pageUtility.createGlobalMci();
             } else if (data.length === 1) {
-                if (firstGetDb) {
-                    firstGetDb = !firstGetDb;
-                    dbStableMci = Number(data[0].mci);
-                } else {
-                    dbStableMci = Number(data[0].mci) + 1;
-                }
+                pageUtility.setDbStableMci(data)
             } else if (data.length > 1) {
                 logger.info("get dataCurrentMai is Error");
                 return;
             }
-            // logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
-            pageUtility.readyGetData();
         });
     },
+    setDbStableMci(data) {
+        if (firstGetDb) {
+            firstGetDb = !firstGetDb;
+            dbStableMci = Number(data[0].value);
+        } else {
+            dbStableMci = Number(data[0].value) + 1;
+        }
+        // logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
+        pageUtility.readyGetData();
+    },
+    createGlobalMci() {
+        console.log("需要初始化mci")
+        let insertMciToGlobal = "INSERT INTO global (key,value) VALUES ('mci', 0)";
+        pgclient.query(insertMciToGlobal, (res) => {
+            let typeVal = Object.prototype.toString.call(res);
+            console.log(typeVal);
+            console.log(res);
+            if (typeVal === '[object Error]') {
+                logger.error(`Global新建Mci : 失败`);
+                logger.error(res)
+            } else {
+                logger.info(`Global新建Mci : 成功`);
+                dbStableMci = 0;
+                pageUtility.readyGetData();
+            }
+        })
+    },
+    updateGlobalMci(val) {
+        let pdateMciSql = `
+            update 
+                global 
+            set 
+                value=temp.value 
+                    from (values 
+                            ('mci',${Number(val)})
+                        ) 
+                as 
+                    temp(key,value)
+            where 
+                global.key = temp.key
+        `
+        pgclient.query(pdateMciSql, (res) => {
+            let typeVal = Object.prototype.toString.call(res);
+            if (typeVal === '[object Error]') {
+                logger.info(`MCI插更新败 ${res}`);
+            } else {
+                logger.info(`MCI更新成功`);
+                // pageUtility.getUnitByMci();//查询所有稳定 block 信息
+            }
+        })
+    },
+    // init2() {
+    //     self = this;
+    //     let SearchOptions = {
+    //         // TODO PKID改为基于MCI，索引时候需要考虑
+    //         // text: "select mci from transaction where (is_stable = $1) order by pkid desc limit 1",
+    //         text: "select mci from transaction where (is_stable = $1) order by mci desc limit 1",
+    //         values: [true]
+    //     };
+    //     pgclient.query(SearchOptions, (data) => {
+    //         if (data.length === 0) {
+    //             dbStableMci = 0;
+    //         } else if (data.length === 1) {
+    //             if (firstGetDb) {
+    //                 firstGetDb = !firstGetDb;
+    //                 dbStableMci = Number(data[0].mci);
+    //             } else {
+    //                 dbStableMci = Number(data[0].mci) + 1;
+    //             }
+    //         } else if (data.length > 1) {
+    //             logger.info("get dataCurrentMai is Error");
+    //             return;
+    //         }
+    //         // logger.info(`当前数据库稳定MCI : 需要拿 ${dbStableMci} 去获取最新数据`);
+    //         pageUtility.readyGetData();
+    //     });
+    // },
     readyGetData() {
         getRpcTimer = setTimeout(function () {
             pageUtility.getRPC()
@@ -168,7 +244,21 @@ let pageUtility = {
         })
     },
     updateMci(status) {
-        let globalUpdateMci = "update global set value=temp.value from (values ('last_mci'," + Number(status.last_mci) + "),('last_stable_mci'," + Number(status.last_stable_mci) + ")) as temp(key,value) where global.key = temp.key"
+        let globalUpdateMci = `
+            update 
+                global 
+            set 
+                value=temp.value 
+                    from (values 
+                            ('last_mci',${Number(status.last_mci)}),
+                            ('last_stable_mci',${Number(status.last_stable_mci)})
+                        ) 
+                as 
+                    temp(key,value)
+            where 
+                global.key = temp.key
+        `
+        // let globalUpdateMci = "update global set value=temp.value from (values ('last_mci'," + Number(status.last_mci) + "),('last_stable_mci'," + Number(status.last_stable_mci) + ")) as temp(key,value) where global.key = temp.key"
         pgclient.query(globalUpdateMci, (res) => {
             let typeVal = Object.prototype.toString.call(res);
             if (typeVal === '[object Error]') {
@@ -411,6 +501,7 @@ let pageUtility = {
                 // // profiler.stop('SQL=> searchWitnessBaseDb');
                 // // profiler.start();
                 let hashWitnessObj = {};
+                //TODO 作为判断 trans.is_witness 值的源数据使用；
                 witnessRes.forEach((item) => {
                     hashWitnessObj[item.item] = item.item;
                 });
@@ -522,6 +613,9 @@ let pageUtility = {
             if (timestamp10UpdateAry.length > 0) {
                 pageUtility.batchUpdateTimestamp(timestamp10UpdateAry)
             }
+
+            //更新Mci
+            pageUtility.updateGlobalMci(dbStableMci);
 
 
             pgclient.query('COMMIT', (err) => {
@@ -812,17 +906,33 @@ let pageUtility = {
         let batchInsertSql = {
             text: "INSERT INTO accounts (account,type,balance) VALUES" + tempAry.toString()
         };
-        pgclient.query(batchInsertSql, async (res) => {
+        pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchInsertAccount")) {
                 return;
             }
-            try {
-                await updateCount('accountsCount', 'accounts_count', tempAry.length)
-            } catch (e) {
-                pageUtility.shouldAbort(e, "UPDATE global SET accounts_count")
-            }
+            // try {
+            //     await updateCount('accountsCount', 'accounts_count', tempAry.length)
+            // } catch (e) {
+            //     pageUtility.shouldAbort(e, "UPDATE global SET accounts_count")
+            // }
+        });
 
+        //更新账户数量
+        let updateAccountCount = `
+                update 
+                    "global"
+                set 
+                    "value"= "value" + ${tempAry.length} 
+                where 
+                    key = 'accounts_count'
+            `;
+        pgclient.query(updateAccountCount, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "updateAccountCount")) {
+                logger.info(updateAccountCount)
+                return;
+            }
         });
     },
     //批量插入 timestamp
@@ -887,18 +997,39 @@ let pageUtility = {
         });
 
         let batchInsertSql = {
-            text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
+            // text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
+            text: `
+                INSERT INTO 
+                    transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) 
+                VALUES` + tempAry.toString()
         };
-        pgclient.query(batchInsertSql, async (res) => {
+        pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchInsertBlock")) {
                 logger.info(batchInsertSql)
                 return;
             }
-            try {
-                await updateCount('transactionCount', 'transaction_count', tempAry.length)
-            } catch (e) {
-                pageUtility.shouldAbort(res, "UPDATE global SET transaction_count")
+            // try {
+            //     await updateCount('transactionCount', 'transaction_count', tempAry.length)
+            // } catch (e) {
+            //     pageUtility.shouldAbort(res, "UPDATE global SET transaction_count")
+            // }
+        });
+
+        //更新计数
+        let updateTranCount = `
+                update 
+                    "global"
+                set 
+                    "value"= "value" + ${tempAry.length} 
+                where 
+                    key = 'transaction_count'
+            `;
+        pgclient.query(updateTranCount, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "updateTranCount")) {
+                logger.info(updateTranCount)
+                return;
             }
         });
     },
@@ -933,8 +1064,24 @@ let pageUtility = {
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + //item.mci可能为null
                 ")");
         });
-        let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , stable_timestamp=tmp.stable_timestamp, mci=tmp.mci from (values ' + tempAry.toString() +
-            ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci) where transaction.hash=tmp.hash';
+        // let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , stable_timestamp=tmp.stable_timestamp, mci=tmp.mci from (values ' + tempAry.toString() +
+        //     ') as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci) where transaction.hash=tmp.hash';
+        let batchUpdateSql = `
+            update 
+                transaction 
+            set 
+                is_free=tmp.is_free , 
+                is_stable=tmp.is_stable , 
+                "status"=tmp.status , 
+                is_on_mc=tmp.is_on_mc , 
+                mc_timestamp=tmp.mc_timestamp , 
+                stable_timestamp=tmp.stable_timestamp, 
+                mci=tmp.mci 
+            from 
+                (values ${tempAry.toString()}) as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci) 
+            where 
+                transaction.hash=tmp.hash
+        `;
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchUpdateBlock")) {
@@ -953,8 +1100,22 @@ let pageUtility = {
                 Number(item.balance) +
                 ")");
         });
-        let batchUpdateSql = 'update accounts set balance = accounts.balance + tmp.balance from (values ' + tempAry.toString() +
-            ') as tmp (account,balance) where accounts.account=tmp.account';
+        // let batchUpdateSql = 'update accounts set balance = accounts.balance + tmp.balance from (values ' + tempAry.toString() +
+        // ') as tmp (account,balance) where accounts.account=tmp.account';
+
+        // let batchUpdateSql = 'update accounts set balance = accounts.balance + tmp.balance from (values ' + tempAry.toString() + ') as tmp (account,balance) where accounts.account=tmp.account';
+        let batchUpdateSql = `
+            update 
+                accounts 
+            set 
+                balance = accounts.balance + tmp.balance 
+            from 
+                (values ${tempAry.toString()}) 
+                as 
+                tmp (account,balance) 
+            where 
+                accounts.account=tmp.account
+        `;
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchUpdateAccount")) {
@@ -971,8 +1132,21 @@ let pageUtility = {
                 Number(item.count) +
                 ")");
         });
-        let batchUpdateSql = 'update timestamp set count= timestamp.count + tmp.count from (values ' + tempAry.toString() +
-            ') as tmp (timestamp,count) where timestamp.timestamp=tmp.timestamp';
+        // let batchUpdateSql = 'update timestamp set count= timestamp.count + tmp.count from (values ' + tempAry.toString() +
+        // ') as tmp (timestamp,count) where timestamp.timestamp=tmp.timestamp';
+        // let batchUpdateSql = 'update timestamp set count= timestamp.count + tmp.count from (values ' + tempAry.toString() + ') as tmp (timestamp,count) where timestamp.timestamp=tmp.timestamp';
+        let batchUpdateSql = `
+            update 
+                timestamp 
+            set 
+                count= timestamp.count + tmp.count 
+            from 
+                (values ${tempAry.toString()}) 
+                as 
+                    tmp (timestamp,count) 
+            where 
+                timestamp.timestamp=tmp.timestamp
+        `;
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "batchUpdateTimestamp")) {
