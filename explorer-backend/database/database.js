@@ -992,7 +992,8 @@ let pageUtility = {
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + "," +//item.mci可能为null
                 (Number(item.latest_included_mci) || 0) + "," +//latest_included_mci 可能为0 =>12303
                 (Number(item.mc_timestamp) || 0) + "," +
-                (Number(item.stable_timestamp) || 0) +
+                (Number(item.stable_timestamp) || 0) + "," +
+                (!(Number(item.type) === 1 && item.is_stable !== 1)) + // is_shown
                 ")");
         });
 
@@ -1000,7 +1001,7 @@ let pageUtility = {
             // text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
             text: `
                 INSERT INTO 
-                    transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) 
+                    transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp,is_shown) 
                 VALUES` + tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
@@ -1061,7 +1062,8 @@ let pageUtility = {
                 (item.is_on_mc === 1) + "," +
                 (item.mc_timestamp) + "," +
                 (item.stable_timestamp) + "," +
-                Number(Boolean(item.mci != 'null') ? item.mci : -1) + //item.mci可能为null
+                Number(Boolean(item.mci != 'null') ? item.mci : -1) + "," + //item.mci可能为null
+                (!(Number(item.type) === 1 && item.is_stable !== 1)) + // is_shown
                 ")");
         });
         // let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , stable_timestamp=tmp.stable_timestamp, mci=tmp.mci from (values ' + tempAry.toString() +
@@ -1076,9 +1078,10 @@ let pageUtility = {
                 is_on_mc=tmp.is_on_mc , 
                 mc_timestamp=tmp.mc_timestamp , 
                 stable_timestamp=tmp.stable_timestamp, 
-                mci=tmp.mci 
+                mci=tmp.mci,
+                is_shown=tmp.is_shown,
             from 
-                (values ${tempAry.toString()}) as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci) 
+                (values ${tempAry.toString()}) as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci,is_shown) 
             where 
                 transaction.hash=tmp.hash
         `;

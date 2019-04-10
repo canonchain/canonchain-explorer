@@ -388,7 +388,9 @@ router.get("/get_transactions", function (req, res, next) {
 //获取最新的交易
 router.get("/get_latest_transactions", function (req, res, next) {
     logger.info(`/get_latest_transactions start: ${Date.now() - req._startTime}`)
-    pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction where "from" != "to" or is_stable = true or amount != 0 order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
+    // TODO optimize
+    // pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction where "from" != "to" or is_stable = true or amount != 0 order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
+    pgclient.query('Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction where is_shown = true order by exec_timestamp desc, level desc,pkid desc LIMIT 10', (data) => {
         logger.info(`/get_latest_transactions after SQL-1: ${Date.now() - req._startTime}`)
         let typeVal = Object.prototype.toString.call(data);
         if (typeVal === '[object Error]') {
