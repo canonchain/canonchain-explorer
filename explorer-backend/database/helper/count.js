@@ -10,13 +10,13 @@ const client = require('../PG').client;
 
 const countHelper = {
     accountsCount: 0,
-    transactionCount: 0
+    transactionCount: 0,
+    transactionShown: 0,
 };
 
 /**
  * @param countKey - key in countHelper ['accountsCount', 'transactionCount']
  * @param globalKey - key of count store in global table
- * @param tableName - which table rows to count
  * @returns {Promise} Promise object
  * */
 async function getCount(countKey, globalKey) {
@@ -44,26 +44,6 @@ async function getCount(countKey, globalKey) {
         return
     }
     countHelper[countKey] = +res.rows[0].count;
-    // try {
-    //     query = {
-    //         text: 'SELECT COUNT(*) FROM ' + tableName
-    //     };
-    //     res = await client.query(query)
-    // } catch (e) {
-    //     logger.error(query, e.stack)
-    // }
-    // if (res.rows.length === 0) return;
-    // // if (+res.rows[0].count === 0) return;
-    // countHelper[countKey] = +res.rows[0].count;
-    // try {
-    //     query = {
-    //         text: 'UPDATE global SET value = $1 WHERE key = $2',
-    //         values: [countHelper[countKey], globalKey]
-    //     };
-    //     await client.query(query)
-    // } catch (e) {
-    //     logger.error(query, e.stack)
-    // }
 }
 
 async function updateCount(countKey, globalKey, num) {

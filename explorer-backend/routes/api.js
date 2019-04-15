@@ -304,7 +304,8 @@ router.get("/get_transactions", function (req, res, next) {
     let sql;
     if (!wt) {
         // filterVal = ' WHERE "from" != "to" or is_stable = true or amount != 0 '
-        sql = 'Select COUNT(1) FROM transaction WHERE "from" != "to" or is_stable = true or amount != 0'
+        // sql = 'Select COUNT(1) FROM transaction WHERE "from" != "to" or is_stable = true or amount != 0'
+        sql = "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'"
     }else{
         sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'"
     }
@@ -606,6 +607,7 @@ router.get("/get_previous_units", function (req, res, next) {
            (is_free = 1 and exec_timestamp = xxx and level = yyy and pkid < zzz)
            
         */
+        // TODO
         sqlOptions = {
             text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE ((is_free < $1) or (is_free = $1 and exec_timestamp < $2) or (is_free = $1 and exec_timestamp = $2 and level < $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4))' + filterOtherUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
             values: [searchParameter.is_free, searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]

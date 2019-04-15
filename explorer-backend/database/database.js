@@ -75,6 +75,8 @@ const getCount = require('./helper/count').getCount
 
 getCount('accountsCount', 'accounts_count');
 getCount('transactionCount', 'transaction_count');
+getCount('transactionShown', 'transaction_shown_count');
+let _updateShownTran = 0;
 
 let pageUtility = {
     init() {
@@ -521,7 +523,7 @@ let pageUtility = {
     searchBlockBaseDb() {
         //处理Block unBlock插入后，在mci插入，可能有些是插入后的
         let upsertBlockSql = {
-            text: "select hash from transaction where hash = ANY ($1)",
+            text: "select hash, is_shown from transaction where hash = ANY ($1)",
             values: [unitAryForSql]
         };
         // // profiler.start();
@@ -533,6 +535,9 @@ let pageUtility = {
             blockRes.forEach(dbItem => {
                 for (let i = 0; i < unitInsertAry.length; i++) {
                     if (unitInsertAry[i].hash === dbItem.hash) {
+                        if(dbItem['is_shown'] !== !(+unitInsertAry[i].type === 1 && !unitInsertAry[i].is_stable)){
+                            _updateShownTran += 1
+                        }
                         unitUpdateAry.push(unitInsertAry[i]);//数据库存在的Block
                         unitInsertAry.splice(i, 1);
 
@@ -642,6 +647,7 @@ let pageUtility = {
                 timestamp10InsertAry = [];
                 timestamp10UpdateAry = [];
 
+                _updateShownTran = 0
 
                 //Other
                 isStableDone = dbStableMci < rpcStableMci ? false : true;
@@ -731,7 +737,7 @@ let pageUtility = {
     //搜索哪些hash已经存在数据库中,哪些
     searchBlockFromDb() {
         let upsertBlockSql = {
-            text: "select hash from transaction where hash = ANY ($1)",
+            text: "select hash, is_shown from transaction where hash = ANY ($1)",
             values: [unstableUnitHashAry]
         };
         pgclient.query(upsertBlockSql, (blockRes) => {
@@ -740,6 +746,9 @@ let pageUtility = {
             blockRes.forEach(dbItem => {
                 for (let i = 0; i < unstableInsertBlockAry.length; i++) {
                     if (unstableInsertBlockAry[i].hash === dbItem.hash) {
+                        if(dbItem['is_shown'] !== !(+unstableInsertBlockAry[i].type === 1 && !unstableInsertBlockAry[i].is_stable)){
+                            _updateShownTran += 1
+                        }
                         //已经存在的,好像没有移除干净
                         unstableUpdateBlockAry.push(unstableInsertBlockAry[i]);
                         unstableInsertBlockAry.splice(i, 1);
@@ -821,6 +830,7 @@ let pageUtility = {
                     return;
                 }
                 logger.info(`批量插入不稳定 END  ${Boolean(unstable_next_index)} \n`);
+                _updateShownTran = 0
                 if (unstable_next_index) {
                     //没有获取完，需要获取
                     pageUtility.getUnstableBlocks();
@@ -1017,6 +1027,18 @@ let pageUtility = {
             // }
         });
 
+        // 更新transaction_shown_count in global
+        const shownTranCount = blockAry.filter(item => {
+            return !(+item.type === 1 && !item.is_stable) // item.is_shown
+        }).length
+        pgclient.query(`UPDATE global SET value = value + ${shownTranCount} WHERE key = 'transaction_shown_count'`, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "update transaction_shown_count")) {
+                logger.info(updateTranCount)
+                return;
+            }
+        });
+
         //更新计数
         let updateTranCount = `
                 update 
@@ -1063,7 +1085,7 @@ let pageUtility = {
                 (item.mc_timestamp) + "," +
                 (item.stable_timestamp) + "," +
                 Number(Boolean(item.mci != 'null') ? item.mci : -1) + "," + //item.mci可能为null
-                (!(Number(item.type) === 1 && item.is_stable !== 1)) + // is_shown
+                (!(+item.type === 1 && !item.is_stable)) + // is_shown
                 ")");
         });
         // let batchUpdateSql = 'update transaction set is_free=tmp.is_free , is_stable=tmp.is_stable , "status"=tmp.status , is_on_mc=tmp.is_on_mc , mc_timestamp=tmp.mc_timestamp , stable_timestamp=tmp.stable_timestamp, mci=tmp.mci from (values ' + tempAry.toString() +
@@ -1079,7 +1101,7 @@ let pageUtility = {
                 mc_timestamp=tmp.mc_timestamp , 
                 stable_timestamp=tmp.stable_timestamp, 
                 mci=tmp.mci,
-                is_shown=tmp.is_shown,
+                is_shown=tmp.is_shown
             from 
                 (values ${tempAry.toString()}) as tmp (hash,is_free,is_stable,"status",is_on_mc,mc_timestamp,stable_timestamp,mci,is_shown) 
             where 
@@ -1087,7 +1109,14 @@ let pageUtility = {
         `;
         pgclient.query(batchUpdateSql, (res) => {
             //ROLLBACK
-            if (pageUtility.shouldAbort(res, "batchUpdateBlock")) {
+            if (pageUtility.shouldAbort(res, `batchUpdateBlock SQL: ${batchUpdateSql}`)) {
+                return;
+            }
+        });
+        logger.info(`更新transaction_shown_count数量 ${_updateShownTran}`);
+        pgclient.query(`UPDATE global SET value = value + ${_updateShownTran} WHERE key = 'transaction_shown_count'`, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "UPDATE global transaction_shown_count")) {
                 return;
             }
         });
@@ -1207,7 +1236,8 @@ let pageUtility = {
                 //TODO.给改为结束进程
                 // release the client back to the pool
                 // pageUtility.init();
-            })
+            });
+            _updateShownTran = 0
         }
         return typeVal === '[object Error]'
     },
