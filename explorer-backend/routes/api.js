@@ -219,7 +219,8 @@ router.get("/get_account_list", function (req, res, next) {
         page = Number(queryPage) || 1;
     }
     logger.info(`/get_account_list before SQL-1: ${Date.now() - req._startTime}`)
-    pgclient.query('Select COUNT(1) FROM transaction WHERE "from" = $1 OR "to"=$1', [queryAccount], (count) => {
+    // pgclient.query('Select COUNT(1) FROM transaction WHERE "from" = $1 OR "to"=$1', [queryAccount], (count) => {
+    pgclient.query('SELECT transaction_count AS count FROM accounts WHERE account = $1', [queryAccount], (count) => {
         logger.info(`/get_account_list after SQL-1: ${Date.now() - req._startTime}`)
         let typeCountVal = Object.prototype.toString.call(count);
         if (typeCountVal === '[object Error]') {

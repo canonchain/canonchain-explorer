@@ -72,6 +72,7 @@ let unstableUpdateBlockAry = [];//需要更新的Block
 
 const getCount = require('./helper/count').getCount
 // const updateCount = require('./helper/count').updateCount
+const calcAccountTranCount = require('./account/transaction-count').calcCount
 
 getCount('accountsCount', 'accounts_count');
 getCount('transactionCount', 'transaction_count');
@@ -535,7 +536,7 @@ let pageUtility = {
             blockRes.forEach(dbItem => {
                 for (let i = 0; i < unitInsertAry.length; i++) {
                     if (unitInsertAry[i].hash === dbItem.hash) {
-                        if(dbItem['is_shown'] !== !(+unitInsertAry[i].type === 1 && !unitInsertAry[i].is_stable)){
+                        if (dbItem['is_shown'] !== !(+unitInsertAry[i].type === 1 && !unitInsertAry[i].is_stable)) {
                             _updateShownTran += 1
                         }
                         unitUpdateAry.push(unitInsertAry[i]);//数据库存在的Block
@@ -746,7 +747,7 @@ let pageUtility = {
             blockRes.forEach(dbItem => {
                 for (let i = 0; i < unstableInsertBlockAry.length; i++) {
                     if (unstableInsertBlockAry[i].hash === dbItem.hash) {
-                        if(dbItem['is_shown'] !== !(+unstableInsertBlockAry[i].type === 1 && !unstableInsertBlockAry[i].is_stable)){
+                        if (dbItem['is_shown'] !== !(+unstableInsertBlockAry[i].type === 1 && !unstableInsertBlockAry[i].is_stable)) {
                             _updateShownTran += 1
                         }
                         //已经存在的,好像没有移除干净
@@ -911,10 +912,11 @@ let pageUtility = {
         //     }];
         let tempAry = [];
         accountAry.forEach((item) => {
-            tempAry.push("('" + item.account + "'," + item.type + "," + item.balance + ")");
+            // tempAry.push("('" + item.account + "'," + item.type + "," + item.balance + ")");
+            tempAry.push(`('${item.account}', ${item.type}, ${item.balance}, 0)`);
         });
         let batchInsertSql = {
-            text: "INSERT INTO accounts (account,type,balance) VALUES" + tempAry.toString()
+            text: "INSERT INTO accounts (account,type,balance, transaction_count) VALUES" + tempAry.toString()
         };
         pgclient.query(batchInsertSql, (res) => {
             //ROLLBACK
@@ -975,7 +977,7 @@ let pageUtility = {
 
     //批量插入Block
     batchInsertBlock(blockAry) {
-        let tempAry = [];
+        let tempAry = [], calcObj = {};
         blockAry.forEach((item) => {
             tempAry.push(
                 "('" +
@@ -1005,6 +1007,8 @@ let pageUtility = {
                 (Number(item.stable_timestamp) || 0) + "," +
                 (!(Number(item.type) === 1 && item.is_stable !== 1)) + // is_shown
                 ")");
+
+            calcAccountTranCount(item, calcObj)
         });
 
         let batchInsertSql = {
@@ -1027,6 +1031,28 @@ let pageUtility = {
             // }
         });
 
+        // TODO 更新transaction_count in accounts
+        let valueStr = Object.keys(calcObj).map(key => `('${key}',${calcObj[key]})`).join()
+        let query = `
+            UPDATE 
+                accounts 
+            SET 
+                transaction_count = transaction_count + tmp.count 
+            FROM 
+                (VALUES ${valueStr}) 
+            AS 
+                tmp(account, count) 
+            WHERE 
+                accounts.account = tmp.account
+        `;
+        pgclient.query(query, (res) => {
+            //ROLLBACK
+            if (pageUtility.shouldAbort(res, "UPDATE accounts SET transaction_count")) {
+                logger.info(query)
+                return;
+            }
+        });
+
         // 更新transaction_shown_count in global
         const shownTranCount = blockAry.filter(item => {
             return !(+item.type === 1 && !item.is_stable) // item.is_shown
@@ -1034,7 +1060,6 @@ let pageUtility = {
         pgclient.query(`UPDATE global SET value = value + ${shownTranCount} WHERE key = 'transaction_shown_count'`, (res) => {
             //ROLLBACK
             if (pageUtility.shouldAbort(res, "update transaction_shown_count")) {
-                logger.info(updateTranCount)
                 return;
             }
         });
