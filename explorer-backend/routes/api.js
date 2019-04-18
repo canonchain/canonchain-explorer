@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 var responseTime = require("./response-time");
 
-var pgclient = require('../database/PG').default;// 引用上述文件
+var pgclient = require('../database/PG-pool').default;// 引用上述文件
 pgclient.getConnection();
 
 //写日志

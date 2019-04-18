@@ -74,9 +74,7 @@ const getCount = require('./helper/count').getCount
 // const updateCount = require('./helper/count').updateCount
 const calcAccountTranCount = require('./account/transaction-count').calcCount
 
-getCount('accountsCount', 'accounts_count');
-getCount('transactionCount', 'transaction_count');
-getCount('transactionShown', 'transaction_shown_count');
+// 记录需修改的显示的交易数量
 let _updateShownTran = 0;
 
 let pageUtility = {
@@ -104,6 +102,9 @@ let pageUtility = {
                 return;
             }
         });
+        getCount('accountsCount', 'accounts_count');
+        getCount('transactionCount', 'transaction_count');
+        getCount('transactionShown', 'transaction_shown_count');
     },
     setDbStableMci(data) {
         if (firstGetDb) {

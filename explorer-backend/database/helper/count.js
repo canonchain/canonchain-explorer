@@ -8,11 +8,11 @@ const logger = log4js.getLogger('write_db');//此处使用category的值
 
 const client = require('../PG').client;
 
-const countHelper = {
-    accountsCount: 0,
-    transactionCount: 0,
-    transactionShown: 0,
-};
+// const countHelper = {
+//     accountsCount: 0,
+//     transactionCount: 0,
+//     transactionShown: 0,
+// };
 
 /**
  * @param countKey - key in countHelper ['accountsCount', 'transactionCount']
@@ -36,32 +36,29 @@ async function getCount(countKey, globalKey) {
                 text: 'INSERT INTO global (key, value) VALUES ($1, $2)',
                 values: [globalKey, 0]
             };
-            res = await client.query(query)
+            await client.query(query)
         } catch (e) {
             logger.error(query, e.stack)
         }
-        countHelper[countKey] = 0
-        return
     }
-    countHelper[countKey] = +res.rows[0].count;
 }
 
-async function updateCount(countKey, globalKey, num) {
-    let query;
-    countHelper[countKey] += num;
-    try {
-        query = {
-            text: 'UPDATE global SET value = $1 WHERE key = $2',
-            values: [countHelper[countKey], globalKey]
-        };
-        await client.query(query)
-    } catch (e) {
-        logger.error(query, e.stack)
-        throw e
-    }
-}
+// async function updateCount(countKey, globalKey, num) {
+//     let query;
+//     countHelper[countKey] += num;
+//     try {
+//         query = {
+//             text: 'UPDATE global SET value = $1 WHERE key = $2',
+//             values: [countHelper[countKey], globalKey]
+//         };
+//         await client.query(query)
+//     } catch (e) {
+//         logger.error(query, e.stack)
+//         throw e
+//     }
+// }
 
 module.exports = {
     getCount,
-    updateCount,
+    // updateCount,
 };
