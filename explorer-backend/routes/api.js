@@ -643,7 +643,7 @@ router.get("/get_previous_units", function (req, res, next) {
             FROM transaction 
                 ${filterFirstUnitSql}
             order by 
-                is_free desc , 
+                
                 exec_timestamp desc, 
                 level desc,
                 pkid desc 
