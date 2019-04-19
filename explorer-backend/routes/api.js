@@ -612,17 +612,15 @@ router.get("/get_previous_units", function (req, res, next) {
                     transaction 
                 WHERE 
                     (
-                        (is_free < $1) or 
-                        (is_free = $1 and exec_timestamp < $2) or 
-                        (is_free = $1 and exec_timestamp = $2 and level < $3) or 
-                        (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4)
-                    ) 
-                ${filterOtherUnitSql} 
-                order 
-                    by is_free desc , exec_timestamp desc, level desc,pkid desc 
+                        (exec_timestamp < $1) or 
+                        (exec_timestamp = $1 and level < $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid < $3)
+                    ) ${filterOtherUnitSql} 
+                order by 
+                    exec_timestamp desc, level desc, pkid desc 
                 limit 
                     100`,
-            values: [searchParameter.is_free, searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
+            values: [searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
         }
     } else if (searchParameter.direction === 'up') {
         //上一个
@@ -644,21 +642,22 @@ router.get("/get_previous_units", function (req, res, next) {
                     transaction 
                 WHERE 
                     (
-                        (is_free > $1) or 
-                        (is_free = $1 and exec_timestamp > $2) or 
-                        (is_free = $1 and exec_timestamp = $2 and level > $3) or 
-                        (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid > $4)
+                        (exec_timestamp > $1) or 
+                        (exec_timestamp = $1 and level > $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid > $3)
                     ) ${filterOtherUnitSql} 
                 order by 
-                    is_free desc , exec_timestamp desc, level desc,pkid desc 
+                    exec_timestamp desc, level desc, pkid desc 
                 limit 
                     100
             `,
-            values: [searchParameter.is_free, searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
+            values: [searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
         }
 
     } else if ((searchParameter.direction === 'center') && searchParameter.active_unit) {
         sqlOptions = {
+            //TODO direction这里"center" 时候再加一个sql,
+            //用来取出 (select exec_timestamp from transaction where hash = $1 limit 1 ) 给 exec_timestamp 用
             text: `
             (
                 Select 
@@ -668,29 +667,25 @@ router.get("/get_previous_units", function (req, res, next) {
                 WHERE 
                     (
                         (
-                            is_free >(select is_free from transaction where hash = $1 limit 1 )
-                        ) or 
-                        (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
-                            and 
+                            
                             exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )
                         ) or 
                         (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
-                            and 
-                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
                             and 
                                 level > (select level from transaction where hash = $1 limit 1 )
                         ) or 
                         (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) and 
-                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and 
-                            level = (select level from transaction where hash = $1 limit 1 ) and 
-                            pkid > (select pkid from transaction where hash = $1 limit 1 )
+                            
+                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            and 
+                                level = (select level from transaction where hash = $1 limit 1 ) 
+                            and 
+                                pkid > (select pkid from transaction where hash = $1 limit 1 )
                         )
                     ) ${filterOtherUnitSql}
                     order by 
-                        is_free desc, exec_timestamp desc, level desc,pkid desc limit 49
+                        exec_timestamp desc, level desc,pkid desc limit 49
             ) 
             UNION 
             (
@@ -712,24 +707,15 @@ router.get("/get_previous_units", function (req, res, next) {
                 WHERE 
                     (
                         (
-                            is_free <(select is_free from transaction where hash = $1 limit 1 )
+                            exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) 
                         ) or 
                         (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
-                            and 
-                                exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) 
-                        ) or 
-                        (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
-                            and 
-                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
                             and 
                                 level < (select level from transaction where hash = $1 limit 1 )
                         ) or 
                         (
-                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
-                            and 
-                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
                             and 
                                 level = (select level from transaction where hash = $1 limit 1 ) 
                             and 
@@ -737,12 +723,12 @@ router.get("/get_previous_units", function (req, res, next) {
                         )
                     ) ${filterOtherUnitSql} 
                 order by 
-                    is_free desc, exec_timestamp desc, level desc,pkid desc  
-                limit 
+                    exec_timestamp desc, level desc, pkid desc
+                limit
                     50
             ) 
             order by 
-                is_free desc , exec_timestamp desc, level desc,pkid desc
+                exec_timestamp desc, level desc, pkid desc
             `,
             values: [searchParameter.active_unit]
         }
