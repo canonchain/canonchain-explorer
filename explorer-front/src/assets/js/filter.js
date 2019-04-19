@@ -2,7 +2,8 @@ import Tools from '../../tools'
 let czr = new Tools();
 
 /**
- * 接收: 秒为单位的时间戳
+ * 接收: wei为单位的金额
+ * 返回：czr为单位的金额
  *  */
 export const toCZRVal = value => {
     if (value) {

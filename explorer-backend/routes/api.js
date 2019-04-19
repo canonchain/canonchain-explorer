@@ -307,7 +307,7 @@ router.get("/get_transactions", function (req, res, next) {
         // filterVal = ' WHERE "from" != "to" or is_stable = true or amount != 0 '
         // sql = 'Select COUNT(1) FROM transaction WHERE "from" != "to" or is_stable = true or amount != 0'
         sql = "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'"
-    }else{
+    } else {
         sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'"
     }
     var page, //当前页数
@@ -587,13 +587,9 @@ router.get("/get_previous_units", function (req, res, next) {
 
     let filterFirstUnitSql = ' WHERE type = 1 ';
     let filterOtherUnitSql = ' and (type = 1 ) ';
-    let searchParentsSql = ' item,parent ';
-    let searchItem = 'parent';
 
-    // logger.info(searchParameter,filterFirstUnitSql,filterOtherUnitSql,searchParentsSql,searchItem);
     if (searchParameter.direction === 'down') {
         //下一个
-        //PKID find row (isFREE / / / )  select * from transaction where hash = $1
         //is_free exec_timestamp
         //is_free exec_timestamp level    
         //is_free exec_timestamp level    pkid
@@ -606,11 +602,26 @@ router.get("/get_previous_units", function (req, res, next) {
            (is_free = 1 and exec_timestamp = xxx and level < yyy)
         or 
            (is_free = 1 and exec_timestamp = xxx and level = yyy and pkid < zzz)
-           
         */
         // TODO
         sqlOptions = {
-            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE ((is_free < $1) or (is_free = $1 and exec_timestamp < $2) or (is_free = $1 and exec_timestamp = $2 and level < $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4))' + filterOtherUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
+            text: `
+                Select 
+                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (is_free < $1) or 
+                        (is_free = $1 and exec_timestamp < $2) or 
+                        (is_free = $1 and exec_timestamp = $2 and level < $3) or 
+                        (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid < $4)
+                    ) 
+                ${filterOtherUnitSql} 
+                order 
+                    by is_free desc , exec_timestamp desc, level desc,pkid desc 
+                limit 
+                    100`,
             values: [searchParameter.is_free, searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
         }
     } else if (searchParameter.direction === 'up') {
@@ -626,24 +637,133 @@ router.get("/get_previous_units", function (req, res, next) {
         
         */
         sqlOptions = {
-            text: 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE ((is_free > $1) or (is_free = $1 and exec_timestamp > $2) or (is_free = $1 and exec_timestamp = $2 and level > $3) or (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid > $4))' + filterOtherUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100',
+            text: `
+                Select 
+                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (is_free > $1) or 
+                        (is_free = $1 and exec_timestamp > $2) or 
+                        (is_free = $1 and exec_timestamp = $2 and level > $3) or 
+                        (is_free = $1 and exec_timestamp = $2 and level = $3 and pkid > $4)
+                    ) ${filterOtherUnitSql} 
+                order by 
+                    is_free desc , exec_timestamp desc, level desc,pkid desc 
+                limit 
+                    100
+            `,
             values: [searchParameter.is_free, searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
         }
 
     } else if ((searchParameter.direction === 'center') && searchParameter.active_unit) {
         sqlOptions = {
-            text: '(Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE ((is_free >(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level > (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid > (select pkid from transaction where hash = $1 limit 1 )))' + filterOtherUnitSql + ' order by is_free desc, exec_timestamp desc, level desc,pkid desc limit 49) UNION (select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent from transaction where hash = $1 limit 1) UNION (Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction WHERE ((is_free <(select is_free from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) ) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level < (select level from transaction where hash = $1 limit 1 )) or (is_free  = (select is_free from transaction where hash = $1 limit 1 ) and exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and level = (select level from transaction where hash = $1 limit 1 ) and pkid < (select pkid from transaction where hash = $1 limit 1 ))) ' + filterOtherUnitSql + ' order by is_free desc, exec_timestamp desc, level desc,pkid desc  limit 50) order by is_free desc , exec_timestamp desc, level desc,pkid desc',
+            text: `
+            (
+                Select 
+                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (
+                            is_free >(select is_free from transaction where hash = $1 limit 1 )
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
+                            and 
+                            exec_timestamp > (select exec_timestamp from transaction where hash = $1 limit 1 )
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
+                            and 
+                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            and 
+                                level > (select level from transaction where hash = $1 limit 1 )
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) and 
+                            exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) and 
+                            level = (select level from transaction where hash = $1 limit 1 ) and 
+                            pkid > (select pkid from transaction where hash = $1 limit 1 )
+                        )
+                    ) ${filterOtherUnitSql}
+                    order by 
+                        is_free desc, exec_timestamp desc, level desc,pkid desc limit 49
+            ) 
+            UNION 
+            (
+                select 
+                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                from 
+                    transaction 
+                where 
+                    hash = $1 
+                limit 
+                    1
+            ) 
+            UNION 
+            (
+                Select 
+                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (
+                            is_free <(select is_free from transaction where hash = $1 limit 1 )
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
+                            and 
+                                exec_timestamp < (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
+                            and 
+                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            and 
+                                level < (select level from transaction where hash = $1 limit 1 )
+                        ) or 
+                        (
+                            is_free  = (select is_free from transaction where hash = $1 limit 1 ) 
+                            and 
+                                exec_timestamp = (select exec_timestamp from transaction where hash = $1 limit 1 ) 
+                            and 
+                                level = (select level from transaction where hash = $1 limit 1 ) 
+                            and 
+                                pkid < (select pkid from transaction where hash = $1 limit 1 )
+                        )
+                    ) ${filterOtherUnitSql} 
+                order by 
+                    is_free desc, exec_timestamp desc, level desc,pkid desc  
+                limit 
+                    50
+            ) 
+            order by 
+                is_free desc , exec_timestamp desc, level desc,pkid desc
+            `,
             values: [searchParameter.active_unit]
         }
     } else {
-        // sqlOptions = 'Select hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent FROM transaction ' + filterFirstUnitSql + ' order by is_free desc , exec_timestamp desc, level desc,pkid desc limit 100';
+        /**
+        sqlOptions = '
+        Select 
+            hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+        FROM 
+            transaction ' + filterFirstUnitSql + ' 
+        order by 
+            is_free desc , exec_timestamp desc, level desc,pkid desc 
+        limit 
+            100';
+        */
         sqlOptions = `
             Select 
                 hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
             FROM transaction 
                 ${filterFirstUnitSql}
             order by 
-                
                 exec_timestamp desc, 
                 level desc,
                 pkid desc 
@@ -652,7 +772,7 @@ router.get("/get_previous_units", function (req, res, next) {
         `;
     }
 
-    logger.info("搜索语句:",sqlOptions)
+    logger.info("搜索语句:", sqlOptions)
     logger.info(`/get_previous_units before SQL-1: ${Date.now() - req._startTime}`)
     pgclient.query(sqlOptions, (data) => {
         logger.info(`/get_previous_units after SQL-1: ${Date.now() - req._startTime}`)
@@ -692,10 +812,8 @@ router.get("/get_previous_units", function (req, res, next) {
                 })
                 var dataAryStr = dataAry.join(",");
 
-                // logger.info("Select "+searchParentsSql+" FROM parents WHERE item in (" + dataAryStr + ")");
-                //"Select item,parent FROM parents WHERE item in (" + dataAryStr + ")" + " or parent in(" + dataAryStr + ")"
                 logger.info(`/get_previous_units before SQL-2: ${Date.now() - req._startTime}`)
-                pgclient.query("Select " + searchParentsSql + " FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
+                pgclient.query("Select item,parent FROM parents WHERE item in (" + dataAryStr + ")", (result) => {
                     logger.info(`/get_previous_units after SQL-2: ${Date.now() - req._startTime}`)
                     let resultTypeVal = Object.prototype.toString.call(result);
                     if (resultTypeVal === '[object Error]') {
@@ -711,30 +829,16 @@ router.get("/get_previous_units", function (req, res, next) {
                         res.json(responseData);
                     } else {
                         //筛选parent数据，把不是 dataAryDiff 里的parent都移除
-                        if (searchItem === 'prototype') {
-                            result.forEach(resItem => {
-                                let protyAry = resItem[searchItem].split(',');
-                                protyAry.forEach(proItem => {
-                                    tempEdges[resItem.item + '_' + proItem] = {
-                                        "data": {
-                                            "source": resItem.item,
-                                            "target": proItem
-                                        },
-                                        "best_parent_unit": ''
-                                    }
-                                })
-                            })
-                        } else {
-                            result.forEach(resItem => {
-                                tempEdges[resItem.item + '_' + resItem[searchItem]] = {
-                                    "data": {
-                                        "source": resItem.item,
-                                        "target": resItem[searchItem]
-                                    },
-                                    "best_parent_unit": isBastParent(resItem, data)
-                                }
-                            })
-                        }
+                        result.forEach(resItem => {
+                            tempEdges[resItem.item + '_' + resItem["parent"]] = {
+                                "data": {
+                                    "source": resItem.item,
+                                    "target": resItem["parent"]
+                                },
+                                "best_parent_unit": isBastParent(resItem, data)
+                            }
+                        })
+
                         responseData = {
                             units: {
                                 nodes: formatUnits(data),
