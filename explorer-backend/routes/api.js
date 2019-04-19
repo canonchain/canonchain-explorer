@@ -357,7 +357,7 @@ router.get("/get_transactions", function (req, res, next) {
                 OFFSETVAL = (page - 1) * LIMITVAL;
                 // *,balance/sum(balance)
                 logger.info(`/get_transactions before SQL-2: ${Date.now() - req._startTime}`)
-                pgclient.query('Select exec_timestamp,mc_timestamp,stable_timestamp,level,hash,"type","from","to",is_stable,"status",amount FROM transaction ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
+                pgclient.query('Select exec_timestamp,mc_timestamp,stable_timestamp,level,hash,"type","from","to",is_stable,"status",amount FROM transaction WHERE is_shown = true ' + filterVal + ' order by exec_timestamp desc, level desc,pkid desc LIMIT $1  OFFSET $2', [LIMITVAL, OFFSETVAL], (data) => {
                     logger.info(`/get_transactions after SQL-2: ${Date.now() - req._startTime}`)
                     let typeVal = Object.prototype.toString.call(data);
                     if (typeVal === '[object Error]') {
