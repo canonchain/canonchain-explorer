@@ -49,12 +49,11 @@
                                     </template>
                                     <template v-else-if='blockInfo.status == "3"'>
                                         <span class="txt-danger"> 失败(3) </span>
+                                    </template>                                    
+                                    <template v-else>
+                                        <span class="txt-info">-</span>
                                     </template>
                                 </template>
-
-                                <span v-else class="xt-info">
-                                    -
-                                </span>
                             </template>
                         </div>
                     </div>
@@ -160,35 +159,6 @@ export default {
                 .catch(function(error) {
                     self.loadingSwitch = false;
                 });
-        }
-    },
-    filters: {
-        toCZRVal: function(val) {
-            let tempVal = self.$czr.utils.fromWei(val, "czr");
-            return tempVal; //TODO Keep 4 decimal places
-        },
-        toDate: function(val) {
-            if (val == "0" || !val) {
-                return "-";
-            }
-            let newDate = new Date();
-            newDate.setTime(val * 1000);
-            let addZero = function(val) {
-                return val < 10 ? "0" + val : val;
-            };
-            return (
-                newDate.getFullYear() +
-                " / " +
-                addZero(newDate.getMonth() + 1) +
-                " / " +
-                addZero(newDate.getDate()) +
-                " " +
-                addZero(newDate.getHours()) +
-                ":" +
-                addZero(newDate.getMinutes()) +
-                ":" +
-                addZero(newDate.getSeconds())
-            );
         }
     }
 };

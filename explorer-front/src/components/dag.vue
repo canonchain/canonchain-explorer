@@ -1675,35 +1675,6 @@ export default {
             self.loadingInfoSwitch = true;
             location.hash = "#/dag/" + hash ;
         }
-    },
-    filters: {
-        toCZRVal: function(val) {
-            let tempVal = self.$czr.utils.fromWei(val, "czr");
-            return tempVal;
-        },
-        toDate: function(val) {
-            if (val == "0" || !val) {
-                return "-";
-            }
-            let newDate = new Date();
-            newDate.setTime(val * 1000);
-            let addZero = function(val) {
-                return val < 10 ? "0" + val : val;
-            };
-            return (
-                newDate.getFullYear() +
-                " / " +
-                addZero(newDate.getMonth() + 1) +
-                " / " +
-                addZero(newDate.getDate()) +
-                " " +
-                addZero(newDate.getHours()) +
-                ":" +
-                addZero(newDate.getMinutes()) +
-                ":" +
-                addZero(newDate.getSeconds())
-            );
-        }
     }
 };
 </script>

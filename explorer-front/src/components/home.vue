@@ -95,9 +95,9 @@
                                     </template>
                                     <template v-else-if='scope.row.status == "3"'>
                                         <span class="txt-danger"> 失败(3) </span>
-                                    </template>
+                                    </template>                                    
                                     <template v-else>
-                                        <span class="xt-info"> - </span>
+                                        <span class="txt-info">-</span>
                                     </template>
                                 </template>
 
@@ -289,35 +289,6 @@ export default {
                 return target;
             }
             return (new Date(format(time))).getTime()/1000;
-        }
-    },
-    filters: {
-        toCZRVal: function(val) {
-            let tempVal = self.$czr.utils.fromWei(val, "czr");
-            return tempVal; //TODO Keep 4 decimal places
-        },
-        toDate: function(val) {
-            if (val == "0" || !val) {
-                return "-";
-            }
-            let newDate = new Date();
-            newDate.setTime(val * 1000);
-            let addZero = function(val) {
-                return val < 10 ? "0" + val : val;
-            };
-            return (
-                newDate.getFullYear() +
-                " / " +
-                addZero(newDate.getMonth() + 1) +
-                " / " +
-                addZero(newDate.getDate()) +
-                " " +
-                addZero(newDate.getHours()) +
-                ":" +
-                addZero(newDate.getMinutes()) +
-                ":" +
-                addZero(newDate.getSeconds())
-            );
         }
     }
 };

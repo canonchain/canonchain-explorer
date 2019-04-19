@@ -5,7 +5,6 @@ import axios from 'axios'
 
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
-import Czr from './czr'
 
 // import VueParticles from 'vue-particles'
 // Vue.use(VueParticles)
@@ -13,8 +12,12 @@ import Czr from './czr'
 Vue.use(ElementUI);
 Vue.config.productionTip = false
 
-let czr = new Czr();
-Vue.czr = Vue.prototype.$czr = czr;
+// global filter 
+import * as filters from '@/assets/js/filter.js'
+Object.keys(filters).forEach(k => {
+  Vue.filter(k, filters[k])
+});
+
 Vue.prototype.$axios = axios
 // Vue.prototype.$router = router
 

@@ -100,12 +100,6 @@ export default {
         handleClick(account) {
             this.$router.push("/account/" + account);
         }
-    },
-    filters: {
-        toCZRVal: function(val) {
-            let tempVal = self.$czr.utils.fromWei(val, "czr");
-            return parseFloat(tempVal).toFixed(4); //TODO Keep 4 decimal places
-        }
     }
 };
 </script>
