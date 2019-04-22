@@ -349,10 +349,12 @@ let pageUtility = {
                     accountsTotal[blockInfo.to].balance = BigNumber(accountsTotal[blockInfo.to].balance).plus(blockInfo.amount).toString(10);
                 } else {
                     //无：写入数据
-                    accountsTotal[blockInfo.to] = {
-                        account: blockInfo.to,
-                        type: 1,
-                        balance: blockInfo.amount
+                    if (blockInfo.to) {
+                        accountsTotal[blockInfo.to] = {
+                            account: blockInfo.to,
+                            type: 1,
+                            balance: blockInfo.amount
+                        }
                     }
                 }
                 //处理发款方余额
@@ -913,8 +915,10 @@ let pageUtility = {
         //     }];
         let tempAry = [];
         accountAry.forEach((item) => {
-            // tempAry.push("('" + item.account + "'," + item.type + "," + item.balance + ")");
-            tempAry.push(`('${item.account}', ${item.type}, ${item.balance}, 0)`);
+            if (item.account) {
+                // tempAry.push("('" + item.account + "'," + item.type + "," + item.balance + ")");
+                tempAry.push(`('${item.account}', ${item.type}, ${item.balance}, 0)`);
+            }
         });
         let batchInsertSql = {
             text: "INSERT INTO accounts (account,type,balance, transaction_count) VALUES" + tempAry.toString()

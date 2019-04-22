@@ -1,5 +1,5 @@
 const { Client, Pool } = require('pg');
-const config = require('./config');
+const config = require('./config-pool');
 
 //写日志
 let log4js = require('./log_config');
