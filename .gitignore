@@ -10,6 +10,7 @@ explorer-backend/logs/
 explorer-backend/data_logs/
 explorer-backend/dist/
 explorer-backend/database/config.js
+explorer-backend/database/config-pool.js
 explorer-front/node_modules/
 explorer-front/dist/
 explorer-front/npm-debug.log*

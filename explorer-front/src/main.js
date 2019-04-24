@@ -21,6 +21,10 @@ Object.keys(filters).forEach(k => {
 Vue.prototype.$axios = axios
 // Vue.prototype.$router = router
 
+// 封装的AXIOS，用于 await
+import { api } from '@/tools/api/api.js'
+Vue.prototype.$api = api
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
