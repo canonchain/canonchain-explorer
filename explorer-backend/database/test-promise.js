@@ -32,7 +32,7 @@
                 value
             from 
                 global 
-            where 
+            where
                 "key" = $1
         `,
         values: ["test1"]

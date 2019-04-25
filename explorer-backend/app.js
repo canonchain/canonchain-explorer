@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 let indexRouter = require('./routes/index');
 app.use('/', indexRouter);
-app.use('/api', require('./routes/api'));
+app.use('/api', require('./routes/api2'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

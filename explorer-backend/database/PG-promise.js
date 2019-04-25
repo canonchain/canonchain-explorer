@@ -45,6 +45,8 @@ const pgPromise = {
             client.release()
         }
     }
+
+    //TOODO 增加多次查询，1次链接，1次断开的
 }
 
 module.exports = pgPromise;
