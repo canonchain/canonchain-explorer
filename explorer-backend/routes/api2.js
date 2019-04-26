@@ -415,7 +415,7 @@ router.get("/get_transactions", async function (req, res, next) {
         responseData = {
             count: Number(count),
             page: Number(queryPage),
-            transactions: data,
+            transactions: data.rows,
             code: 200,
             success: true,
             message: "success"
@@ -456,7 +456,7 @@ router.get("/get_latest_transactions", async function (req, res, next) {
         }
     } else {
         responseData = {
-            transactions: data,
+            transactions: data.rows,
             code: 200,
             success: true,
             message: "success"
@@ -712,8 +712,8 @@ router.get("/get_previous_units", async function (req, res, next) {
                     exec_timestamp , level ,pkid
                 from 
                     transaction 
-                where 
-                    hash = $1 
+                where
+                    hash = $1
                 limit 
                     1
             `,
@@ -912,7 +912,7 @@ router.get("/get_mci", async function (req, res, next) {
 })
 
 //获取TPS
-//获取账号信息
+//T:266ms
 router.get("/get_timestamp", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
@@ -924,7 +924,7 @@ router.get("/get_timestamp", async function (req, res, next) {
         var restleTimestamp = queryType === '10' ? Math.ceil(Number(queryStart) / 10) : queryStart;
         sql.text = `
             Select 
-                timestamp,count 
+                timestamp,count
             FROM 
                 timestamp 
             WHERE 
@@ -956,9 +956,6 @@ router.get("/get_timestamp", async function (req, res, next) {
     let data = await pgPromise.query(sql)
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mc After')
 
-    console.log(data);
-
-
     if (data.code) {
         responseData = {
             timestamp: [],
@@ -972,7 +969,7 @@ router.get("/get_timestamp", async function (req, res, next) {
         let count = [];
         data.rows.forEach(item => {
             timestamp.unshift(item.timestamp)
-            count.unshift(item.count / Number(queryType))
+            count.unshift(Math.ceil(item.count / Number(queryType)));
         })
         responseData = {
             timestamp: timestamp,
