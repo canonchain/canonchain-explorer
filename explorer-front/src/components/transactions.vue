@@ -13,7 +13,9 @@
                         <el-table :data="database" style="width: 100%">
                             <el-table-column label="时间" width="200">
                                 <template slot-scope="scope">
-                                    <span class="table-long-item">{{scope.row.exec_timestamp | toDate}}</span>
+                                    <span
+                                        class="table-long-item"
+                                    >{{scope.row.exec_timestamp | toDate}}</span>
                                 </template>
                             </el-table-column>
                             <el-table-column label="交易号" width="200">
@@ -29,11 +31,13 @@
                                         <span class="table-long-item">GENESIS</span>
                                     </template>
                                     <template v-else>
-                                        <el-button @click="goAccountPath(scope.row.from)" type="text">
+                                        <el-button
+                                            @click="goAccountPath(scope.row.from)"
+                                            type="text"
+                                        >
                                             <span class="table-long-item">{{scope.row.from}}</span>
                                         </el-button>
                                     </template>
-
                                 </template>
                             </el-table-column>
                             <el-table-column label="收款方" width="200">
@@ -46,23 +50,21 @@
                             <el-table-column label="状态" min-width="80" align="center">
                                 <template slot-scope="scope">
                                     <template v-if="scope.row.is_stable === false">
-                                        <span class="txt-warning">
-                                            等待确认
-                                        </span>
+                                        <span class="txt-warning">等待确认</span>
                                     </template>
                                     <template v-else>
-                                        <template v-if='scope.row.status == "0"'>
-                                            <span class="txt-success"> 成功 </span>
+                                        <template v-if="scope.row.status == '0'">
+                                            <span class="txt-success">成功</span>
                                         </template>
-                                        <template v-else-if='scope.row.status == "1"'>
-                                            <span class="txt-danger"> 失败(1) </span>
+                                        <template v-else-if="scope.row.status ==  '1'">
+                                            <span class="txt-danger">失败(1)</span>
                                         </template>
-                                        <template v-else-if='scope.row.status == "2"'>
-                                            <span class="txt-danger"> 失败(2) </span>
+                                        <template v-else-if="scope.row.status ==  '2'">
+                                            <span class="txt-danger">失败(2)</span>
                                         </template>
-                                        <template v-else-if='scope.row.status == "3"'>
-                                            <span class="txt-danger"> 失败(3) </span>
-                                        </template>                                        
+                                        <template v-else-if="scope.row.status ==  '3'">
+                                            <span class="txt-danger">失败(3)</span>
+                                        </template>
                                         <template v-else>
                                             <span class="txt-info">-</span>
                                         </template>
@@ -71,27 +73,71 @@
                             </el-table-column>
                             <el-table-column label="金额 / CZR" align="right" min-width="230">
                                 <template slot-scope="scope">
-                                    <span >{{scope.row.amount | toCZRVal}}</span>
+                                    <span>{{scope.row.amount | toCZRVal}}</span>
                                 </template>
                             </el-table-column>
-
                         </el-table>
                     </template>
                 </div>
                 <div class="pagin-block">
-                    <el-pagination small background layout="total,prev, pager, next" @current-change="handleCurrentChange" :current-page.sync="currentPage" :page-size="limitVal" :total="totalVal" :pager-count="5">
-                    </el-pagination>
+                    <el-button-group>
+                        <el-button
+                            type="primary"
+                            size="mini"
+                            @click="getTransactions(startOpt,'desc')"
+                            :disabled="pagin_att.head"
+                        >首页</el-button>
+                        <el-button
+                            type="primary"
+                            size="mini"
+                            icon="el-icon-arrow-left"
+                            @click="getTransactions(beforeOpt)"
+                            :disabled="pagin_att.before"
+                        >上一页</el-button>
+                        <el-button
+                            type="primary"
+                            size="mini"
+                            :disabled="pagin_att.after"
+                            @click="getTransactions(afterOpt)"
+                        >
+                            下一页
+                            <i class="el-icon-arrow-right el-icon--right"></i>
+                        </el-button>
+                        <el-button
+                            type="primary"
+                            size="mini"
+                            @click="getTransactions(endOpt,'asc')"
+                            :disabled="pagin_att.foot"
+                        >尾页</el-button>
+                    </el-button-group>
                 </div>
             </div>
         </div>
-
     </div>
 </template>
 <script>
 import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
+let errorInfo = {
+    exec_timestamp: "1555895648",
+    level: "-",
+    pkid: "-",
+    hash: "-",
+    from: "-",
+    to: "-",
+    is_stable: false,
+    status: "0",
+    amount: "0"
+};
+
 let self = null;
+let MAX_VAL = "9999999999";
+let MIN_VAL = "0";
+let startItem;
+let endItem;
+
+let sort = "desc";
 
 export default {
     name: "Accounts",
@@ -101,58 +147,157 @@ export default {
     },
     data() {
         return {
-            currentPage: 1,
-            limitVal: 20,
             totalVal: 0,
+            wt: window.location.hash.indexOf("?wt=") > 1 ? "all" : "",
             loadingSwitch: false,
+            pagin_att: {
+                head: true,
+                before: true,
+                after: false,
+                foot: false
+            },
             database: [
                 {
-                    mc_timestamp: "-",
+                    exec_timestamp: "-",
                     hash: "0",
                     from: 0,
                     to: 0,
                     amount: 0
                 }
-            ]
+            ],
+            afterOpt: {},
+            beforeOpt: {},
+            near_item: {},
+            far_item: {},
+            startOpt: {
+                action: "after",
+                exec_timestamp: MAX_VAL,
+                level: MAX_VAL,
+                pkid: MAX_VAL
+            },
+
+            endOpt: {
+                action: "before",
+                exec_timestamp: MIN_VAL,
+                level: MIN_VAL,
+                pkid: MIN_VAL
+            }
         };
     },
     created() {
         self = this;
-        self.getTransactions();
+        self.getTransactionsCount();
+        self.getFlagTransactions();
     },
     methods: {
-        getTransactions() {
-            var wtVal='';
-            if(window.location.hash.indexOf('?wt=')>1){
-                wtVal='all'
+        async getTransactions(parm, flag) {
+            self.loadingSwitch = true;
+            if (flag) {
+                sort = flag == "asc" ? "asc" : "desc";
             }
-            (self.loadingSwitch = true),
-                self.$axios
-                    .get("/api/get_transactions", {
-                        params: {
-                            page: self.currentPage,
-                            wt: wtVal,
-                        }
-                    })
-                    .then(function(response) {
-                        self.database = response.data.transactions;
-                        self.totalVal = response.data.count;
-                        self.loadingSwitch = false;
-                    })
-                    .catch(function(error) {
-                        self.database = {
-                            mc_timestamp: "-",
-                            hash: "-",
-                            from: "-",
-                            to: "-",
-                            amount: 0
-                        };
-                        self.loadingSwitch = false;
-                    });
+            let opt = {
+                action: parm.action, //before 向前翻页=>大于值 | after 向后翻页=>小于值
+                exec_timestamp: parm.exec_timestamp,
+                wt: self.wt,
+                level: parm.level,
+                pkid: parm.pkid,
+                sort: sort
+            };
+            console.log("******************************");
+            console.log(opt);
+
+            let response = await self.$api.get("/api/get_transactions2", opt);
+
+            if (response.success) {
+                startItem = response.transactions[0];
+                self.beforeOpt = {
+                    action: "before",
+                    exec_timestamp: startItem.exec_timestamp,
+                    level: startItem.level,
+                    pkid: startItem.pkid
+                };
+
+                endItem =
+                    response.transactions[response.transactions.length - 1];
+                self.afterOpt = {
+                    action: "after",
+                    exec_timestamp: endItem.exec_timestamp,
+                    level: endItem.level,
+                    pkid: endItem.pkid
+                };
+                console.log(startItem.hash, "大", startItem.pkid);
+                console.log(endItem.hash, "小", endItem.pkid);
+
+                self.database = response.transactions;
+            } else {
+                self.database = [errorInfo];
+            }
+
+            //禁用第一页和最后一页
+            if (response.transactions[0].hash == self.near_item.hash) {
+                self.pagin_att.head = true;
+                self.pagin_att.before = true;
+                self.pagin_att.after = false;
+            } else {
+                self.pagin_att.head = false;
+                self.pagin_att.before = false;
+            }
+
+            if (
+                response.transactions[response.transactions.length - 1].hash ==
+                self.far_item.hash
+            ) {
+                self.pagin_att.before = false;
+                self.pagin_att.after = true;
+                self.pagin_att.foot = true;
+            } else {
+                self.pagin_att.after = false;
+                self.pagin_att.foot = false;
+            }
+
+            self.loadingSwitch = false;
         },
-        handleCurrentChange(val) {
-            self.getTransactions();
+
+        async getTransactionsCount(action, hash) {
+            let opt = {
+                wt: self.wt
+            };
+            let response = await self.$api.get(
+                "/api/get_transactions_count",
+                opt
+            );
+            if (response.success) {
+                self.totalVal = response.count;
+            } else {
+                self.totalVal = "-";
+            }
         },
+
+        async getFlagTransactions() {
+            let opt = {
+                wt: self.wt
+            };
+            let response = await self.$api.get(
+                "/api/get_flag_transactions",
+                opt
+            );
+
+            if (response.success) {
+                self.near_item = response.near_item;
+                self.far_item = response.far_item;
+            } else {
+                //errorInfo
+                self.near_item = response.errorInfo;
+                self.far_item = response.errorInfo;
+            }
+
+            console.log("-------- getFlagTransactions");
+            console.log(self.near_item.hash);
+            console.log(self.far_item.hash);
+            console.log("-------- getFlagTransactions");
+            self.getTransactions(self.startOpt);
+        },
+
         goBlockPath(block) {
             this.$router.push("/block/" + block);
         },

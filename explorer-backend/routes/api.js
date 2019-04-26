@@ -306,9 +306,9 @@ router.get("/get_transactions", function (req, res, next) {
     if (!wt) {
         // filterVal = ' WHERE "from" != "to" or is_stable = true or amount != 0 '
         // sql = 'Select COUNT(1) FROM transaction WHERE "from" != "to" or is_stable = true or amount != 0'
-        sql = "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'"
+        sql = "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'"//稳定
     } else {
-        sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'"
+        sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'" //大
     }
     var page, //当前页数
         pages, // 合计总页数
