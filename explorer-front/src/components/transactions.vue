@@ -84,7 +84,7 @@
                         <el-button
                             type="primary"
                             size="mini"
-                            @click="getTransactions(startOpt,'desc')"
+                            @click="getTransactions(startOpt,'head')"
                             :disabled="pagin_att.head"
                         >首页</el-button>
                         <el-button
@@ -106,7 +106,7 @@
                         <el-button
                             type="primary"
                             size="mini"
-                            @click="getTransactions(endOpt,'asc')"
+                            @click="getTransactions(endOpt,'foot')"
                             :disabled="pagin_att.foot"
                         >尾页</el-button>
                     </el-button-group>
@@ -136,8 +136,7 @@ let MAX_VAL = "9999999999";
 let MIN_VAL = "0";
 let startItem;
 let endItem;
-
-let sort = "desc";
+let direction = "head";
 
 export default {
     name: "Accounts",
@@ -169,6 +168,7 @@ export default {
             beforeOpt: {},
             near_item: {},
             far_item: {},
+            get_endpage_item: {},
             startOpt: {
                 action: "after",
                 exec_timestamp: MAX_VAL,
@@ -192,16 +192,19 @@ export default {
     methods: {
         async getTransactions(parm, flag) {
             self.loadingSwitch = true;
-            if (flag) {
-                sort = flag == "asc" ? "asc" : "desc";
+            if (flag == "head") {
+                direction = "head";
+            } else if (flag == "foot") {
+                direction = "foot";
             }
+
             let opt = {
                 action: parm.action, //before 向前翻页=>大于值 | after 向后翻页=>小于值
                 exec_timestamp: parm.exec_timestamp,
                 wt: self.wt,
                 level: parm.level,
                 pkid: parm.pkid,
-                sort: sort
+                direction: direction
             };
             console.log("******************************");
             console.log(opt);
@@ -285,6 +288,10 @@ export default {
             if (response.success) {
                 self.near_item = response.near_item;
                 self.far_item = response.far_item;
+                // self.endOpt.exec_timestamp =
+                //     response.end_flag_item.exec_timestamp;
+                // self.endOpt.level = response.end_flag_item.level;
+                // self.endOpt.pkid = response.end_flag_item.pkid;
             } else {
                 //errorInfo
                 self.near_item = response.errorInfo;

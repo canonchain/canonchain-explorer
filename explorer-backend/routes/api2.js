@@ -459,6 +459,7 @@ router.get("/get_transactions_count", async function (req, res, next) {
 router.get("/get_flag_transactions", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
+    let LIMIT_VAL = 5;
     let errorInfo = {
         "exec_timestamp": "0",
         "level": "0",
@@ -488,7 +489,7 @@ router.get("/get_flag_transactions", async function (req, res, next) {
                 "level",
                 "pkid" 
             LIMIT
-                1
+                ${LIMIT_VAL + 1}
         `
     }
     let start_sql = {
@@ -545,6 +546,7 @@ router.get("/get_flag_transactions", async function (req, res, next) {
     responseData = {
         near_item: transStartInfo.rows[0],
         far_item: transEndInfo.rows[0],
+        end_flag_item: transEndInfo.rows[LIMIT_VAL - 1],
         code: 200,
         success: true,
         message: "success"
@@ -564,21 +566,26 @@ router.get("/get_transactions2", async function (req, res, next) {
         exec_timestamp: '1555893967',
         wt: '12',
         level: '232877',
-        pkid: '822014828' 
+        pkid: '822014828' ,
+        direction: "head"   //head foot 从哪个方向搜索(head表示从UI界面中首页开始搜索)
     }
 
      * 
      */
-    let LIMITVAL = 20;
+    let LIMIT_VAL = 5;
     //如果有wt，则查询含见证节点的交易
     let shown = (queryVal.wt == true) ? '' : ' and is_shown = true ';
-    let sortVal;
-    let actionSymbol = (queryVal.action === "before") ? ' > ' : ' < ';
-    if (queryVal.sort === "desc") {
-        sortVal = " desc ";
-        // actionSymbol = (queryVal.action === "before") ? ' < ' : ' > ';
-    } else {
-        sortVal = " asc ";
+    let sortVal = "desc";
+    let actionSymbol = (queryVal.action === "before") ? '>' : '<';
+    // sortVal = (queryVal.action === "before") ? "asc" : "desc";
+
+    if (queryVal.direction === "head") {
+        // sortVal = "desc";
+        sortVal = (queryVal.action === "before") ? "asc" : "desc";
+    } else if (queryVal.direction === "foot") {
+        //after -> des
+        sortVal = (queryVal.action === "before") ? "asc" : "desc";
+        // sortVal = "asc";
     }
 
     // *,balance/sum(balance)
@@ -590,10 +597,9 @@ router.get("/get_transactions2", async function (req, res, next) {
                 transaction 
             WHERE 
                 (
-                    (exec_timestamp = $1 and level = $2 and pkid ${actionSymbol} $3) or 
+                    (exec_timestamp ${actionSymbol} $1) or 
                     (exec_timestamp = $1 and level ${actionSymbol} $2) or 
-                    (exec_timestamp ${actionSymbol} $1)
-
+                    (exec_timestamp = $1 and level = $2 and pkid ${actionSymbol} $3)
                 ) ${shown} 
             order by 
                 "exec_timestamp" ${sortVal}, 
@@ -602,10 +608,18 @@ router.get("/get_transactions2", async function (req, res, next) {
             LIMIT
                 $4
         `,
-        values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMITVAL]
+        values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL]
     };
 
-    console.log(queryVal.action, "=====", sortVal, actionSymbol);
+    console.log(
+        queryVal.action, '++',
+        actionSymbol, '++',
+        sortVal, "=====",
+        Number(queryVal.exec_timestamp),
+        Number(queryVal.level),
+        Number(queryVal.pkid),
+        LIMIT_VAL
+    );
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
@@ -619,13 +633,12 @@ router.get("/get_transactions2", async function (req, res, next) {
         logger.info(data)
     } else {
         responseData = {
-            transactions: (queryVal.sort === "desc") ? data.rows : data.rows.reverse(),
+            transactions: (sortVal === "desc") ? data.rows : data.rows.reverse(),
             code: 200,
             success: true,
             message: "success"
         }
     }
-
     res.json(responseData);
 })
 
