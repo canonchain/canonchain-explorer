@@ -6,7 +6,7 @@
                 <search></search>
                 <div class="sub-header">
                     <strong>交易列表</strong>
-                    <span class="sub_header-des">合计 {{totalVal}} 笔交易</span>
+                    <span class="sub_header-des">合计 {{TOTAL_VAL}} 笔交易</span>
                 </div>
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
                     <template>
@@ -80,36 +80,16 @@
                     </template>
                 </div>
                 <div class="pagin-block">
-                    <el-button-group>
-                        <el-button
-                            type="primary"
-                            size="mini"
-                            @click="getTransactions(startOpt,'head')"
-                            :disabled="pagin_att.head"
-                        >首页</el-button>
-                        <el-button
-                            type="primary"
-                            size="mini"
-                            icon="el-icon-arrow-left"
-                            @click="getTransactions(beforeOpt)"
-                            :disabled="pagin_att.before"
-                        >上一页</el-button>
-                        <el-button
-                            type="primary"
-                            size="mini"
-                            :disabled="pagin_att.after"
-                            @click="getTransactions(afterOpt)"
-                        >
-                            下一页
-                            <i class="el-icon-arrow-right el-icon--right"></i>
-                        </el-button>
-                        <el-button
-                            type="primary"
-                            size="mini"
-                            @click="getTransactions(endOpt,'foot')"
-                            :disabled="pagin_att.foot"
-                        >尾页</el-button>
-                    </el-button-group>
+                    <el-pagination
+                        small
+                        background
+                        layout="total,prev, pager, next"
+                        @current-change="getPaginationFlag"
+                        :current-page.sync="current_page"
+                        :page-size="LIMIT_VAL"
+                        :total="TOTAL_VAL"
+                        :pager-count="5"
+                    ></el-pagination>
                 </div>
             </div>
         </div>
@@ -132,11 +112,7 @@ let errorInfo = {
 };
 
 let self = null;
-let MAX_VAL = "9999999999";
-let MIN_VAL = "0";
-let startItem;
-let endItem;
-let direction = "head";
+let MAX_PAGE;
 
 export default {
     name: "Accounts",
@@ -146,15 +122,10 @@ export default {
     },
     data() {
         return {
-            totalVal: 0,
-            wt: window.location.hash.indexOf("?wt=") > 1 ? "all" : "",
+            TOTAL_VAL: 0,
+            LIMIT_VAL: 5,
+            wt: window.location.hash.indexOf("wt=") > 1 ? "all" : "",
             loadingSwitch: false,
-            pagin_att: {
-                head: true,
-                before: true,
-                after: false,
-                foot: false
-            },
             database: [
                 {
                     exec_timestamp: "-",
@@ -164,98 +135,80 @@ export default {
                     amount: 0
                 }
             ],
-            afterOpt: {},
-            beforeOpt: {},
-            near_item: {},
-            far_item: {},
             get_endpage_item: {},
-            startOpt: {
-                action: "after",
-                exec_timestamp: MAX_VAL,
-                level: MAX_VAL,
-                pkid: MAX_VAL
-            },
 
-            endOpt: {
-                action: "before",
-                exec_timestamp: MIN_VAL,
-                level: MIN_VAL,
-                pkid: MIN_VAL
-            }
+            url_parm: {},
+            current_page: this.$route.query.page || 1,
+
+            startOpt: {}
         };
     },
     created() {
         self = this;
+        let queryInfo = this.$route.query;
+        self.url_parm = {
+            exec_timestamp: queryInfo.exec_timestamp,
+            level: queryInfo.level,
+            pkid: queryInfo.pkid,
+            page: queryInfo.page || 1
+        };
+
+        self.current_page = Number(queryInfo.page || 1);
         self.getTransactionsCount();
         self.getFlagTransactions();
     },
     methods: {
-        async getTransactions(parm, flag) {
+        async getPaginationFlag(val) {
             self.loadingSwitch = true;
-            if (flag == "head") {
-                direction = "head";
-            } else if (flag == "foot") {
-                direction = "foot";
+            // if want_page == MAX_PAGE 说明是取最后一页
+            if (val == MAX_PAGE) {
+                self.$router.push(
+                    `/transactions?exec_timestamp=0&level=0&pkid=0&page=${MAX_PAGE}`
+                );
+                return;
             }
+            // if want_page == 1 说明是取第一页
+            if (val == 1) {
+                self.$router.push(`/transactions`);
+                return;
+            }
+
+            let opt = {
+                exec_timestamp: self.url_parm.exec_timestamp,
+                level: self.url_parm.level,
+                pkid: self.url_parm.pkid,
+                page: self.url_parm.page, //当前页 1
+                want_page: val
+            };
+            let response = await self.$api.get("/api/get_want_page_flag", opt);
+            self.loadingSwitch = false;
+            let responseInfo = response.data;
+            self.$router.push(
+                `/transactions?exec_timestamp=${
+                    responseInfo.exec_timestamp
+                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}&page=${
+                    response.page
+                }`
+            );
+        },
+        async getTransactions(parm, flag) {
+            //TODO 当尾页中，点击下一页时候，数组记录
+            self.loadingSwitch = true;
 
             let opt = {
                 action: parm.action, //before 向前翻页=>大于值 | after 向后翻页=>小于值
                 exec_timestamp: parm.exec_timestamp,
                 wt: self.wt,
                 level: parm.level,
-                pkid: parm.pkid,
-                direction: direction
+                pkid: parm.pkid
             };
-            console.log("******************************");
-            console.log(opt);
 
-            let response = await self.$api.get("/api/get_transactions2", opt);
+            let response = await self.$api.get("/api/get_transactions", opt);
 
             if (response.success) {
-                startItem = response.transactions[0];
-                self.beforeOpt = {
-                    action: "before",
-                    exec_timestamp: startItem.exec_timestamp,
-                    level: startItem.level,
-                    pkid: startItem.pkid
-                };
-
-                endItem =
-                    response.transactions[response.transactions.length - 1];
-                self.afterOpt = {
-                    action: "after",
-                    exec_timestamp: endItem.exec_timestamp,
-                    level: endItem.level,
-                    pkid: endItem.pkid
-                };
-                console.log(startItem.hash, "大", startItem.pkid);
-                console.log(endItem.hash, "小", endItem.pkid);
-
                 self.database = response.transactions;
             } else {
                 self.database = [errorInfo];
-            }
-
-            //禁用第一页和最后一页
-            if (response.transactions[0].hash == self.near_item.hash) {
-                self.pagin_att.head = true;
-                self.pagin_att.before = true;
-                self.pagin_att.after = false;
-            } else {
-                self.pagin_att.head = false;
-                self.pagin_att.before = false;
-            }
-
-            if (
-                response.transactions[response.transactions.length - 1].hash ==
-                self.far_item.hash
-            ) {
-                self.pagin_att.before = false;
-                self.pagin_att.after = true;
-                self.pagin_att.foot = true;
-            } else {
-                self.pagin_att.after = false;
-                self.pagin_att.foot = false;
             }
 
             self.loadingSwitch = false;
@@ -270,9 +223,10 @@ export default {
                 opt
             );
             if (response.success) {
-                self.totalVal = response.count;
+                self.TOTAL_VAL = response.count;
+                MAX_PAGE = Math.ceil(response.count / self.LIMIT_VAL);
             } else {
-                self.totalVal = "-";
+                self.TOTAL_VAL = "-";
             }
         },
 
@@ -280,29 +234,27 @@ export default {
             let opt = {
                 wt: self.wt
             };
-            let response = await self.$api.get(
-                "/api/get_flag_transactions",
-                opt
-            );
+            let response = await self.$api.get("/api/get_first_page_flag", opt);
 
             if (response.success) {
-                self.near_item = response.near_item;
-                self.far_item = response.far_item;
-                // self.endOpt.exec_timestamp =
-                //     response.end_flag_item.exec_timestamp;
-                // self.endOpt.level = response.end_flag_item.level;
-                // self.endOpt.pkid = response.end_flag_item.pkid;
+                self.startOpt = response.near_item;
+                if (!self.url_parm.exec_timestamp) {
+                    self.url_parm.exec_timestamp =
+                        response.near_item.exec_timestamp;
+                    self.url_parm.level = response.near_item.level;
+                    self.url_parm.pkid = response.near_item.pkid;
+                    self.url_parm.page = 1;
+                }
             } else {
-                //errorInfo
-                self.near_item = response.errorInfo;
-                self.far_item = response.errorInfo;
+                console.log("error");
             }
 
-            console.log("-------- getFlagTransactions");
-            console.log(self.near_item.hash);
-            console.log(self.far_item.hash);
-            console.log("-------- getFlagTransactions");
-            self.getTransactions(self.startOpt);
+            //如果有字段信息
+            if (self.url_parm.page > 1) {
+                self.getTransactions(self.url_parm);
+            } else {
+                self.getTransactions(self.startOpt);
+            }
         },
 
         goBlockPath(block) {

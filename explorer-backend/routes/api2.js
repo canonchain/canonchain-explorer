@@ -20,6 +20,9 @@ router.use(function (req, res, next) {
     next();
 })
 
+//分页limit
+let LIMIT_VAL = 5;
+
 let PageUtility = {
     timeLog: function (req, symbol_str) {
         /**
@@ -331,100 +334,9 @@ router.get("/get_account_list", async function (req, res, next) {
     res.json(responseData);
 })
 
-//获取交易列表 TODO 切换查询，避免攻击
-router.get("/get_transactions", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryPage = req.query.page;// ?page=2
-    var wt = req.query.wt;// ?page=2
-    let sql;
-    if (!wt) {
-        sql = "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'"
-    } else {
-        sql = "SELECT value AS count FROM global WHERE key = 'transaction_count'"
-    }
-    var page, //当前页数
-        pages; // 合计总页数
-
-    var OFFSETVAL;//前面忽略的条数
-    var LIMITVAL = 20;//每页显示条数
-
-    if (typeof Number(queryPage) !== "number") {
-        page = 1;
-    } else {
-        page = Number(queryPage) || 1;
-    }
-
-    PageUtility.timeLog(req, '[1] SELECT transaction_count Before')
-    let count = await pgPromise.query(sql)
-    PageUtility.timeLog(req, '[1] SELECT transaction_count After')
-
-    if (count.code) {
-        responseData = {
-            count: 0,
-            page: 1,
-            transactions: [],
-            code: 500,
-            success: false,
-            message: "count transaction Error"
-        }
-        res.json(responseData);
-    } else {
-        count = Number(count.rows[0].count);//TODO 这么写有BUG  Cannot read property 'count' of undefined
-        pages = Math.ceil(count / LIMITVAL);
-        //paga 不大于 pages
-        page = Math.min(pages, page);
-        //page 不小于 1
-        page = Math.max(page, 1);
-        OFFSETVAL = (page - 1) * LIMITVAL;
-    }
-
-    // *,balance/sum(balance)
-    let opt2 = {
-        text: `
-            Select 
-                exec_timestamp,mc_timestamp,stable_timestamp,level,hash,"type","from","to",is_stable,"status",amount 
-            FROM 
-                transaction 
-            WHERE 
-                is_shown = true
-            order by 
-                exec_timestamp desc, 
-                level desc,
-                pkid desc 
-            LIMIT 
-                $1  
-            OFFSET 
-                $2
-        `,
-        values: [LIMITVAL, OFFSETVAL]
-    };
-
-    PageUtility.timeLog(req, '[2] SELECT transaction info Before')
-    let data = await pgPromise.query(opt2)
-    PageUtility.timeLog(req, '[2] SELECT transaction info After')
-    if (data.code) {
-        responseData = {
-            count: 0,
-            page: 1,
-            transactions: [],
-            code: 500,
-            success: false,
-            message: 'Select exec_timestamp,level,hash,"from","to",is_stable,"status",amount FROM transaction Error'
-        }
-    } else {
-        responseData = {
-            count: Number(count),
-            page: Number(queryPage),
-            transactions: data.rows,
-            code: 200,
-            success: true,
-            message: "success"
-        }
-    }
-    res.json(responseData);
-})
-
+//************************** 交易列表开始
 //获取交易总数量
+//参数：wt
 router.get("/get_transactions_count", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
@@ -455,47 +367,23 @@ router.get("/get_transactions_count", async function (req, res, next) {
     }
 })
 
-//获取交易列表最近一项和最后一项
-router.get("/get_flag_transactions", async function (req, res, next) {
+//获取交易表中最近(LIMIT+1)项
+//参数：wt
+router.get("/get_first_page_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
-    let LIMIT_VAL = 5;
     let errorInfo = {
         "exec_timestamp": "0",
         "level": "0",
-        "pkid": "0",
-        "hash": "-",
-        "from": "-",
-        "to": "-",
-        "is_stable": false,
-        "status": "0",
-        "amount": "0"
+        "pkid": "0"
     }
+
     let shown = (wt == true) ? '' : ' and is_shown = true ';
-    let end_sql = {
-        text: `
-            Select 
-                "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
-            FROM 
-                transaction 
-            WHERE 
-                (
-                    (exec_timestamp > 0 ) or 
-                    (exec_timestamp = 0 and level > 0) or 
-                    (exec_timestamp = 0 and level = 0 and pkid > 0)
-                ) ${shown} 
-            order by 
-                "exec_timestamp", 
-                "level",
-                "pkid" 
-            LIMIT
-                ${LIMIT_VAL + 1}
-        `
-    }
+
     let start_sql = {
         text: `
             Select 
-                "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                "exec_timestamp","level","pkid"
             FROM 
                 transaction 
             WHERE 
@@ -508,6 +396,8 @@ router.get("/get_flag_transactions", async function (req, res, next) {
                 "exec_timestamp" desc, 
                 "level" desc,
                 "pkid" desc 
+            offset 
+                ${LIMIT_VAL}
             LIMIT
                 1
         `
@@ -519,76 +409,198 @@ router.get("/get_flag_transactions", async function (req, res, next) {
     if (transStartInfo.code) {
         responseData = {
             near_item: errorInfo,
-            far_item: errorInfo,
             code: 500,
             success: false,
             message: "select start_sql Error"
         }
-        res.json(responseData);
-    }
-
-
-    PageUtility.timeLog(req, '[1] SELECT end_sql Before')
-    let transEndInfo = await pgPromise.query(end_sql)
-    PageUtility.timeLog(req, '[1] SELECT end_sql After')
-
-    if (transEndInfo.code) {
+    } else {
         responseData = {
             near_item: transStartInfo.rows[0],
-            far_item: errorInfo,
-            code: 500,
-            success: false,
-            message: "select end_sql Error"
+            code: 200,
+            success: true,
+            message: "success"
         }
-        res.json(responseData);
-    }
-
-    responseData = {
-        near_item: transStartInfo.rows[0],
-        far_item: transEndInfo.rows[0],
-        end_flag_item: transEndInfo.rows[LIMIT_VAL - 1],
-        code: 200,
-        success: true,
-        message: "success"
     }
     res.json(responseData);
+})
 
+//获取想要获取分页的pkid等信息
+/**
+ * 需要参数：
+ * {
+        "exec_timestamp": "0",
+        "level": "0",
+        "pkid": "0",
+        "page": "1",//当前页 1
+        "want_page":"3"//想要跳转的页面
+    }
+ * 
+ */
+router.get("/get_want_page_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+
+    var wt = queryVal.wt;// ?wt=all 代表查找含有见证节点的交易列表
+    var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
+    let errorInfo = {
+        "exec_timestamp": "0",
+        "level": "0",
+        "pkid": "0",
+    }
+    let shown = (wt == true) ? '' : ' and is_shown = true ';
+    let ascVal;
+    let symbol_str;
+    if (offsetPage >= 0) {
+        symbol_str = ">";
+        ascVal = "asc";
+    } else {
+        symbol_str = "<";
+        ascVal = "desc";
+    }
+    let offsetNum = (offsetPage >= 0) ? (offsetPage * LIMIT_VAL) : (-offsetPage * LIMIT_VAL);
+
+    let start_sql;
+    // let start_sql = {
+    //     text: `
+    //         Select 
+    //             "exec_timestamp","level","pkid"
+    //         FROM 
+    //             transaction 
+    //         WHERE 
+    //             (
+    //                 (exec_timestamp ${symbol_str} $1) or 
+    //                 (exec_timestamp = $1 and level ${symbol_str} $2) or 
+    //                 (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
+    //             ) ${shown} 
+    //         order by 
+    //             "exec_timestamp" ${ascVal},
+    //             "level"  ${ascVal},
+    //             "pkid"  ${ascVal}
+    //         offset
+    //             ${offsetNum - 1}
+    //         LIMIT
+    //             1
+    //     `,
+    //     values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
+    // }
+
+    //解决大数据时候，搜索慢的场景（desc < 查询的情况）
+    if (symbol_str == "<") {
+        start_sql = {
+            text: `
+            (
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp = $1 and level < $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid < $3)
+                    ) ${shown} 
+                order by 
+                    "exec_timestamp" desc,
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    ${offsetNum}
+            )
+            union
+            (
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp < $1)
+                    ) ${shown} 
+                order by 
+                    "exec_timestamp" desc,
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    ${offsetNum}
+            )
+            order by
+                "exec_timestamp" desc,
+                "level" desc,
+                "pkid" desc
+            offset
+                ${offsetNum - 1}
+            LIMIT
+                1
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
+        }
+
+
+    } else {
+        start_sql = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp ${symbol_str} $1) or 
+                        (exec_timestamp = $1 and level ${symbol_str} $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
+                    ) ${shown} 
+                order by 
+                    "exec_timestamp" ${ascVal},
+                    "level"  ${ascVal},
+                    "pkid"  ${ascVal}
+                offset
+                    ${offsetNum - 1}
+                LIMIT
+                    1
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
+        }
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    if (transStartInfo.code) {
+        responseData = {
+            data: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+    } else {
+        responseData = {
+            data: transStartInfo.rows[0],
+            page: queryVal.want_page,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
 })
 
 //获取交易列表
-router.get("/get_transactions2", async function (req, res, next) {
+/**
+ * 参数
+{ 
+    exec_timestamp: '1555893967',
+    wt: '12',
+    level: '232877',
+    pkid: '822014828' ,
+}
+ */
+router.get("/get_transactions", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
-    /**
-    
-    { 
-        action:'before',   //before 向前翻页=>大于 | after 向后翻页=>小于
-        exec_timestamp: '1555893967',
-        wt: '12',
-        level: '232877',
-        pkid: '822014828' ,
-        direction: "head"   //head foot 从哪个方向搜索(head表示从UI界面中首页开始搜索)
-    }
 
-     * 
-     */
-    let LIMIT_VAL = 5;
     //如果有wt，则查询含见证节点的交易
     let shown = (queryVal.wt == true) ? '' : ' and is_shown = true ';
-    let sortVal = "desc";
-    let actionSymbol = (queryVal.action === "before") ? '>' : '<';
-    // sortVal = (queryVal.action === "before") ? "asc" : "desc";
 
-    if (queryVal.direction === "head") {
-        // sortVal = "desc";
-        sortVal = (queryVal.action === "before") ? "asc" : "desc";
-    } else if (queryVal.direction === "foot") {
-        //after -> des
-        sortVal = (queryVal.action === "before") ? "asc" : "desc";
-        // sortVal = "asc";
-    }
-
-    // *,balance/sum(balance)
     let opt2 = {
         text: `
             Select 
@@ -597,29 +609,20 @@ router.get("/get_transactions2", async function (req, res, next) {
                 transaction 
             WHERE 
                 (
-                    (exec_timestamp ${actionSymbol} $1) or 
-                    (exec_timestamp = $1 and level ${actionSymbol} $2) or 
-                    (exec_timestamp = $1 and level = $2 and pkid ${actionSymbol} $3)
+                    (exec_timestamp > $1) or 
+                    (exec_timestamp = $1 and level > $2) or 
+                    (exec_timestamp = $1 and level = $2 and pkid > $3)
                 ) ${shown} 
             order by 
-                "exec_timestamp" ${sortVal}, 
-                "level" ${sortVal},
-                "pkid" ${sortVal} 
+                "exec_timestamp" asc, 
+                "level" asc,
+                "pkid" asc 
             LIMIT
                 $4
         `,
         values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL]
     };
 
-    console.log(
-        queryVal.action, '++',
-        actionSymbol, '++',
-        sortVal, "=====",
-        Number(queryVal.exec_timestamp),
-        Number(queryVal.level),
-        Number(queryVal.pkid),
-        LIMIT_VAL
-    );
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
@@ -633,7 +636,7 @@ router.get("/get_transactions2", async function (req, res, next) {
         logger.info(data)
     } else {
         responseData = {
-            transactions: (sortVal === "desc") ? data.rows : data.rows.reverse(),
+            transactions: data.rows.reverse(),
             code: 200,
             success: true,
             message: "success"
@@ -641,6 +644,7 @@ router.get("/get_transactions2", async function (req, res, next) {
     }
     res.json(responseData);
 })
+//************************** 交易列表结束
 
 
 //获取最新的交易
