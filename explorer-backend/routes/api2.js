@@ -193,6 +193,239 @@ router.get("/get_accounts", async function (req, res, next) {
     res.json(responseData);
 })
 
+//************************** 账户列表开始
+//获取账户总数量
+router.get("/get_accounts_count", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let sql = "SELECT value AS count FROM global WHERE key = 'accounts_count'";
+
+    PageUtility.timeLog(req, '[1] SELECT get_accounts_count Before')
+    let count = await pgPromise.query(sql)
+    PageUtility.timeLog(req, '[1] SELECT get_accounts_count After')
+
+    if (count.code) {
+        responseData = {
+            count: 0,
+            code: 500,
+            success: false,
+            message: "count transaction Error"
+        }
+        res.json(responseData);
+    } else {
+        responseData = {
+            count: Number(count.rows[0].count),//TODO 这么写有BUG  Cannot read property 'count' of undefined
+            code: 200,
+            success: true,
+            message: "success"
+        }
+        res.json(responseData);
+    }
+})
+//获取交易表中最近(LIMIT+1)项
+router.get("/get_first_balance_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let errorInfo = {
+        account: "czr_XXX",
+        balance: "000000",
+        proportion: "0 %",
+        rank: 0
+    }
+    //TODO 这么写可能会导致漏数据（因为账户的balance可能相同的）
+    //可以创建唯一索引，通过唯一索引+balance搜索
+    let start_sql = {
+        text: `
+            Select
+                balance 
+            FROM 
+                accounts 
+            ORDER BY
+                balance DESC
+            LIMIT 
+                1
+            OFFSET 
+                ${LIMIT_VAL}
+        `
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+    if (transStartInfo.code) {
+        responseData = {
+            item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+    } else {
+        responseData = {
+            item: transStartInfo.rows[0],
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+//获取想要获取分页的 balance 等信息
+/**
+ * 需要参数：
+ * {
+        "balance": "0",
+        "page": "1",//当前页 1
+        "want_page":"3"//想要跳转的页面
+    }
+ * 
+ */
+router.get("/get_want_balance_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;
+    var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
+    let errorInfo = {
+        "balance": "0"
+    }
+
+    let ascVal;
+    let symbol_str;
+    if (offsetPage >= 0) {
+        symbol_str = ">";
+        ascVal = "asc";
+    } else {
+        symbol_str = "<";
+        ascVal = "desc";
+    }
+    let offsetNum = (offsetPage >= 0) ? (offsetPage * LIMIT_VAL) : (-offsetPage * LIMIT_VAL);
+
+    let start_sql = {
+        text: `
+            Select 
+                balance
+            FROM 
+                accounts 
+            WHERE
+                balance ${symbol_str} $1
+
+            ORDER BY 
+                balance ${ascVal}
+            offset
+                ${offsetNum - 1}
+            LIMIT
+                1
+        `,
+        values: [Number(queryVal.balance)]
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    if (transStartInfo.code) {
+        responseData = {
+            data: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+    } else {
+        responseData = {
+            data: transStartInfo.rows[0],
+            page: queryVal.want_page,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+//获取交易列表
+/**
+ * 
+ {
+     "balance":"",
+     "page":"",
+ }
+ */
+router.get("/get_accounts1", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+
+    let sql = {
+        text: `
+
+            Select 
+                account,balance 
+            FROM 
+                accounts 
+            WHERE
+                balance > $1
+            ORDER BY 
+                balance asc
+            LIMIT
+                $2
+        `,
+        values: [queryVal.balance, LIMIT_VAL]
+    };
+
+    console.log("***********-----")
+
+    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    let data = await pgPromise.query(sql)
+    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+
+    if (data.code) {
+        responseData = {
+            accounts: [],
+            code: 500,
+            success: false,
+            message: 'Select trans list FROM transaction Error'
+        }
+        logger.info(data)
+    } else {
+
+        //查询成功
+        var basePage = Number(queryVal.page) - 1; // 1 2
+        var accounts = data.rows.reverse();
+        accounts.forEach((element, index) => {
+            //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
+            element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
+            //并保留6位精度
+            let tempVal = element.balance
+            if (tempVal == 0) {
+                element.balance = 0; //TODO Keep 6 decimal places
+            } else {
+                var reg = /(\d+(?:\.)?)(\d{0,6})/;
+                var regAry = reg.exec(tempVal);
+                var integer = regAry[1];
+                var decimal = regAry[2];
+                if (decimal) {
+                    while (decimal.length < 6) {
+                        decimal += "0";
+                    }
+                } else {
+                    decimal = ".000000"
+                }
+                element.balance = integer + decimal; //TODO Keep 6 decimal places
+            }
+            element.rank = LIMIT_VAL * basePage + (index + 1);
+        });
+
+        responseData = {
+            accounts: accounts,
+            page: queryVal.page,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+
+
+//************************** 账户列表开始
+
 //获取账号信息
 router.get("/get_account", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')

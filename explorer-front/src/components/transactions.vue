@@ -214,7 +214,7 @@ export default {
             self.loadingSwitch = false;
         },
 
-        async getTransactionsCount(action, hash) {
+        async getTransactionsCount() {
             let opt = {
                 wt: self.wt
             };
