@@ -22,7 +22,7 @@ let pglogger = log4js.getLogger('pg_sql');//此处使用category的值
 
 // 监听错误
 pool.on('error', (err, client) => {
-    pglogger.error('未知错误')
+    pglogger.error('XXXXXXXXXXXXXXXXXXXXXXX 未知错误 Error XXXXXXXXXXXXXXXXXXXXXXXXXXX')
     pglogger.error(err)
     pglogger.error(client)
     process.exit(-1)
@@ -44,9 +44,21 @@ const pgPromise = {
         finally {
             client.release()
         }
-    }
+    },
 
-    //TOODO 增加多次查询，1次链接，1次断开的
+    /**
+     * pgPromise.pool 
+     * 直接返回连接池，多次查询需要手动写 connect query query query release;
+     * 例子
+     
+        let pgPromise = require("./PG-promise");        //引入
+        let client = await pgPromise.pool.connect();    //获取连接
+        const data1 = await client.query(opt1)          //操作
+        const data2 = await client.query(data1.xxx)     //操作
+        client.release()                                //释放连接
+     
+     */
+    pool: pool
 }
 
 module.exports = pgPromise;

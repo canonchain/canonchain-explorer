@@ -1,8 +1,8 @@
-let Czr = require("../czr/index");
+let Czr = require("../../czr/index");
 let czr = new Czr();
-let log4js = require('./log_config');
+let log4js = require('../log_config');
 let logger = log4js.getLogger('TEST');//此处使用category的值
-let profiler = require("./profiler");
+let profiler = require("../profiler");
 
 // console.log(`获取网络中最新稳定的MCI-Start`);
 

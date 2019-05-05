@@ -1,7 +1,7 @@
 
 
 (async () => {
-    let pgPromise = require("./PG-promise");
+    let pgPromise = require("../PG-promise");
 
     console.log(" ************* 增加 test1 ************* ")
     let opt1 = {
