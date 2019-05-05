@@ -6,17 +6,19 @@
                 <search></search>
                 <div class="sub-header">
                     <strong class="sub_header-tit">账户信息</strong>
-                    <span class="sub_header-des">{{account}} </span>
+                    <span class="sub_header-des">{{account}}</span>
                 </div>
                 <div class="bui-dlist">
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">余额
+                        <strong class="bui-dlist-tit">
+                            余额
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{accountInfo.balance | toCZRVal}} CZR</div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">交易数
+                        <strong class="bui-dlist-tit">
+                            交易数
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{totalVal}} 次</div>
@@ -29,7 +31,9 @@
                             <el-table :data="tx_list" style="width: 100%">
                                 <el-table-column label="时间" width="180">
                                     <template slot-scope="scope">
-                                        <span class="table-long-item">{{scope.row.exec_timestamp | toDate}}</span>
+                                        <span
+                                            class="table-long-item"
+                                        >{{scope.row.exec_timestamp | toDate}}</span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column label="交易号" width="180">
@@ -42,7 +46,10 @@
                                 <el-table-column label="发款方" width="180">
                                     <template slot-scope="scope">
                                         <template v-if="scope.row.is_from_this_account == false">
-                                            <el-button @click="goAccountPath(scope.row.from)" type="text">
+                                            <el-button
+                                                @click="goAccountPath(scope.row.from)"
+                                                type="text"
+                                            >
                                                 <span class="table-long-item">{{scope.row.from}}</span>
                                             </el-button>
                                         </template>
@@ -59,26 +66,38 @@
                                 <el-table-column>
                                     <template slot-scope="scope">
                                         <span>
-                                            <el-button v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)" type="warning" size="mini">
-                                                转出
-                                            </el-button>
+                                            <el-button
+                                                v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
+                                                type="warning"
+                                                size="mini"
+                                            >转出</el-button>
 
-                                            <el-button v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci > 0)" size="mini">
+                                            <el-button
+                                                v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci > 0)"
+                                                size="mini"
+                                            >
                                                 <i class="el-icon-sort trans-to-self"></i>
                                             </el-button>
 
-                                            <el-button v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci <= 0)" type="success" size="mini">
-                                                转入
-                                            </el-button>
-                                            
+                                            <el-button
+                                                v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci <= 0)"
+                                                type="success"
+                                                size="mini"
+                                            >转入</el-button>
+
                                             <el-button v-else type="success" size="mini">转入</el-button>
                                         </span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column label="收款方" width="180">
                                     <template slot-scope="scope">
-                                        <template v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)">
-                                            <el-button @click="goAccountPath(scope.row.to)" type="text">
+                                        <template
+                                            v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
+                                        >
+                                            <el-button
+                                                @click="goAccountPath(scope.row.to)"
+                                                type="text"
+                                            >
                                                 <span class="table-long-item">{{scope.row.to}}</span>
                                             </el-button>
                                         </template>
@@ -90,22 +109,20 @@
                                 <el-table-column label="状态" min-width="80" align="center">
                                     <template slot-scope="scope">
                                         <template v-if="scope.row.is_stable === false">
-                                            <span class="txt-warning">
-                                                等待确认
-                                            </span>
+                                            <span class="txt-warning">等待确认</span>
                                         </template>
                                         <template v-else>
-                                            <template v-if='scope.row.status == "9"'>
-                                                <span class="txt-success"> 成功 </span>
+                                            <template v-if="scope.row.status == '9'">
+                                                <span class="txt-success">成功</span>
                                             </template>
-                                            <template v-else-if='scope.row.status == "1"'>
-                                                <span class="txt-danger"> 失败(1) </span>
+                                            <template v-else-if="scope.row.status == '1'">
+                                                <span class="txt-danger">失败(1)</span>
                                             </template>
-                                            <template v-else-if='scope.row.status == "2"'>
-                                                <span class="txt-danger"> 失败(2) </span>
+                                            <template v-else-if="scope.row.status == '2'">
+                                                <span class="txt-danger">失败(2)</span>
                                             </template>
-                                            <template v-else-if='scope.row.status == "3"'>
-                                                <span class="txt-danger"> 失败(3) </span>
+                                            <template v-else-if="scope.row.status == '3'">
+                                                <span class="txt-danger">失败(3)</span>
                                             </template>
                                             <template v-else>
                                                 <span class="txt-info">-</span>
@@ -120,16 +137,22 @@
                                 </el-table-column>
                             </el-table>
                             <div class="pagin-block">
-                                <el-pagination small background layout="total,prev, pager, next" @current-change="handleCurrentChange" :current-page.sync="currentPage" :page-size="limitVal" :total="totalVal" :pager-count="5">
-                                </el-pagination>
+                                <el-pagination
+                                    small
+                                    background
+                                    layout="total,prev, pager, next"
+                                    @current-change="handleCurrentChange"
+                                    :current-page.sync="currentPage"
+                                    :page-size="limitVal"
+                                    :total="totalVal"
+                                    :pager-count="5"
+                                ></el-pagination>
                             </div>
                         </template>
                     </div>
                 </div>
             </div>
-
         </div>
-
     </div>
 </template>
 
@@ -174,37 +197,34 @@ export default {
     },
     methods: {
         initTransactionInfo() {},
-        initDatabase() {
-            self.$axios
-                .get("/api/get_account", {
-                    params: {
-                        account: self.accountInfo.address
-                    }
-                })
-                .then(function(response) {
-                    self.accountInfo.balance = response.data.account.balance;
+        async initDatabase() {
+            let opt ={
+                account: self.accountInfo.address
+            }
+            let response = await self.$api.get("/api/get_account", opt);
+            if ({}.toString.call(response) === "[object Object]") {
+                    self.accountInfo.balance = response.account.balance;
                     self.accountInfo.tran_count =
-                        response.data.account.tran_count;
-                })
-                .catch(function(error) {});
+                        response.account.tran_count;
+            } else {
+                console.error("/api/get_account Error");
+            }
         },
-        getAccountLists() {
-            self.$axios
-                .get("/api/get_account_list", {
-                    params: {
-                        account: self.accountInfo.address,
-                        page: self.currentPage
-                    }
-                })
-                .then(function(response) {
-                    self.totalVal = response.data.count;
-                    self.tx_list = response.data.tx_list;
-                    self.loadingSwitch = false;
-                })
-                .catch(function(error) {
-                    self.tx_list = [];
-                    self.loadingSwitch = false;
-                });
+        async getAccountLists() {
+            //TODO 优化分页性能
+            let opt ={
+                account: self.accountInfo.address,
+                page: self.currentPage
+            }
+            let response = await self.$api.get("/api/get_account_list", opt);
+            if ({}.toString.call(response) === "[object Object]") {
+                self.totalVal = response.count;
+                self.tx_list = response.tx_list;
+            } else {
+                self.tx_list = [];
+                console.error("/api/get_account_list Error");
+            }
+            self.loadingSwitch = false;
         },
         handleCurrentChange(val) {
             self.getAccountLists();

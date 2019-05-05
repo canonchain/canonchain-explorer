@@ -8,7 +8,7 @@
                 </div>
                 <div class="sub-header">
                     <strong class="sub_header-tit">交易号</strong>
-                    <span class="sub_header-des"> {{blockHash}} </span>
+                    <span class="sub_header-des">{{blockHash}}</span>
                 </div>
                 <div class="bui-dlist">
                     <!-- <div class="block-item-des">
@@ -16,40 +16,40 @@
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{blockHash}}</div>
-                    </div> -->
+                    </div>-->
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">发送时间
+                        <strong class="bui-dlist-tit">
+                            发送时间
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{blockInfo.exec_timestamp|toDate}}</div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">状态
+                        <strong class="bui-dlist-tit">
+                            状态
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">
                             <template v-if="isSuccess === false">
-                                <span class="txt-info"> 暂无信息 </span>
+                                <span class="txt-info">暂无信息</span>
                             </template>
                             <template v-else>
                                 <template v-if="blockInfo.is_stable === false">
-                                    <span class="txt-warning">
-                                        等待确认
-                                    </span>
+                                    <span class="txt-warning">等待确认</span>
                                 </template>
                                 <template v-else>
-                                    <template v-if='blockInfo.status == "0"'>
-                                        <span class="txt-success"> 成功 </span>
+                                    <template v-if="blockInfo.status == '0'">
+                                        <span class="txt-success">成功</span>
                                     </template>
-                                    <template v-else-if='blockInfo.status == "1"'>
-                                        <span class="txt-danger"> 失败(1) </span>
+                                    <template v-else-if="blockInfo.status == '1'">
+                                        <span class="txt-danger">失败(1)</span>
                                     </template>
-                                    <template v-else-if='blockInfo.status == "2"'>
-                                        <span class="txt-danger"> 失败(2) </span>
+                                    <template v-else-if="blockInfo.status == '2'">
+                                        <span class="txt-danger">失败(2)</span>
                                     </template>
-                                    <template v-else-if='blockInfo.status == "3"'>
-                                        <span class="txt-danger"> 失败(3) </span>
-                                    </template>                                    
+                                    <template v-else-if="blockInfo.status == '3'">
+                                        <span class="txt-danger">失败(3)</span>
+                                    </template>
                                     <template v-else>
                                         <span class="txt-info">-</span>
                                     </template>
@@ -58,31 +58,41 @@
                         </div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">发款方
+                        <strong class="bui-dlist-tit">
+                            发款方
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">
-                            <span  v-if="isSuccess === false">-</span>
-                            <router-link v-else :to="'/account/'+blockInfo.from">{{blockInfo.from || '-'}}</router-link>
+                            <span v-if="isSuccess === false">-</span>
+                            <router-link
+                                v-else
+                                :to="'/account/'+blockInfo.from"
+                            >{{blockInfo.from || '-'}}</router-link>
                         </div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">收款方
+                        <strong class="bui-dlist-tit">
+                            收款方
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">
-                            <span  v-if="isSuccess === false">-</span>
-                            <router-link v-else :to="'/account/'+blockInfo.to">{{blockInfo.to || '-'}}</router-link>
+                            <span v-if="isSuccess === false">-</span>
+                            <router-link
+                                v-else
+                                :to="'/account/'+blockInfo.to"
+                            >{{blockInfo.to || '-'}}</router-link>
                         </div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">金额
+                        <strong class="bui-dlist-tit">
+                            金额
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{blockInfo.amount | toCZRVal}} CZR</div>
                     </div>
                     <div class="block-item-des">
-                        <strong class="bui-dlist-tit">数据
+                        <strong class="bui-dlist-tit">
+                            数据
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
@@ -140,25 +150,17 @@ export default {
         this.initDatabase();
     },
     methods: {
-        initDatabase() {
-            var self = this;
-            self.$axios
-                .get("/api/get_transaction", {
-                    params: {
-                        transaction: self.blockHash
-                    }
-                })
-                .then(function(response) {
-                    if (response.data.message != "error") {
-                        self.isSuccess = response.data.success;
-                        self.blockInfo = response.data.transaction;
-                    }
-
-                    self.loadingSwitch = false;
-                })
-                .catch(function(error) {
-                    self.loadingSwitch = false;
-                });
+        async initDatabase() {
+            let opt ={
+                transaction: self.blockHash
+            }
+            let response = await self.$api.get("/api/get_transaction", opt);
+            if ({}.toString.call(response) === "[object Object]") {
+                self.blockInfo = response.transaction;
+            } else {
+                console.error("/api/get_transaction Error");
+            }
+            self.loadingSwitch = false;
         }
     }
 };

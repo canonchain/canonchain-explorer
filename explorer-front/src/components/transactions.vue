@@ -137,7 +137,12 @@ export default {
             ],
             get_endpage_item: {},
 
-            url_parm: {},
+            url_parm: {
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0,
+                page: 0
+            },
             current_page: this.$route.query.page || 1,
 
             startOpt: {}
@@ -146,12 +151,14 @@ export default {
     created() {
         self = this;
         let queryInfo = this.$route.query;
-        self.url_parm = {
-            exec_timestamp: queryInfo.exec_timestamp,
-            level: queryInfo.level,
-            pkid: queryInfo.pkid,
-            page: queryInfo.page || 1
-        };
+        if (Object.keys(queryInfo).length) {
+            self.url_parm = {
+                exec_timestamp: queryInfo.exec_timestamp,
+                level: queryInfo.level,
+                pkid: queryInfo.pkid,
+                page: queryInfo.page || 1
+            };
+        }
 
         self.current_page = Number(queryInfo.page || 1);
         self.getTransactionsCount();
@@ -238,7 +245,9 @@ export default {
 
             if (response.success) {
                 self.startOpt = response.near_item;
-                if (!self.url_parm.exec_timestamp) {
+                console.log(self.url_parm);
+                console.log(response);
+                if (!self.url_parm.exec_timestamp && response.near_item) {
                     self.url_parm.exec_timestamp =
                         response.near_item.exec_timestamp;
                     self.url_parm.level = response.near_item.level;
@@ -253,7 +262,7 @@ export default {
             if (self.url_parm.page > 1) {
                 self.getTransactions(self.url_parm);
             } else {
-                self.getTransactions(self.startOpt);
+                self.startOpt && self.getTransactions(self.startOpt);
             }
         },
 

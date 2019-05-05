@@ -144,13 +144,15 @@ export default {
         async getFlagAccounts() {
             let response = await self.$api.get("/api/get_first_balance_flag");
 
-            if (response.success) {
-                self.startOpt.balance = response.item.balance;
+            if (response.success && response.item) {
+                self.startOpt.balance = response.item.balance || "0";
                 self.startOpt.page = 1;
                 if (!self.url_parm.balance) {
                     self.url_parm.balance = response.item.balance;
                     self.url_parm.page = 1;
                 }
+            } else if(response.success){
+                console.log("data is null");
             } else {
                 console.log("error");
             }
