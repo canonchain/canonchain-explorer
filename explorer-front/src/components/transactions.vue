@@ -188,7 +188,7 @@ export default {
                 want_page: val
             };
             let response = await self.$api.get("/api/get_want_page_flag", opt);
-            self.loadingSwitch = false;
+            // self.loadingSwitch = false;
             let responseInfo = response.data;
             self.$router.push(
                 `/transactions?exec_timestamp=${

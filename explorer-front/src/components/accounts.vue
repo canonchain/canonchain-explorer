@@ -91,6 +91,7 @@ export default {
         let queryInfo = this.$route.query;
         self.url_parm = {
             balance: queryInfo.balance,
+            acc_id: queryInfo.acc_id,
             page: queryInfo.page || 1
         };
         self.current_page = Number(queryInfo.page || 1);
@@ -103,7 +104,9 @@ export default {
             self.loadingSwitch = true;
             // if want_page == MAX_PAGE 说明是取最后一页
             if (val == MAX_PAGE) {
-                self.$router.push(`/accounts?balance=-1&page=${MAX_PAGE}`);
+                self.$router.push(
+                    `/accounts?balance=-1&acc_id=-1&page=${MAX_PAGE}`
+                );
                 return;
             }
             // if want_page == 1 说明是取第一页
@@ -114,6 +117,7 @@ export default {
 
             let opt = {
                 balance: self.url_parm.balance,
+                acc_id: self.url_parm.acc_id,
                 page: self.url_parm.page, //当前页 1
                 want_page: val
             };
@@ -121,12 +125,13 @@ export default {
                 "/api/get_want_balance_flag",
                 opt
             );
-            self.loadingSwitch = false;
+            // self.loadingSwitch = false;
             let responseInfo = response.data;
+
             self.$router.push(
-                `/accounts?balance=${responseInfo.balance}&page=${
-                    response.page
-                }`
+                `/accounts?balance=${responseInfo.balance}&acc_id=${
+                    responseInfo.acc_id
+                }&page=${response.page}`
             );
         },
 
@@ -145,12 +150,14 @@ export default {
 
             if (response.success && response.item) {
                 self.startOpt.balance = response.item.balance || "0";
+                self.startOpt.acc_id = response.item.acc_id;
                 self.startOpt.page = 1;
                 if (!self.url_parm.balance) {
                     self.url_parm.balance = response.item.balance;
+                    self.url_parm.acc_id = response.item.acc_id;
                     self.url_parm.page = 1;
                 }
-            } else if(response.success){
+            } else if (response.success) {
                 console.log("data is null");
             } else {
                 console.log("error");
@@ -158,21 +165,22 @@ export default {
 
             //如果有字段信息
             if (self.url_parm.page > 1) {
-                self.getAccounts1(self.url_parm);
+                self.getAccounts(self.url_parm);
             } else {
-                self.getAccounts1(self.startOpt);
+                self.getAccounts(self.startOpt);
             }
         },
 
-        async getAccounts1(parm) {
+        async getAccounts(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
             let opt = {
+                acc_id: parm.acc_id,
                 balance: parm.balance,
                 page: parm.page
             };
 
-            let response = await self.$api.get("/api/get_accounts1", opt);
+            let response = await self.$api.get("/api/get_accounts", opt);
 
             if (response.success) {
                 self.database = response.accounts;

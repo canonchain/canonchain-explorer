@@ -26,7 +26,7 @@ let LIMIT_VAL = 20;
 let PageUtility = {
     timeLog: function (req, symbol_str) {
         /**
-         * 记录 logger.info(`/get_accounts start: ${Date.now() - req._startTime}`)
+         * 记录 logger.info(`/get_xxxx start: ${Date.now() - req._startTime}`)
          */
         logger.info(`${req.originalUrl} |  ${symbol_str ? symbol_str : "-"} => ${Date.now() - req._startTime}`)
     },
@@ -85,114 +85,6 @@ let PageUtility = {
     }
 }
 
-// http://localhost:3000/api/get_accounts
-// 获取账号列表
-router.get("/get_accounts", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryPage = req.query.page;// ?page=2
-    var page, //当前页数
-        pages; // 合计总页数
-
-    var OFFSETVAL;//前面忽略的条数
-    var LIMITVAL = 20;//每页显示条数
-    if (typeof Number(queryPage) !== "number") {
-        page = 1;
-    } else {
-        page = Number(queryPage) || 1;
-    }
-
-    // ****************** 查询账户数量
-    PageUtility.timeLog(req, 'SQL-1 accounts Before')
-    let count = await pgPromise.query("SELECT value AS count FROM global WHERE key = 'accounts_count'");
-    PageUtility.timeLog(req, 'SQL-1 accounts After')
-    if (count.code) {
-        // 查询出错
-        responseData = {
-            accounts: [],
-            page: 1,
-            count: 0,
-            code: 500,
-            success: false,
-            message: "count accounts Error"
-        }
-        res.json(responseData);
-    } else {
-        //查询成功
-        count = Number(count.rows[0].count);//TODO 这么写有BUG  Cannot read property 'count' of undefined
-        pages = Math.ceil(count / LIMITVAL);
-        //paga 不大于 pages
-        page = Math.min(pages, page);
-        //page 不小于 1
-        page = Math.max(page, 1);
-        OFFSETVAL = (page - 1) * LIMITVAL;
-    }
-
-    // ****************** 查询账户列表
-    // *,balance/sum(balance)
-    let opt = {
-        text: `
-            Select 
-                account,balance 
-            FROM 
-                accounts 
-            ORDER BY 
-                balance DESC 
-            LIMIT 
-                $1 
-            OFFSET 
-                $2
-        `,
-        values: [LIMITVAL, OFFSETVAL]
-    };
-    PageUtility.timeLog(req, 'SQL-2 Account list Befor')
-    let data = await pgPromise.query(opt);
-    PageUtility.timeLog(req, 'SQL-2 Account list After')
-
-    if (data.code) {
-        // 查询出错
-        responseData = {
-            accounts: [],
-            page: 1,
-            count: 0,
-            code: 404,
-            success: false,
-            message: "no account found"
-        }
-    } else {
-        //查询成功
-        var basePage = Number(queryPage) - 1; // 1 2
-        var accounts = data.rows;
-        accounts.forEach((element, index) => {
-            //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
-            element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
-            //并保留6位精度
-            let tempVal = element.balance
-            var reg = /(\d+(?:\.)?)(\d{0,6})/;
-            var regAry = reg.exec(tempVal);
-            var integer = regAry[1];
-            var decimal = regAry[2];
-            if (decimal) {
-                while (decimal.length < 6) {
-                    decimal += "0";
-                }
-            } else {
-                decimal = ".000000"
-            }
-            element.balance = integer + decimal; //TODO Keep 6 decimal places
-            element.rank = LIMITVAL * basePage + (index + 1);
-        });
-        responseData = {
-            accounts: accounts,
-            page: Number(queryPage),
-            count: Number(count),
-            code: 200,
-            success: true,
-            message: "success"
-        }
-    }
-    res.json(responseData);
-})
-
 //************************** 账户列表开始
 //获取账户总数量
 router.get("/get_accounts_count", async function (req, res, next) {
@@ -225,25 +117,28 @@ router.get("/get_accounts_count", async function (req, res, next) {
 router.get("/get_first_balance_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let errorInfo = {
-        account: "czr_XXX",
+        acc_id: "0000",
         balance: "000000",
-        proportion: "0 %",
-        rank: 0
     }
     //TODO 这么写可能会导致漏数据（因为账户的balance可能相同的）
     //可以创建唯一索引，通过唯一索引+balance搜索
     let start_sql = {
         text: `
             Select
-                balance 
+                "acc_id","balance"
             FROM 
                 accounts 
+            WHERE (
+                (balance < 1732623775600000000000000000 ) or 
+                ( balance < 1732623775600000000000000000 and acc_id < 1732623775600000000000000000)
+            )
             ORDER BY
-                balance DESC
-            LIMIT 
-                1
+                balance desc,
+                acc_id desc
             OFFSET 
                 ${LIMIT_VAL}
+            LIMIT 
+                1
         `
     }
 
@@ -273,6 +168,7 @@ router.get("/get_first_balance_flag", async function (req, res, next) {
  * 需要参数：
  * {
         "balance": "0",
+        "acc_id": "0",
         "page": "1",//当前页 1
         "want_page":"3"//想要跳转的页面
     }
@@ -283,7 +179,8 @@ router.get("/get_want_balance_flag", async function (req, res, next) {
     let queryVal = req.query;
     var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
     let errorInfo = {
-        "balance": "0"
+        acc_id: "0000",
+        balance: "000000",
     }
 
     let ascVal;
@@ -300,26 +197,27 @@ router.get("/get_want_balance_flag", async function (req, res, next) {
     let start_sql = {
         text: `
             Select 
-                balance
+                acc_id,balance
             FROM 
-                accounts 
-            WHERE
-                balance ${symbol_str} $1
-
+                accounts
+            WHERE (
+                (balance ${symbol_str} $1 ) or 
+                ( balance = $1 and acc_id ${symbol_str} $2)
+            )
             ORDER BY 
-                balance ${ascVal}
+                balance ${ascVal},
+                acc_id ${ascVal}
             offset
                 ${offsetNum - 1}
             LIMIT
                 1
         `,
-        values: [Number(queryVal.balance)]
+        values: [Number(queryVal.balance), Number(queryVal.acc_id)]
     }
 
     PageUtility.timeLog(req, '[1] SELECT start_sql Before')
     let transStartInfo = await pgPromise.query(start_sql)
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
     if (transStartInfo.code) {
         responseData = {
             data: errorInfo,
@@ -340,35 +238,28 @@ router.get("/get_want_balance_flag", async function (req, res, next) {
 })
 
 //获取交易列表
-/**
- * 
- {
-     "balance":"",
-     "page":"",
- }
- */
-router.get("/get_accounts1", async function (req, res, next) {
+router.get("/get_accounts", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
 
     let sql = {
         text: `
-
             Select 
                 account,balance 
             FROM 
                 accounts 
-            WHERE
-                balance > $1
-            ORDER BY 
-                balance asc
+            WHERE (
+                (balance > $1 ) or 
+                (balance = $1 and acc_id > $2)
+            )
+            ORDER BY
+                balance asc,
+                acc_id asc
             LIMIT
-                $2
+                ${LIMIT_VAL}
         `,
-        values: [queryVal.balance, LIMIT_VAL]
+        values: [queryVal.balance, queryVal.acc_id]
     };
-
-    console.log("***********-----")
 
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(sql)
@@ -387,6 +278,7 @@ router.get("/get_accounts1", async function (req, res, next) {
         //查询成功
         var basePage = Number(queryVal.page) - 1; // 1 2
         var accounts = data.rows.reverse();
+        // var accounts = data.rows;
         accounts.forEach((element, index) => {
             //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
             element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
@@ -422,9 +314,7 @@ router.get("/get_accounts1", async function (req, res, next) {
     res.json(responseData);
 })
 
-
-
-//************************** 账户列表开始
+//************************** 账户列表结束
 
 //获取账号信息
 router.get("/get_account", async function (req, res, next) {
