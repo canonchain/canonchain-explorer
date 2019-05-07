@@ -73,7 +73,7 @@ export default {
             current_page: 1,
             LIMIT_VAL: 20,
             TOTAL_VAL: 0,
-            loadingSwitch: false,
+            loadingSwitch: true,
             database: [
                 {
                     account: "-",
