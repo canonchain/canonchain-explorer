@@ -123,9 +123,9 @@ export default {
     data() {
         return {
             TOTAL_VAL: 0,
-            LIMIT_VAL: 5,
+            LIMIT_VAL: 20,
             wt: window.location.hash.indexOf("wt=") > 1 ? "all" : "",
-            loadingSwitch: false,
+            loadingSwitch: true,
             database: [
                 {
                     exec_timestamp: "-",
@@ -245,8 +245,6 @@ export default {
 
             if (response.success) {
                 self.startOpt = response.near_item;
-                console.log(self.url_parm);
-                console.log(response);
                 if (!self.url_parm.exec_timestamp && response.near_item) {
                     self.url_parm.exec_timestamp =
                         response.near_item.exec_timestamp;

@@ -71,7 +71,7 @@ export default {
     data() {
         return {
             current_page: 1,
-            LIMIT_VAL: 5,
+            LIMIT_VAL: 20,
             TOTAL_VAL: 0,
             loadingSwitch: false,
             database: [
@@ -123,7 +123,6 @@ export default {
             );
             self.loadingSwitch = false;
             let responseInfo = response.data;
-            console.log(responseInfo);
             self.$router.push(
                 `/accounts?balance=${responseInfo.balance}&page=${
                     response.page

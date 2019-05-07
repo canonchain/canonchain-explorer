@@ -472,8 +472,8 @@
 
             logger.info(`Block完成       合计:${unitAryForSql.length}, 需更新:${unitUpdateAry.length}, 需插入:${unitInsertAry.length}`);
             logger.info(`Parents完成     合计:${beforParentLeng}, 已存在:${hashParentObj.length}, 需处理:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据 
-            pageUtility.stableInsertControl();
-            // pageUtility.writePrototype(parentsTotalAry, '1', pageUtility.stableInsertControl);
+            // pageUtility.stableInsertControl();
+            pageUtility.writePrototype(parentsTotalAry, '1', pageUtility.stableInsertControl);
         },
         // stableBaseDbEvent() {
         //     myEE.on('stable_block', () => {
@@ -696,8 +696,8 @@
             });
             logger.info(`BlockHash 合计有:${unstableUnitHashAry.length} 表里有:${blockRes.length} 更新:${unstableUpdateBlockAry.length} 需插入:${unstableInsertBlockAry.length}`);
             logger.info(`Parents   合计有:${beforUnParentLen} 已存在:${hashParentObj.length} 需处理:${unstableParentsAry.length}`);
-            pageUtility.unstableInsertControl();
-            // pageUtility.writePrototype(unstableParentsAry, '2', pageUtility.unstableInsertControl);
+            // pageUtility.unstableInsertControl();
+            pageUtility.writePrototype(unstableParentsAry, '2', pageUtility.unstableInsertControl);
 
         },
         //搜索哪些Witness已经存在数据库中,并把 unstableWitnessTotal 改为最终需要处理的数据
@@ -1066,41 +1066,32 @@
             await client.query(batchUpdateSql);
         },
 
-        //写原型
-        // async writePrototype(sources_ary, flag, fn) {
-
-        //     //falg : 1=>稳定 2=>不稳定
-        //     logger.info(`写原型数据 Start`)
-        //     let tempAry = [];//辅助展开parents作用
-        //     let inDbParents = [];//已经在数据里的数据
-        //     let allUnit = [];//当前所有的unit
-        //     let allParent = [];//当前所有的parent
-        //     sources_ary.forEach(item => {
-        //         //展开parents
-        //         if (item.parent.length > 0) {
-        //             item.parent.forEach(childrenItem => {
-        //                 tempAry.push({
-        //                     item: item.item,
-        //                     parent: childrenItem,//单个parents
-        //                     is_witness: item.is_witness
-        //                 });
-        //                 allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
-        //                 allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
-        //             })
-        //         }
-        //     })
-        //     sources_ary = tempAry;
-        //     if (flag == "1") {
-        //         //赋值稳定的
-        //         parentsTotalAry = sources_ary;
-        //     } else if (flag == "2") {
-        //         //赋值不稳定的
-        //         unstableParentsAry = sources_ary;
-        //     }
-
-        //     logger.info(`写原型数据 End`)
-        //     fn();
-        // },
+        //展开parent
+        async writePrototype(sources_ary, flag, fn) {
+            //falg : 1=>稳定 2=>不稳定
+            logger.info(`写原型数据 Start`)
+            let tempAry = [];//辅助展开parents作用
+            sources_ary.forEach(item => {
+                //展开parents
+                if (item.parent.length > 0) {
+                    item.parent.forEach(childrenItem => {
+                        tempAry.push({
+                            item: item.item,
+                            parent: childrenItem,//单个parents
+                        });
+                    })
+                }
+            })
+            sources_ary = tempAry;
+            if (flag == "1") {
+                //赋值稳定的
+                parentsTotalAry = sources_ary;
+            } else if (flag == "2") {
+                //赋值不稳定的
+                unstableParentsAry = sources_ary;
+            }
+            fn();
+        },
         async updateGlobalMci(val) {
             let pdateMciSql = `
                 update 

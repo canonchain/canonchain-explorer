@@ -21,7 +21,7 @@ router.use(function (req, res, next) {
 })
 
 //分页limit
-let LIMIT_VAL = 5;
+let LIMIT_VAL = 20;
 
 let PageUtility = {
     timeLog: function (req, symbol_str) {
