@@ -13,22 +13,6 @@
     let logger = log4js.getLogger('write_db');//此处使用category的值
     let self;
 
-    //TODO 见证人列表 从数据库读取
-    const WITNESS_ARY = [
-        'czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS',
-        'czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3',
-        'czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU',
-        'czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf',
-        'czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z',
-        'czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7',
-        'czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii',
-        'czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS',
-        'czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd',
-        'czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb',
-        'czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE',
-        'czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP'
-    ];
-
     //辅助数据 Start
     let getRpcTimer = null,
         getUnstableTimer = null;
@@ -79,6 +63,10 @@
     // 记录需修改的显示的交易数量
     let _updateShownTran = 0;
 
+    // 订阅events
+    // const EventEmitter = require('events');
+    // const myEE = new EventEmitter();
+
     let pageUtility = {
         async init() {
             self = this;
@@ -94,8 +82,6 @@
                 values: ["mci"]
             };
             let data = await client.query(SearchOptions);
-            console.log(data)
-            console.log(data.rowCount)
 
             //TODO 为了方便修改，所以都没有写语法错误/节点关闭特殊场景的处理代码，后面需要加上
             if (data.rowCount === 0) {
@@ -230,21 +216,16 @@
         },
         //插入稳定的Unit ------------------------------------------------ Start
         getUnitByMci() {
-            logger.info(`通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 获取blocks ===============================`);
+            logger.info(`开始通过 ${dbStableMci} ${MCI_LIMIT} ${next_index} 向节点获取blocks ---------------------`);
             czr.request.stableBlocks(dbStableMci, MCI_LIMIT, next_index).then(function (data) {
-                logger.info(`拿到了结果 ${dbStableMci} ${MCI_LIMIT} => ${data.next_index}`);
-
+                logger.info(`拿到了结果, next_index: ${data.next_index}`);
                 if (data.blocks) {
                     data.blocks.forEach((item) => {
                         if (dbStableMci === 0) {
                             item.type = 1;
                         }
-                        //写 is_witness
-                        if (WITNESS_ARY.indexOf(item.from) > -1) {
-                            item.is_witness = true;
-                        } else {
-                            item.is_witness = false;
-                        }
+                        //写 is_witness 需要删除
+                        // item.is_witness = false;
                         unitInsertAry.push(item);
                     });
                     next_index = data.next_index ? data.next_index : '';
@@ -260,6 +241,7 @@
         },
         async validateBlocks() {
             //如果是已经存在并且稳定的Block，需要移除掉(否则金额对不上)
+            logger.info(`把数据库中已存在的Blocks删除`);
             unitInsertAry.forEach(blockInfo => {
                 unitAryForSql.push(blockInfo.hash);
             })
@@ -274,11 +256,13 @@
                 unitInsertAry.splice(curIndex, 1);
                 unitAryForSql.splice(curIndex, 1);
             });
+            logger.info(`把数据库中已存在的Blocks删除 结束`);
             pageUtility.filterData();
 
         },
         filterData() {
             //2、根据稳定Units数据，筛选Account Parent Witness Timestamp，方便后续储存
+            logger.info(`数据分装 开始`);
             unitInsertAry.forEach(blockInfo => {
                 //DO 处理账户，发款方不在当前 accountsTotal 时 （以前已经储存在数据库了）
                 if (!accountsTotal.hasOwnProperty(blockInfo.from)) {
@@ -316,7 +300,7 @@
                 parentsTotalAry.push({
                     item: blockInfo.hash,
                     parent: blockInfo.parents,
-                    is_witness: blockInfo.is_witness
+                    // is_witness: blockInfo.is_witness
                 });
 
                 // 处理witness
@@ -357,13 +341,16 @@
             * 处理Block
             * */
 
-            logger.info(`数据过滤分装完成，开始发送异步操作`);
+            logger.info(`数据分装 结束`);
+            // pageUtility.stableBaseDbEvent();
             pageUtility.searchBlockBaseDb();
             pageUtility.searchAccountBaseDb();
             pageUtility.searchTimestampBaseDb();
             pageUtility.searchTimestamp10BaseDb();
             pageUtility.searchWitnessBaseDb();
+
         },
+
         async searchAccountBaseDb() {
             //处理账户
             let tempAccountAllAry = Object.keys(accountsTotal);
@@ -485,12 +472,36 @@
 
             logger.info(`Block完成       合计:${unitAryForSql.length}, 需更新:${unitUpdateAry.length}, 需插入:${unitInsertAry.length}`);
             logger.info(`Parents完成     合计:${beforParentLeng}, 已存在:${hashParentObj.length}, 需处理:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据 
-            pageUtility.writePrototype(parentsTotalAry, '1', pageUtility.stableInsertControl);
+            pageUtility.stableInsertControl();
+            // pageUtility.writePrototype(parentsTotalAry, '1', pageUtility.stableInsertControl);
         },
+        // stableBaseDbEvent() {
+        //     myEE.on('stable_block', () => {
+        //         pageUtility.searchBlockBaseDb();
+        //     });
+        //     myEE.on('stable_account', () => {
+        //         pageUtility.searchAccountBaseDb();
+        //     });
+        //     myEE.on('stable_timestamp', () => {
+        //         pageUtility.searchTimestampBaseDb();
+        //     });
+        //     myEE.on('stable_timestamp10', () => {
+        //         pageUtility.searchTimestamp10BaseDb();
+        //     });
+        //     myEE.on('stable_witness', () => {
+        //         pageUtility.searchWitnessBaseDb();
+        //     });
+        //     myEE.emit('stable_block');
+        //     myEE.emit('stable_account');
+        //     myEE.emit('stable_timestamp');
+        //     myEE.emit('stable_timestamp10');
+        //     myEE.emit('stable_witness');
+        // },
         stableInsertControl() {
             //TODO 改为同步了，不能这么做了
             stableCount++;
             if (stableCount === 5) {
+                logger.info(`数据过滤分装完成，完成分类操作`);
                 stableCount = 0;
                 pageUtility.batchInsertStable();
             }
@@ -623,17 +634,13 @@
                     //@A 拆分数据
                     unstableInsertBlockAry.forEach(blockInfo => {
                         //写 is_witness
-                        if (WITNESS_ARY.indexOf(blockInfo.from) != -1) {
-                            blockInfo.is_witness = true;
-                        } else {
-                            blockInfo.is_witness = false;
-                        }
+                        // blockInfo.is_witness = false;
                         //处理parents
                         // if (blockInfo.parents.length > 0) {}//不能加if，否则可能有问题啊；
                         unstableParentsAry.push({
                             item: blockInfo.hash,
                             parent: blockInfo.parents,
-                            is_witness: blockInfo.is_witness
+                            // is_witness: blockInfo.is_witness
                         })
 
                         //处理witness
@@ -689,8 +696,8 @@
             });
             logger.info(`BlockHash 合计有:${unstableUnitHashAry.length} 表里有:${blockRes.length} 更新:${unstableUpdateBlockAry.length} 需插入:${unstableInsertBlockAry.length}`);
             logger.info(`Parents   合计有:${beforUnParentLen} 已存在:${hashParentObj.length} 需处理:${unstableParentsAry.length}`);
-            // pageUtility.unstableInsertControl();
-            pageUtility.writePrototype(unstableParentsAry, '2', pageUtility.unstableInsertControl);
+            pageUtility.unstableInsertControl();
+            // pageUtility.writePrototype(unstableParentsAry, '2', pageUtility.unstableInsertControl);
 
         },
         //搜索哪些Witness已经存在数据库中,并把 unstableWitnessTotal 改为最终需要处理的数据
@@ -800,10 +807,12 @@
             */
             let tempAry = [];
             parentAry.forEach(item => {
-                tempAry.push("('" + item.item + "','" + item.parent + "','" + item.is_witness + "','')");
+                // tempAry.push("('" + item.item + "','" + item.parent + "','" + item.is_witness + "','')");
+                tempAry.push("('" + item.item + "','" + item.parent + "')");
             })
             let batchInsertSql = {
-                text: "INSERT INTO parents (item,parent,is_witness,prototype) VALUES " + tempAry.toString()
+                // text: "INSERT INTO parents (item,parent,is_witness,prototype) VALUES " + tempAry.toString()
+                text: "INSERT INTO parents (item,parent) VALUES " + tempAry.toString()
             };
             await client.query(batchInsertSql);
         },
@@ -884,7 +893,7 @@
                     (Number(item.exec_timestamp) || 0) + ",'" +
                     item.signature + "'," +
                     (item.is_free === '1') + ",'" +
-                    item.is_witness + "','" +
+                    // item.is_witness + "','" +
                     item.level + "','" +
                     item.witnessed_level + "','" +
                     item.best_parent + "'," +
@@ -897,7 +906,6 @@
                     (Number(item.stable_timestamp) || 0) + "," +
                     (!(Number(item.type) === 1 && item.is_stable !== 1)) + // is_shown
                     ")");
-
                 calcAccountTranCount(item, calcObj)
             });
 
@@ -905,7 +913,10 @@
                 // text: 'INSERT INTO transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp) VALUES' + tempAry.toString()
                 text: `
                 INSERT INTO 
-                    transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,is_witness,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp,is_shown) 
+                    transaction(hash,type,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,
+                    data,exec_timestamp,signature,is_free,
+                    level,witnessed_level,best_parent,is_stable,"status",
+                    is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp,is_shown) 
                 VALUES` + tempAry.toString()
             };
             await client.query(batchInsertSql);
@@ -1056,40 +1067,40 @@
         },
 
         //写原型
-        async writePrototype(sources_ary, flag, fn) {
+        // async writePrototype(sources_ary, flag, fn) {
 
-            //falg : 1=>稳定 2=>不稳定
-            logger.info(`写原型数据 Start`)
-            let tempAry = [];//辅助展开parents作用
-            let inDbParents = [];//已经在数据里的数据
-            let allUnit = [];//当前所有的unit
-            let allParent = [];//当前所有的parent
-            sources_ary.forEach(item => {
-                //展开parents
-                if (item.parent.length > 0) {
-                    item.parent.forEach(childrenItem => {
-                        tempAry.push({
-                            item: item.item,
-                            parent: childrenItem,//单个parents
-                            is_witness: item.is_witness
-                        });
-                        allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
-                        allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
-                    })
-                }
-            })
-            sources_ary = tempAry;
-            if (flag == "1") {
-                //赋值稳定的
-                parentsTotalAry = sources_ary;
-            } else if (flag == "2") {
-                //赋值不稳定的
-                unstableParentsAry = sources_ary;
-            }
+        //     //falg : 1=>稳定 2=>不稳定
+        //     logger.info(`写原型数据 Start`)
+        //     let tempAry = [];//辅助展开parents作用
+        //     let inDbParents = [];//已经在数据里的数据
+        //     let allUnit = [];//当前所有的unit
+        //     let allParent = [];//当前所有的parent
+        //     sources_ary.forEach(item => {
+        //         //展开parents
+        //         if (item.parent.length > 0) {
+        //             item.parent.forEach(childrenItem => {
+        //                 tempAry.push({
+        //                     item: item.item,
+        //                     parent: childrenItem,//单个parents
+        //                     is_witness: item.is_witness
+        //                 });
+        //                 allUnit.push(item.item);//判断parent的值有哪里是已经存在allUnit的
+        //                 allParent.push(childrenItem);//判断parent的值有哪里是已经存在allParent的
+        //             })
+        //         }
+        //     })
+        //     sources_ary = tempAry;
+        //     if (flag == "1") {
+        //         //赋值稳定的
+        //         parentsTotalAry = sources_ary;
+        //     } else if (flag == "2") {
+        //         //赋值不稳定的
+        //         unstableParentsAry = sources_ary;
+        //     }
 
-            // logger.info(`写原型数据 End`)
-            fn();
-        },
+        //     logger.info(`写原型数据 End`)
+        //     fn();
+        // },
         async updateGlobalMci(val) {
             let pdateMciSql = `
                 update 

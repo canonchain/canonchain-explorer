@@ -6,7 +6,7 @@
 const log4js = require('../log_config');
 const logger = log4js.getLogger('write_db');//此处使用category的值
 
-const client = require('../PG').client;
+const client = require('../PG-promise');
 
 // const countHelper = {
 //     accountsCount: 0,

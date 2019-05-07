@@ -3,7 +3,7 @@
  * 2019/4/15
  */
 
-const client = require('../PG').client;
+const client = require('../PG-promise');
 
 /**
  * @param item - transaction obj
