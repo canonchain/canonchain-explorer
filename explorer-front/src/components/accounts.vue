@@ -59,16 +59,6 @@
                             @click="getPaginationFlag('footer')"
                         >尾页</el-button>
                     </el-button-group>
-
-                    <!-- <el-pagination
-                        small
-                        background
-                        layout="total,prev, pager, next"
-                        @current-change="getPaginationFlag"
-                        :page-size="LIMIT_VAL"
-                        :total="TOTAL_VAL"
-                        :pager-count="5"
-                    ></el-pagination>-->
                 </div>
             </div>
         </div>
@@ -84,7 +74,7 @@ let isDefaultPage = false;
 let errorInfo = {
     account: "czr-xxx",
     balance: "-",
-    proportion: "0.0 %",
+    proportion: "0.0 %"
     // rank: 1
 };
 

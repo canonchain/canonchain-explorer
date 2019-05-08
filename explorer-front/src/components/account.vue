@@ -6,7 +6,7 @@
                 <search></search>
                 <div class="sub-header">
                     <strong class="sub_header-tit">账户信息</strong>
-                    <span class="sub_header-des">{{account}}</span>
+                    <span class="sub_header-des">{{accountInfo.account}}</span>
                 </div>
                 <div class="bui-dlist">
                     <div class="block-item-des">
@@ -21,14 +21,14 @@
                             交易数
                             <span class="space-des"></span>
                         </strong>
-                        <div class="bui-dlist-det">{{totalVal}} 次</div>
+                        <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
                     </div>
                 </div>
                 <div class="account-content">
                     <h2 class="transfer-tit">交易记录</h2>
                     <div class="accounts-list-wrap" v-loading="loadingSwitch">
                         <template>
-                            <el-table :data="tx_list" style="width: 100%">
+                            <el-table :data="database" style="width: 100%">
                                 <el-table-column label="时间" width="180">
                                     <template slot-scope="scope">
                                         <span
@@ -142,16 +142,42 @@
                                 </el-table-column>
                             </el-table>
                             <div class="pagin-block">
-                                <el-pagination
+                                <el-button-group>
+                                    <el-button
+                                        size="mini"
+                                        :disabled="btnSwitch.header"
+                                        @click="getPaginationFlag('header')"
+                                    >首页</el-button>
+                                    <el-button
+                                        size="mini"
+                                        icon="el-icon-arrow-left"
+                                        :disabled="btnSwitch.left"
+                                        @click="getPaginationFlag('left')"
+                                    >上一页</el-button>
+                                    <el-button
+                                        size="mini"
+                                        :disabled="btnSwitch.right"
+                                        @click="getPaginationFlag('right')"
+                                    >
+                                        下一页
+                                        <i class="el-icon-arrow-right el-icon--right"></i>
+                                    </el-button>
+                                    <el-button
+                                        size="mini"
+                                        :disabled="btnSwitch.footer"
+                                        @click="getPaginationFlag('footer')"
+                                    >尾页</el-button>
+                                </el-button-group>
+                                <!-- <el-pagination
                                     small
                                     background
                                     layout="total,prev, pager, next"
                                     @current-change="handleCurrentChange"
                                     :current-page.sync="currentPage"
-                                    :page-size="limitVal"
-                                    :total="totalVal"
+                                    :page-size="LIMIT_VAL"
+                                    :total="TOTAL_VAL"
                                     :pager-count="5"
-                                ></el-pagination>
+                                ></el-pagination>-->
                             </div>
                         </template>
                     </div>
@@ -164,7 +190,11 @@
 <script>
 import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
+
 let self = null;
+let isDefaultPage = false;
+
+//TODO 交易列表改为 发送 和 接收 两个List ,解决sql搜索慢的问题
 
 export default {
     name: "Block",
@@ -174,31 +204,47 @@ export default {
     },
     data() {
         return {
-            account: this.$route.params.id,
-            balance: 0,
-            pagingSwitch: {
-                limit: 2,
-                beforeDisabled: true,
-                nextDisabled: false
+            TOTAL_VAL: 0,
+            LIMIT_VAL: 20,
+
+            loadingSwitch: true,
+            btnSwitch: {
+                header: false,
+                left: false,
+                right: false,
+                footer: false
             },
+            database: [],
+            pageFirstItem: {},
+            url_parm: {
+                account: this.$route.params.id,
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0
+            },
+            startOpt: {},
+
             accountInfo: {
                 address: this.$route.params.id,
-                balance: 0,
-                tran_count: 0
+                balance: 0
             },
-            tx_list: [],
-            loadingSwitch: true,
 
-            currentPage: 1,
-            limitVal: 20,
-            totalVal: 0
+            tx_list: [],
+            currentPage: 1
         };
     },
     created() {
         self = this;
-        this.initDatabase();
-        self.getAccountLists();
-        this.initTransactionInfo();
+
+        let queryInfo = this.$route.query;
+        if (Object.keys(queryInfo).length) {
+            self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
+            self.url_parm.level = queryInfo.level;
+            self.url_parm.pkid = queryInfo.pkid;
+        }
+
+        self.initDatabase();
+        self.getFlagTransactions();
     },
     methods: {
         initTransactionInfo() {},
@@ -211,32 +257,148 @@ export default {
             if (response.success) {
                 let accInfo = response.account;
                 self.accountInfo.balance = accInfo.balance;
-                self.accountInfo.tran_count = accInfo.transaction_count;
-                self.totalVal = Number(accInfo.transaction_count);
+                self.TOTAL_VAL = Number(accInfo.transaction_count);
             } else {
                 console.error("/api/get_account Error");
             }
         },
-        async getAccountLists() {
-            //TODO 优化分页性能
+        async getPaginationFlag(val) {
+            self.loadingSwitch = true;
+            // 想取最后一页
+            if (val === "footer") {
+                self.$router.push(
+                    `/account/${
+                        self.url_parm.account
+                    }?exec_timestamp=0&level=0&pkid=0`
+                );
+                return;
+            }
+            // 想取第一页
+            if (val === "header") {
+                self.$router.push(`/account/${self.url_parm.account}`);
+                return;
+            }
+            if (
+                val == "left" &&
+                (self.pageFirstItem.exec_timestamp ==
+                    self.startOpt.exec_timestamp &&
+                    self.pageFirstItem.level == self.startOpt.level &&
+                    self.pageFirstItem.pkid == self.startOpt.pkid)
+            ) {
+                self.$router.push(`/account/${self.url_parm.account}`);
+                return;
+            }
+
             let opt = {
-                account: self.accountInfo.address,
-                page: self.currentPage
+                exec_timestamp: self.url_parm.exec_timestamp,
+                level: self.url_parm.level,
+                pkid: self.url_parm.pkid,
+                direction: val
+                // page: self.url_parm.page, //当前页 1
+                // want_page: val
             };
-            let response = await self.$api.get("/api/get_account_list", opt);
+            let response = await self.$api.get("/api/get_want_page_flag", opt);
+            // self.loadingSwitch = false;
+            let responseInfo = response.data;
+            self.$router.push(
+                `/account/${self.url_parm.account}?exec_timestamp=${
+                    responseInfo.exec_timestamp
+                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}`
+            );
+        },
+        // async getAccountLists() {
+        //     //TODO 优化分页性能
+        //     let opt = {
+        //         account: self.accountInfo.address,
+        //         page: self.currentPage
+        //     };
+        //     let response = await self.$api.get("/api/get_account_list", opt);
+        //     if (response.success) {
+        //         if (self.TOTAL_VAL < response.tx_list.length) {
+        //             self.TOTAL_VAL = response.tx_list.length;
+        //         }
+        //         self.tx_list = response.tx_list;
+        //     } else {
+        //         console.error("/api/get_account_list Error");
+        //     }
+
+        //     self.loadingSwitch = false;
+        // },
+        // handleCurrentChange(val) {
+        //     self.getAccountLists();
+        // },
+
+        async getFlagTransactions() {
+            let opt = {
+                account: self.url_parm.account
+            };
+            let response = await self.$api.get(
+                "/api/get_account_first_flag",
+                opt
+            );
+
             if (response.success) {
-                if (self.totalVal < response.tx_list.length) {
-                    self.totalVal = response.tx_list.length;
+                self.startOpt = response.near_item;
+                if (!self.url_parm.exec_timestamp && response.near_item) {
+                    isDefaultPage = true;
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.footer = false;
+                    self.url_parm.exec_timestamp =
+                        response.near_item.exec_timestamp;
+                    self.url_parm.level = response.near_item.level;
+                    self.url_parm.pkid = response.near_item.pkid;
                 }
-                self.tx_list = response.tx_list;
             } else {
-                console.error("/api/get_account_list Error");
+                console.log("error");
+            }
+
+            //如果有字段信息
+            if (response.near_item.length) {
+                if (isDefaultPage) {
+                    self.startOpt && self.getTransactions(self.startOpt);
+                } else {
+                    self.getTransactions(self.url_parm);
+                }
+            } else {
+                self.loadingSwitch = false;
+            }
+        },
+        async getTransactions(parm) {
+            //TODO 当尾页中，点击下一页时候，数组记录
+            self.loadingSwitch = true;
+            let opt = {
+                exec_timestamp: parm.exec_timestamp,
+                account: parm.account,
+                level: parm.level,
+                pkid: parm.pkid
+            };
+            let response = await self.$api.get("/api/get_transactions", opt);
+
+            if (response.success) {
+                self.database = response.transactions;
+                self.pageFirstItem = response.transactions[0];
+                if (response.transactions.length < 20) {
+                    self.$router.push(`/transactions`);
+                }
+            } else {
+                self.database = [errorInfo];
+            }
+            //禁止首页上一页
+            if (
+                parm.exec_timestamp == self.startOpt.exec_timestamp &&
+                parm.level == self.startOpt.level &&
+                parm.pkid == self.startOpt.pkid
+            ) {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
+            }
+            //禁止尾页下一页
+            if (parm.exec_timestamp == 0 && parm.level == 0 && parm.pkid == 0) {
+                self.btnSwitch.footer = true;
+                self.btnSwitch.right = true;
             }
 
             self.loadingSwitch = false;
-        },
-        handleCurrentChange(val) {
-            self.getAccountLists();
         },
         goBlockPath(block) {
             this.$router.push("/block/" + block);

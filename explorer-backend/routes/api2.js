@@ -565,7 +565,7 @@ router.get("/get_want_page_flag", async function (req, res, next) {
         }
 
     }
-    
+
     res.json(responseData);
 })
 
@@ -740,6 +740,286 @@ router.get("/get_account_list", async function (req, res, next) {
             item.is_to_self = false;
         }
     })
+    res.json(responseData);
+})
+// --------------------- 测试
+
+//获取交易表中最近(LIMIT+1)项
+//参数： account
+router.get("/get_account_first_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    var queryAccount = queryInfo.account;// ?account=2
+    let errorInfo = {
+        "exec_timestamp": "0",
+        "level": "0",
+        "pkid": "0"
+    }
+
+    let start_sql = {
+        text: `
+            Select 
+                "exec_timestamp","level","pkid"
+            FROM 
+                transaction 
+            WHERE 
+                (
+                    (exec_timestamp < 9999999999 ) or 
+                    (exec_timestamp = 9999999999 and level < 9999999999) or 
+                    (exec_timestamp = 9999999999 and level = 9999999999 and pkid < 9999999999)
+                ) 
+                and 
+                ("from" = $1)
+            order by 
+                "exec_timestamp" desc, 
+                "level" desc,
+                "pkid" desc 
+            offset 
+                ${LIMIT_VAL}
+            LIMIT
+                1
+        `,
+        values: [queryAccount]
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || [],
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+//获取想要获取分页的pkid等信息
+/**
+ * 需要参数：
+ * {
+        "exec_timestamp": "0",
+        "level": "0",
+        "pkid": "0",
+        "account": "1"
+    }
+ *
+ */
+router.get("/get_account_want_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;
+    var queryAccount = queryVal.account;// ?account=2
+    // var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
+    let errorInfo = {
+        "exec_timestamp": "0",
+        "level": "0",
+        "pkid": "0",
+    }
+
+    let ascVal;
+    let symbol_str;
+    if (queryVal.direction === 'left') {
+        symbol_str = ">";
+        ascVal = "asc";
+    } else {
+        symbol_str = "<";
+        ascVal = "desc";
+    }
+    let offsetNum = 20;
+
+    let start_sql;
+
+    //union用来解决大数据时候，搜索慢的场景（desc < 查询的情况）
+
+    if (symbol_str == "<") {
+        //向右 点下一页
+        start_sql = {
+            text: `
+            (
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp = $1 and level < $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid < $3)
+                    ) 
+                    and 
+                    ("from" = $4)
+                order by 
+                    "exec_timestamp" desc,
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    ${offsetNum}
+            )
+            union
+            (
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp < $1)
+                    ) 
+                    and 
+                    ("from" = $4)
+                order by 
+                    "exec_timestamp" desc,
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    ${offsetNum}
+            )
+            order by
+                "exec_timestamp" desc,
+                "level" desc,
+                "pkid" desc
+            offset
+                ${offsetNum - 1}
+            LIMIT
+                1
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), queryAccount]
+        }
+
+
+    } else {
+        start_sql = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp ${symbol_str} $1) or 
+                        (exec_timestamp = $1 and level ${symbol_str} $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
+                    ) 
+                    and 
+                    ("from" = $4)
+                order by 
+                    "exec_timestamp" ${ascVal},
+                    "level"  ${ascVal},
+                    "pkid"  ${ascVal}
+                offset
+                    ${offsetNum - 1}
+                LIMIT
+                    1
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), queryAccount]
+        }
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    if (transStartInfo.code) {
+        responseData = {
+            data: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+    } else {
+        if (transStartInfo.rows.length) {
+            responseData = {
+                data: transStartInfo.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    "exec_timestamp": 0,
+                    "level": 0,
+                    "pkid": 0
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+
+    }
+
+    res.json(responseData);
+})
+
+//获取交易列表
+/**
+ * 参数
+{
+    exec_timestamp: '1555893967',
+    level: '232877',
+    pkid: '822014828' ,
+    account: '12',
+}
+ */
+router.get("/get_account_transactions", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+    var queryAccount = queryVal.account;// ?account=2
+
+    let opt2 = {
+        text: `
+            Select 
+                "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+            FROM 
+                transaction 
+            WHERE 
+                (
+                    (exec_timestamp > $1) or 
+                    (exec_timestamp = $1 and level > $2) or 
+                    (exec_timestamp = $1 and level = $2 and pkid > $3)
+                )  
+                and 
+                ("from" = $5)
+            order by 
+                "exec_timestamp" asc, 
+                "level" asc,
+                "pkid" asc 
+            LIMIT
+                $4
+        `,
+        values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
+    };
+
+    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    let data = await pgPromise.query(opt2)
+    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'Select trans list FROM transaction Error'
+        }
+        logger.info(data)
+    } else {
+        responseData = {
+            transactions: data.rows.reverse(),
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
     res.json(responseData);
 })
 //************************** 账号详情 结束
