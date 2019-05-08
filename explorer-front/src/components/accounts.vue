@@ -11,7 +11,7 @@
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
                     <template>
                         <el-table :data="database" style="width: 100%">
-                            <el-table-column prop="rank" label="排行榜" width="70"></el-table-column>
+                            <!-- <el-table-column prop="rank" label="排行榜" width="70"></el-table-column> -->
                             <el-table-column label="账户" width="580">
                                 <template slot-scope="scope">
                                     <el-button
@@ -33,16 +33,42 @@
                     </template>
                 </div>
                 <div class="pagin-block">
-                    <el-pagination
+                    <el-button-group>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.header"
+                            @click="getPaginationFlag('header')"
+                        >首页</el-button>
+                        <el-button
+                            size="mini"
+                            icon="el-icon-arrow-left"
+                            :disabled="btnSwitch.left"
+                            @click="getPaginationFlag('left')"
+                        >上一页</el-button>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.right"
+                            @click="getPaginationFlag('right')"
+                        >
+                            下一页
+                            <i class="el-icon-arrow-right el-icon--right"></i>
+                        </el-button>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.footer"
+                            @click="getPaginationFlag('footer')"
+                        >尾页</el-button>
+                    </el-button-group>
+
+                    <!-- <el-pagination
                         small
                         background
                         layout="total,prev, pager, next"
                         @current-change="getPaginationFlag"
-                        :current-page.sync="current_page"
                         :page-size="LIMIT_VAL"
                         :total="TOTAL_VAL"
                         :pager-count="5"
-                    ></el-pagination>
+                    ></el-pagination>-->
                 </div>
             </div>
         </div>
@@ -53,13 +79,13 @@ import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let self = null;
-let MAX_PAGE;
+let isDefaultPage = false;
 
 let errorInfo = {
     account: "czr-xxx",
     balance: "-",
     proportion: "0.0 %",
-    rank: 1
+    // rank: 1
 };
 
 export default {
@@ -70,10 +96,15 @@ export default {
     },
     data() {
         return {
-            current_page: 1,
             LIMIT_VAL: 20,
             TOTAL_VAL: 0,
             loadingSwitch: true,
+            btnSwitch: {
+                header: false,
+                left: false,
+                right: false,
+                footer: false
+            },
             database: [
                 {
                     account: "-",
@@ -82,35 +113,45 @@ export default {
                     type: 0
                 }
             ],
-            url_parm: {},
+            pageFirstItem: {},
+            url_parm: {
+                balance: 0,
+                acc_id: 0
+            },
             startOpt: {}
         };
     },
     created() {
         self = this;
         let queryInfo = this.$route.query;
-        self.url_parm = {
-            balance: queryInfo.balance,
-            acc_id: queryInfo.acc_id,
-            page: queryInfo.page || 1
-        };
-        self.current_page = Number(queryInfo.page || 1);
 
+        if (Object.keys(queryInfo).length) {
+            self.url_parm = {
+                balance: queryInfo.balance,
+                acc_id: queryInfo.acc_id
+            };
+        }
         self.getAccountsCount();
         self.getFlagAccounts();
     },
     methods: {
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
-            // if want_page == MAX_PAGE 说明是取最后一页
-            if (val == MAX_PAGE) {
-                self.$router.push(
-                    `/accounts?balance=-1&acc_id=-1&page=${MAX_PAGE}`
-                );
+            // 想取最后一页
+            if (val === "footer") {
+                self.$router.push(`/accounts?balance=-1&acc_id=-1`);
                 return;
             }
-            // if want_page == 1 说明是取第一页
-            if (val == 1) {
+            // 想取第一页
+            if (val === "header") {
+                self.$router.push(`/accounts`);
+                return;
+            }
+            if (
+                val == "left" &&
+                (self.pageFirstItem.balance == self.startOpt.balance &&
+                    self.pageFirstItem.acc_id == self.startOpt.acc_id)
+            ) {
                 self.$router.push(`/accounts`);
                 return;
             }
@@ -118,20 +159,18 @@ export default {
             let opt = {
                 balance: self.url_parm.balance,
                 acc_id: self.url_parm.acc_id,
-                page: self.url_parm.page, //当前页 1
-                want_page: val
+                direction: val
             };
             let response = await self.$api.get(
                 "/api/get_want_balance_flag",
                 opt
             );
-            // self.loadingSwitch = false;
             let responseInfo = response.data;
 
             self.$router.push(
                 `/accounts?balance=${responseInfo.balance}&acc_id=${
                     responseInfo.acc_id
-                }&page=${response.page}`
+                }`
             );
         },
 
@@ -139,7 +178,6 @@ export default {
             let response = await self.$api.get("/api/get_transactions_count");
             if (response.success) {
                 self.TOTAL_VAL = response.count;
-                MAX_PAGE = Math.ceil(response.count / self.LIMIT_VAL);
             } else {
                 self.TOTAL_VAL = "-";
             }
@@ -151,11 +189,13 @@ export default {
             if (response.success && response.item) {
                 self.startOpt.balance = response.item.balance || "0";
                 self.startOpt.acc_id = response.item.acc_id;
-                self.startOpt.page = 1;
+
                 if (!self.url_parm.balance) {
+                    isDefaultPage = true;
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.footer = false;
                     self.url_parm.balance = response.item.balance;
                     self.url_parm.acc_id = response.item.acc_id;
-                    self.url_parm.page = 1;
                 }
             } else if (response.success) {
                 console.log("data is null");
@@ -164,10 +204,10 @@ export default {
             }
 
             //如果有字段信息
-            if (self.url_parm.page > 1) {
-                self.getAccounts(self.url_parm);
+            if (isDefaultPage) {
+                self.startOpt && self.getAccounts(self.startOpt);
             } else {
-                self.getAccounts(self.startOpt);
+                self.getAccounts(self.url_parm);
             }
         },
 
@@ -176,16 +216,33 @@ export default {
             self.loadingSwitch = true;
             let opt = {
                 acc_id: parm.acc_id,
-                balance: parm.balance,
-                page: parm.page
+                balance: parm.balance
             };
 
             let response = await self.$api.get("/api/get_accounts", opt);
 
             if (response.success) {
                 self.database = response.accounts;
+                self.pageFirstItem = response.accounts[0];
+                if (response.accounts.length < 20) {
+                    self.$router.push(`/accounts`);
+                }
             } else {
                 self.database = [errorInfo];
+            }
+
+            //禁止首页上一页
+            if (
+                parm.acc_id == self.startOpt.acc_id &&
+                parm.balance == self.startOpt.balance
+            ) {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
+            }
+            //禁止尾页下一页
+            if (parm.acc_id == -1 && parm.balance == -1) {
+                self.btnSwitch.footer = true;
+                self.btnSwitch.right = true;
             }
 
             self.loadingSwitch = false;

@@ -100,7 +100,7 @@ router.get("/get_accounts_count", async function (req, res, next) {
             count: 0,
             code: 500,
             success: false,
-            message: "count transaction Error"
+            message: "count count Error"
         }
         res.json(responseData);
     } else {
@@ -177,7 +177,6 @@ router.get("/get_first_balance_flag", async function (req, res, next) {
 router.get("/get_want_balance_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;
-    var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
     let errorInfo = {
         acc_id: "0000",
         balance: "000000",
@@ -185,14 +184,14 @@ router.get("/get_want_balance_flag", async function (req, res, next) {
 
     let ascVal;
     let symbol_str;
-    if (offsetPage >= 0) {
+    if (queryVal.direction === 'left') {
         symbol_str = ">";
         ascVal = "asc";
     } else {
         symbol_str = "<";
         ascVal = "desc";
     }
-    let offsetNum = (offsetPage >= 0) ? (offsetPage * LIMIT_VAL) : (-offsetPage * LIMIT_VAL);
+    let offsetNum = 20;
 
     let start_sql = {
         text: `
@@ -226,13 +225,25 @@ router.get("/get_want_balance_flag", async function (req, res, next) {
             message: "select start_sql Error"
         }
     } else {
-        responseData = {
-            data: transStartInfo.rows[0],
-            page: queryVal.want_page,
-            code: 200,
-            success: true,
-            message: "success"
+        if (transStartInfo.rows.length) {
+            responseData = {
+                data: transStartInfo.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    acc_id: "-1",
+                    balance: "-1",
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
         }
+
     }
     res.json(responseData);
 })
@@ -276,7 +287,7 @@ router.get("/get_accounts", async function (req, res, next) {
     } else {
 
         //查询成功
-        var basePage = Number(queryVal.page) - 1; // 1 2
+        // var basePage = Number(queryVal.page) - 1; // 1 2
         var accounts = data.rows.reverse();
         // var accounts = data.rows;
         accounts.forEach((element, index) => {
@@ -300,12 +311,12 @@ router.get("/get_accounts", async function (req, res, next) {
                 }
                 element.balance = integer + decimal; //TODO Keep 6 decimal places
             }
-            element.rank = LIMIT_VAL * basePage + (index + 1);
+            // element.rank = LIMIT_VAL * basePage + (index + 1);
         });
 
         responseData = {
             accounts: accounts,
-            page: queryVal.page,
+            // page: queryVal.page,
             code: 200,
             success: true,
             message: "success"
@@ -420,10 +431,9 @@ router.get("/get_first_page_flag", async function (req, res, next) {
  */
 router.get("/get_want_page_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
-
+    let queryVal = req.query;
     var wt = queryVal.wt;// ?wt=all 代表查找含有见证节点的交易列表
-    var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
+    // var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
     let errorInfo = {
         "exec_timestamp": "0",
         "level": "0",
@@ -432,42 +442,21 @@ router.get("/get_want_page_flag", async function (req, res, next) {
     let shown = (wt == true) ? '' : ' and is_shown = true ';
     let ascVal;
     let symbol_str;
-    if (offsetPage >= 0) {
+    if (queryVal.direction === 'left') {
         symbol_str = ">";
         ascVal = "asc";
     } else {
         symbol_str = "<";
         ascVal = "desc";
     }
-    let offsetNum = (offsetPage >= 0) ? (offsetPage * LIMIT_VAL) : (-offsetPage * LIMIT_VAL);
+    let offsetNum = 20;
 
     let start_sql;
-    // let start_sql = {
-    //     text: `
-    //         Select 
-    //             "exec_timestamp","level","pkid"
-    //         FROM 
-    //             transaction 
-    //         WHERE 
-    //             (
-    //                 (exec_timestamp ${symbol_str} $1) or 
-    //                 (exec_timestamp = $1 and level ${symbol_str} $2) or 
-    //                 (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
-    //             ) ${shown} 
-    //         order by 
-    //             "exec_timestamp" ${ascVal},
-    //             "level"  ${ascVal},
-    //             "pkid"  ${ascVal}
-    //         offset
-    //             ${offsetNum - 1}
-    //         LIMIT
-    //             1
-    //     `,
-    //     values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
-    // }
 
-    //解决大数据时候，搜索慢的场景（desc < 查询的情况）
+    //union用来解决大数据时候，搜索慢的场景（desc < 查询的情况）
+
     if (symbol_str == "<") {
+        //向右 点下一页
         start_sql = {
             text: `
             (
@@ -555,14 +544,28 @@ router.get("/get_want_page_flag", async function (req, res, next) {
             message: "select start_sql Error"
         }
     } else {
-        responseData = {
-            data: transStartInfo.rows[0],
-            page: queryVal.want_page,
-            code: 200,
-            success: true,
-            message: "success"
+        if (transStartInfo.rows.length) {
+            responseData = {
+                data: transStartInfo.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    "exec_timestamp": 0,
+                    "level": 0,
+                    "pkid": 0
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
         }
+
     }
+    
     res.json(responseData);
 })
 
@@ -782,7 +785,6 @@ router.get("/get_transaction_short", async function (req, res, next) {
     let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
 
-    // console.log(data);
     if (data.code) {
         responseData = {
             transaction: {

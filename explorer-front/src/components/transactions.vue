@@ -85,16 +85,32 @@
                     </template>
                 </div>
                 <div class="pagin-block">
-                    <el-pagination
-                        small
-                        background
-                        layout="total,prev, pager, next"
-                        @current-change="getPaginationFlag"
-                        :current-page.sync="current_page"
-                        :page-size="LIMIT_VAL"
-                        :total="TOTAL_VAL"
-                        :pager-count="5"
-                    ></el-pagination>
+                    <el-button-group>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.header"
+                            @click="getPaginationFlag('header')"
+                        >首页</el-button>
+                        <el-button
+                            size="mini"
+                            icon="el-icon-arrow-left"
+                            :disabled="btnSwitch.left"
+                            @click="getPaginationFlag('left')"
+                        >上一页</el-button>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.right"
+                            @click="getPaginationFlag('right')"
+                        >
+                            下一页
+                            <i class="el-icon-arrow-right el-icon--right"></i>
+                        </el-button>
+                        <el-button
+                            size="mini"
+                            :disabled="btnSwitch.footer"
+                            @click="getPaginationFlag('footer')"
+                        >尾页</el-button>
+                    </el-button-group>
                 </div>
             </div>
         </div>
@@ -117,7 +133,7 @@ let errorInfo = {
 };
 
 let self = null;
-let MAX_PAGE;
+let isDefaultPage = false;
 
 export default {
     name: "Accounts",
@@ -131,6 +147,12 @@ export default {
             LIMIT_VAL: 20,
             wt: window.location.hash.indexOf("wt=") > 1 ? "all" : "",
             loadingSwitch: true,
+            btnSwitch: {
+                header: false,
+                left: false,
+                right: false,
+                footer: false
+            },
             database: [
                 {
                     exec_timestamp: "-",
@@ -140,15 +162,13 @@ export default {
                     amount: 0
                 }
             ],
-            get_endpage_item: {},
-
+            pageFirstItem: {},
             url_parm: {
                 exec_timestamp: 0,
                 level: 0,
-                pkid: 0,
-                page: 0
+                pkid: 0
             },
-            current_page: this.$route.query.page || 1,
+            // current_page: this.$route.query.page || 1,
 
             startOpt: {}
         };
@@ -160,27 +180,34 @@ export default {
             self.url_parm = {
                 exec_timestamp: queryInfo.exec_timestamp,
                 level: queryInfo.level,
-                pkid: queryInfo.pkid,
-                page: queryInfo.page || 1
+                pkid: queryInfo.pkid
             };
         }
-
-        self.current_page = Number(queryInfo.page || 1);
         self.getTransactionsCount();
         self.getFlagTransactions();
     },
     methods: {
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
-            // if want_page == MAX_PAGE 说明是取最后一页
-            if (val == MAX_PAGE) {
+            // 想取最后一页
+            if (val === "footer") {
                 self.$router.push(
-                    `/transactions?exec_timestamp=0&level=0&pkid=0&page=${MAX_PAGE}`
+                    `/transactions?exec_timestamp=0&level=0&pkid=0`
                 );
                 return;
             }
-            // if want_page == 1 说明是取第一页
-            if (val == 1) {
+            // 想取第一页
+            if (val === "header") {
+                self.$router.push(`/transactions`);
+                return;
+            }
+            if (
+                val == "left" &&
+                (self.pageFirstItem.exec_timestamp ==
+                    self.startOpt.exec_timestamp &&
+                    self.pageFirstItem.level == self.startOpt.level &&
+                    self.pageFirstItem.pkid == self.startOpt.pkid)
+            ) {
                 self.$router.push(`/transactions`);
                 return;
             }
@@ -189,8 +216,9 @@ export default {
                 exec_timestamp: self.url_parm.exec_timestamp,
                 level: self.url_parm.level,
                 pkid: self.url_parm.pkid,
-                page: self.url_parm.page, //当前页 1
-                want_page: val
+                direction: val
+                // page: self.url_parm.page, //当前页 1
+                // want_page: val
             };
             let response = await self.$api.get("/api/get_want_page_flag", opt);
             // self.loadingSwitch = false;
@@ -198,29 +226,42 @@ export default {
             self.$router.push(
                 `/transactions?exec_timestamp=${
                     responseInfo.exec_timestamp
-                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}&page=${
-                    response.page
-                }`
+                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}`
             );
         },
-        async getTransactions(parm, flag) {
+        async getTransactions(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
-
             let opt = {
-                action: parm.action, //before 向前翻页=>大于值 | after 向后翻页=>小于值
                 exec_timestamp: parm.exec_timestamp,
                 wt: self.wt,
                 level: parm.level,
                 pkid: parm.pkid
             };
-
             let response = await self.$api.get("/api/get_transactions", opt);
 
             if (response.success) {
                 self.database = response.transactions;
+                self.pageFirstItem = response.transactions[0];
+                if (response.transactions.length < 20) {
+                    self.$router.push(`/transactions`);
+                }
             } else {
                 self.database = [errorInfo];
+            }
+            //禁止首页上一页
+            if (
+                parm.exec_timestamp == self.startOpt.exec_timestamp &&
+                parm.level == self.startOpt.level &&
+                parm.pkid == self.startOpt.pkid
+            ) {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
+            }
+            //禁止尾页下一页
+            if (parm.exec_timestamp == 0 && parm.level == 0 && parm.pkid == 0) {
+                self.btnSwitch.footer = true;
+                self.btnSwitch.right = true;
             }
 
             self.loadingSwitch = false;
@@ -236,7 +277,6 @@ export default {
             );
             if (response.success) {
                 self.TOTAL_VAL = response.count;
-                MAX_PAGE = Math.ceil(response.count / self.LIMIT_VAL);
             } else {
                 self.TOTAL_VAL = "-";
             }
@@ -251,21 +291,23 @@ export default {
             if (response.success) {
                 self.startOpt = response.near_item;
                 if (!self.url_parm.exec_timestamp && response.near_item) {
+                    isDefaultPage = true;
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.footer = false;
                     self.url_parm.exec_timestamp =
                         response.near_item.exec_timestamp;
                     self.url_parm.level = response.near_item.level;
                     self.url_parm.pkid = response.near_item.pkid;
-                    self.url_parm.page = 1;
                 }
             } else {
                 console.log("error");
             }
 
             //如果有字段信息
-            if (self.url_parm.page > 1) {
-                self.getTransactions(self.url_parm);
-            } else {
+            if (isDefaultPage) {
                 self.startOpt && self.getTransactions(self.startOpt);
+            } else {
+                self.getTransactions(self.url_parm);
             }
         },
 
