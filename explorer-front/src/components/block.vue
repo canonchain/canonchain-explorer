@@ -77,10 +77,14 @@
                         </strong>
                         <div class="bui-dlist-det">
                             <span v-if="isSuccess === false">-</span>
-                            <router-link
-                                v-else
-                                :to="'/account/'+blockInfo.to"
-                            >{{blockInfo.to || '-'}}</router-link>
+                            <template v-else>
+                                <template v-if="blockInfo.to">
+                                    <router-link :to="'/account/'+blockInfo.to">{{blockInfo.to}}</router-link>
+                                </template>
+                                <template v-else>
+                                    <span>-</span>
+                                </template>
+                            </template>
                         </div>
                     </div>
                     <div class="block-item-des">
@@ -106,6 +110,7 @@
 <script>
 import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
+import transactionsVue from "./transactions.vue";
 
 let self = null;
 
@@ -118,30 +123,15 @@ export default {
     data() {
         return {
             blockHash: this.$route.params.id,
-            isSuccess:false,
+            isSuccess: false,
             blockInfo: {
                 from: "-",
                 to: "-",
                 amount: "0",
-                previous: "-",
-                parents: "-",
-                best_parent: "-",
                 data: "",
                 exec_timestamp: "0",
                 status: "0",
-                is_free: "0",
-                is_on_mc: "0",
-                is_stable: "0",
-                last_summary: "-",
-                last_summary_block: "-",
-                latest_included_mci: "3",
-                level: "4",
-                mc_timestamp: "0",
-                mci: "4",
-                signature: "-",
-                witness_list: "",
-                witness_list_block: "-",
-                witnessed_level: "0"
+                is_stable: "0"
             }
         };
     },
@@ -151,14 +141,25 @@ export default {
     },
     methods: {
         async initDatabase() {
-            let opt ={
+            let opt = {
                 transaction: self.blockHash
-            }
-            let response = await self.$api.get("/api/get_transaction", opt);
-            if ({}.toString.call(response) === "[object Object]") {
-                self.blockInfo = response.transaction;
+            };
+            let response = await self.$api.get(
+                "/api/get_transaction_short",
+                opt
+            );
+            if (response.success) {
+                self.isSuccess = true;
+                self.blockInfo.from = response.transaction.from;
+                self.blockInfo.to = response.transaction.to;
+                self.blockInfo.amount = response.transaction.amount;
+                self.blockInfo.data = response.transaction.data;
+                self.blockInfo.exec_timestamp =
+                    response.transaction.exec_timestamp;
+                self.blockInfo.status = response.transaction.status;
+                self.blockInfo.is_stable = response.transaction.is_stable;
             } else {
-                console.error("/api/get_transaction Error");
+                console.error("/api/get_transaction_short Error");
             }
             self.loadingSwitch = false;
         }

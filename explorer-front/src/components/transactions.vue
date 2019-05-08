@@ -42,9 +42,14 @@
                             </el-table-column>
                             <el-table-column label="收款方" width="200">
                                 <template slot-scope="scope">
-                                    <el-button @click="goAccountPath(scope.row.to)" type="text">
-                                        <span class="table-long-item">{{scope.row.to}}</span>
-                                    </el-button>
+                                    <template v-if="scope.row.to">
+                                        <el-button @click="goAccountPath(scope.row.to)" type="text">
+                                            <span class="table-long-item">{{scope.row.to}}</span>
+                                        </el-button>
+                                    </template>
+                                    <template v-else>
+                                        <span>-</span>
+                                    </template>
                                 </template>
                             </el-table-column>
                             <el-table-column label="状态" min-width="80" align="center">

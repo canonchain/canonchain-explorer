@@ -2,8 +2,8 @@ var express = require("express");
 var router = express.Router();
 var responseTime = require("./response-time");
 
-var pgPromise = require('../database/PG-promise');// 引用上述文件
-
+var PgPromise = require('../database/PG-promise');// 引用上述文件
+var pgPromise = PgPromise.pool;
 //写日志
 let log4js = require('../database/log_config');
 let logger = log4js.getLogger('read_db');//此处使用category的值
@@ -315,147 +315,6 @@ router.get("/get_accounts", async function (req, res, next) {
 })
 
 //************************** 账户列表结束
-
-//获取账号信息
-router.get("/get_account", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryAccount = req.query.account;// ?account=2
-
-    let opt = {
-        text: `
-            Select 
-                account,balance 
-            FROM 
-                accounts  
-            WHERE 
-                account = $1
-        `,
-        values: [queryAccount]
-    };
-    PageUtility.timeLog(req, 'Account Info Befor')
-    let data = await pgPromise.query(opt);
-    PageUtility.timeLog(req, 'Account Info After')
-
-    if (data.code) {
-        // 查询出错
-        responseData = {
-            account: {},
-            code: 500,
-            success: false,
-            message: "Select account,balance FROM accounts Error"
-        }
-    } else {
-        responseData = {
-            account: data.rows[0],
-            code: 200,
-            success: true,
-            message: "success"
-        }
-    }
-    res.json(responseData);
-})
-
-//获取账号的交易列表
-router.get("/get_account_list", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryAccount = req.query.account;// ?account=2
-    var queryPage = req.query.page;// ?page=2
-    var page, //当前页数
-        pages; // 合计总页数
-
-    var OFFSETVAL;//前面忽略的条数
-    var LIMITVAL = 20;//每页显示条数
-    if (typeof Number(queryPage) !== "number") {
-        page = 1;
-    } else {
-        page = Number(queryPage) || 1;
-    }
-
-    let opt = {
-        text: `
-            SELECT 
-                transaction_count AS count 
-            FROM 
-                accounts 
-            WHERE 
-                account = $1
-        `,
-        values: [queryAccount]
-    };
-    PageUtility.timeLog(req, '[1] SELECT transaction_count Before')
-    let count = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[1] SELECT transaction_count After')
-
-    if (count.code) {
-        responseData = {
-            count: 0,
-            tx_list: [],
-            code: 500,
-            success: false,
-            message: "count account Error"
-        }
-        res.json(responseData);
-    } else {
-        count = Number(count.rows[0].count);
-        pages = Math.ceil(count / LIMITVAL);
-        //paga 不大于 pages
-        page = Math.min(pages, page);
-        //page 不小于 1
-        page = Math.max(page, 1);
-        OFFSETVAL = (page - 1) * LIMITVAL;
-    }
-
-    //TODO 这里需要优化，太慢了
-    // *,balance/sum(balance)
-    let opt2 = {
-        text: `
-            Select 
-                exec_timestamp,level,hash,"from","to",is_stable,"status",amount,mci 
-            FROM 
-                transaction 
-            WHERE 
-                "from" = $1 OR 
-                "to"=$1 
-            order by 
-                exec_timestamp desc, 
-                level desc,
-                pkid desc 
-            LIMIT 
-                $2 
-            OFFSET 
-                $3
-        `,
-        values: [queryAccount, LIMITVAL, OFFSETVAL]
-    }
-
-    PageUtility.timeLog(req, '[2] SELECT transaction info Before')
-    let data = await pgPromise.query(opt2)
-    PageUtility.timeLog(req, '[2] SELECT transaction info After')
-
-    responseData = {
-        tx_list: data.rows,
-        page: Number(queryPage),
-        count: Number(count),
-        code: 0,
-        success: true,
-        message: "success"
-    }
-    //是否从此帐号发出
-    responseData.tx_list.forEach(item => {
-        if (item.from == queryAccount) {
-            item.is_from_this_account = true;
-        } else {
-            item.is_from_this_account = false;
-        }
-        //是否转给自己
-        if (item.from == item.to) {
-            item.is_to_self = true;
-        } else {
-            item.is_to_self = false;
-        }
-    })
-    res.json(responseData);
-})
 
 //************************** 交易列表开始
 //获取交易总数量
@@ -770,39 +629,180 @@ router.get("/get_transactions", async function (req, res, next) {
 //************************** 交易列表结束
 
 
-//获取最新的交易
-router.get("/get_latest_transactions", async function (req, res, next) {
+//************************** 账号详情 开始
+//获取账号信息
+router.get("/get_account", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    // TODO optimize
-    let sql = {
+    var queryAccount = req.query.account;// ?account=2
+
+    let opt = {
         text: `
             Select 
-                exec_timestamp,level,hash,"from","to",is_stable,"status",amount 
+                "account","balance","transaction_count"
             FROM 
+                "accounts"  
+            WHERE 
+                "account" = $1
+        `,
+        values: [queryAccount]
+    };
+    PageUtility.timeLog(req, 'Account Info Befor')
+    let data = await pgPromise.query(opt);
+    PageUtility.timeLog(req, 'Account Info After')
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            account: {},
+            code: 500,
+            success: false,
+            message: "Select account,balance,transaction_count FROM accounts Error"
+        }
+    } else {
+        if (data.rows.length) {
+            responseData = {
+                account: data.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                account: {
+                    "account": queryAccount,
+                    "balance": 0,
+                    "transaction_count": 0
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//获取账号的交易列表
+router.get("/get_account_list", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    var queryAccount = queryInfo.account;// ?account=2
+    var queryPage = queryInfo.page;// ?page=2
+
+    var OFFSETVAL;//前面忽略的条数
+    OFFSETVAL = (queryPage - 1) * LIMIT_VAL || 0;
+
+    //TODO 这里需要优化，太慢了
+    // console.log(queryAccount, LIMIT_VAL, OFFSETVAL);
+    let opt2 = {
+        text: `
+            Select 
+                exec_timestamp,level,hash,"from","to",is_stable,"status",amount,mci 
+            FROM
                 transaction 
-            where 
-                is_shown = true 
+            WHERE 
+                "from" = $1 OR "to"=$1
             order by 
                 exec_timestamp desc, 
                 level desc,
                 pkid desc 
-            LIMIT 10
-        `
-    };
-    PageUtility.timeLog(req, '[1] SELECT latest transactions Before')
-    let data = await pgPromise.query(sql)
-    PageUtility.timeLog(req, '[1] SELECT latest transactions Afer')
+            LIMIT 
+                $2 
+            OFFSET 
+                $3
+        `,
+        values: [queryAccount, LIMIT_VAL, OFFSETVAL]
+    }
 
-    if (data.code) {
+    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    let data = await pgPromise.query(opt2)
+    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+
+    responseData = {
+        tx_list: data.rows,
+        page: Number(queryPage),
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    //是否从此帐号发出
+    responseData.tx_list.forEach(item => {
+        if (item.from == queryAccount) {
+            item.is_from_this_account = true;
+        } else {
+            item.is_from_this_account = false;
+        }
+        //是否转给自己
+        if (item.from == item.to) {
+            item.is_to_self = true;
+        } else {
+            item.is_to_self = false;
+        }
+    })
+    res.json(responseData);
+})
+//************************** 账号详情 结束
+
+//************************** 交易详情页 开始
+//获取交易HAX对应的信息 简单信息
+router.get("/get_transaction_short", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryTransaction = req.query.transaction;// TODO 验证格式
+    if (queryTransaction.length !== 64) {
         responseData = {
-            transactions: [],
+            transaction: {
+                "hash": queryTransaction,
+                "from": "-",
+                "to": "-",
+                "amount": "0",
+                "data": "",
+                "exec_timestamp": "1534146836",
+                "status": "0",
+                "is_stable": "0"
+            },
             code: 500,
             success: false,
-            message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from transaction error'
+            message: "hash is not validated"
+        }
+        res.json(responseData);
+    }
+
+    //TODO 少选点信息
+    let opt = {
+        text: `
+            Select 
+                "hash","from","to","amount","data","exec_timestamp","status","is_stable"
+            FROM 
+                transaction  
+            WHERE 
+                hash = $1
+        `,
+        values: [queryTransaction]
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    let data = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+
+    // console.log(data);
+    if (data.code) {
+        responseData = {
+            transaction: {
+                "hash": queryTransaction,
+                "from": "-",
+                "to": "-",
+                "amount": "0",
+                "data": "",
+                "exec_timestamp": "1534146836",
+                "status": "0",
+                "is_stable": "0"
+            },
+            code: 500,
+            success: false,
+            message: "select items from transaction error"
         }
     } else {
+        transaction = data.rows[0];
         responseData = {
-            transactions: data.rows,
+            transaction: transaction,
             code: 200,
             success: true,
             message: "success"
@@ -810,9 +810,11 @@ router.get("/get_latest_transactions", async function (req, res, next) {
     }
     res.json(responseData);
 })
+//************************** 交易详情页 结束
 
-//获取交易号信息 
-//TODO 这个接口改为2个接口，一个供DAG图用（全属性），一个供trans详情用（简单信息）
+
+//************************** DAG 开始
+//获取交易HAX对应的信息  全属性
 router.get("/get_transaction", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryTransaction = req.query.transaction;// ?account=2
@@ -961,9 +963,7 @@ router.get("/get_transaction", async function (req, res, next) {
 
 
 })
-
 //获取以前的unit
-
 router.get("/get_previous_units", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
@@ -1213,11 +1213,51 @@ router.get("/get_previous_units", async function (req, res, next) {
     res.json(responseData);
 
 });
+//************************** DAG 结束
 
-/*
-首页：mci、交易数量、TPS 
-*/
-//获取MCI
+
+//************************** 首页接口 开始
+//获取最新的交易
+router.get("/get_latest_transactions", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    // TODO optimize
+    let sql = {
+        text: `
+            Select 
+                exec_timestamp,level,hash,"from","to",is_stable,"status",amount 
+            FROM 
+                transaction 
+            where 
+                is_shown = true 
+            order by 
+                exec_timestamp desc, 
+                level desc,
+                pkid desc 
+            LIMIT 10
+        `
+    };
+    PageUtility.timeLog(req, '[1] SELECT latest transactions Before')
+    let data = await pgPromise.query(sql)
+    PageUtility.timeLog(req, '[1] SELECT latest transactions Afer')
+
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from transaction error'
+        }
+    } else {
+        responseData = {
+            transactions: data.rows,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取MCI 首页：mci、交易数量、TPS 
 router.get("/get_mci", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
@@ -1256,9 +1296,7 @@ router.get("/get_mci", async function (req, res, next) {
     }
     res.json(responseData);
 })
-
 //获取TPS
-//T:266ms
 router.get("/get_timestamp", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
@@ -1327,4 +1365,6 @@ router.get("/get_timestamp", async function (req, res, next) {
     }
     res.json(responseData);
 })
+//************************** 首页接口 结束
+
 module.exports = router;

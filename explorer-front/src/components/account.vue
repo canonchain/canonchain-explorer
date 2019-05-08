@@ -91,18 +91,23 @@
                                 </el-table-column>
                                 <el-table-column label="收款方" width="180">
                                     <template slot-scope="scope">
-                                        <template
-                                            v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
-                                        >
-                                            <el-button
-                                                @click="goAccountPath(scope.row.to)"
-                                                type="text"
+                                        <template v-if="scope.row.to">
+                                            <template
+                                                v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
                                             >
+                                                <el-button
+                                                    @click="goAccountPath(scope.row.to)"
+                                                    type="text"
+                                                >
+                                                    <span class="table-long-item">{{scope.row.to}}</span>
+                                                </el-button>
+                                            </template>
+                                            <template v-else>
                                                 <span class="table-long-item">{{scope.row.to}}</span>
-                                            </el-button>
+                                            </template>
                                         </template>
                                         <template v-else>
-                                            <span class="table-long-item">{{scope.row.to}}</span>
+                                            <span>-</span>
                                         </template>
                                     </template>
                                 </el-table-column>
@@ -198,32 +203,36 @@ export default {
     methods: {
         initTransactionInfo() {},
         async initDatabase() {
-            let opt ={
+            let opt = {
                 account: self.accountInfo.address
-            }
+            };
             let response = await self.$api.get("/api/get_account", opt);
-            if ({}.toString.call(response) === "[object Object]") {
-                    self.accountInfo.balance = response.account.balance;
-                    self.accountInfo.tran_count =
-                        response.account.tran_count;
+
+            if (response.success) {
+                let accInfo = response.account;
+                self.accountInfo.balance = accInfo.balance;
+                self.accountInfo.tran_count = accInfo.transaction_count;
+                self.totalVal = Number(accInfo.transaction_count);
             } else {
                 console.error("/api/get_account Error");
             }
         },
         async getAccountLists() {
             //TODO 优化分页性能
-            let opt ={
+            let opt = {
                 account: self.accountInfo.address,
                 page: self.currentPage
-            }
+            };
             let response = await self.$api.get("/api/get_account_list", opt);
-            if ({}.toString.call(response) === "[object Object]") {
-                self.totalVal = response.count;
+            if (response.success) {
+                if (self.totalVal < response.tx_list.length) {
+                    self.totalVal = response.tx_list.length;
+                }
                 self.tx_list = response.tx_list;
             } else {
-                self.tx_list = [];
                 console.error("/api/get_account_list Error");
             }
+
             self.loadingSwitch = false;
         },
         handleCurrentChange(val) {
