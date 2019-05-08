@@ -15,8 +15,18 @@
                 <div id="menuInput">
                     <div class="input-wrap">
                         <el-form class="demo-form-inline" id="search-form">
-                            <el-input v-model="searchVal" placeholder="请输入DAG上的查询内容" id="inputSearch" size="small">
-                                <el-button slot="append" size="mini" icon="el-icon-search" @click="searchForm"></el-button>
+                            <el-input
+                                v-model="searchVal"
+                                placeholder="请输入DAG上的查询内容"
+                                id="inputSearch"
+                                size="small"
+                            >
+                                <el-button
+                                    slot="append"
+                                    size="mini"
+                                    icon="el-icon-search"
+                                    @click="searchForm"
+                                ></el-button>
                             </el-input>
                         </el-form>
                     </div>
@@ -56,33 +66,50 @@
                 <div class="info-item-dev">
                     <strong>Previous</strong>:
                     <span class="info-item-val">
-                        <template v-if='activeUnitInfo.previous === "0000000000000000000000000000000000000000000000000000000000000000"'>
+                        <template
+                            v-if="activeUnitInfo.previous === '0000000000000000000000000000000000000000000000000000000000000000'"
+                        >
                             <span>-</span>
                         </template>
                         <template v-else>
-                            <a href="javascript:;" @click="goBlockHash(activeUnitInfo.previous)">{{activeUnitInfo.previous}}</a>
+                            <a
+                                href="javascript:;"
+                                @click="goBlockHash(activeUnitInfo.previous)"
+                            >{{activeUnitInfo.previous}}</a>
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <strong>Best Parent</strong>:
                     <span class="info-item-val">
-                        <template v-if='activeUnitInfo.best_parent === "0000000000000000000000000000000000000000000000000000000000000000"'>
+                        <template
+                            v-if="activeUnitInfo.best_parent === '0000000000000000000000000000000000000000000000000000000000000000'"
+                        >
                             <span>-</span>
                         </template>
                         <template v-else>
-                            <a href="javascript:;" @click="goBlockHash(activeUnitInfo.best_parent)">{{activeUnitInfo.best_parent}}</a>
+                            <a
+                                href="javascript:;"
+                                @click="goBlockHash(activeUnitInfo.best_parent)"
+                            >{{activeUnitInfo.best_parent}}</a>
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
-                    <template v-if='activeUnitInfo.parents.length==0'>
-                        <strong>Parents : - </strong>
+                    <template v-if="activeUnitInfo.parents.length==0">
+                        <strong>Parents : -</strong>
                     </template>
                     <template v-else>
-                        <strong :class="['switch',{'switch-show': showParentsLink }]" @click="toggleParents('parent')">Parents</strong>
+                        <strong
+                            :class="['switch',{'switch-show': showParentsLink }]"
+                            @click="toggleParents('parent')"
+                        >Parents</strong>
                     </template>
-                    <div v-for="item in activeUnitInfo.parents" v-show="showParentsLink==true" :key='item.parent'>
+                    <div
+                        v-for="item in activeUnitInfo.parents"
+                        v-show="showParentsLink==true"
+                        :key="item.parent"
+                    >
                         <a href="javascript:;" @click="goBlockHash(item.parent)">{{item.parent}}</a>
                     </div>
                 </div>
@@ -103,26 +130,23 @@
                     <span class="level-wrap">
                         <strong>Status</strong>:
                         <template v-if="activeUnitInfo.is_stable === false">
-                            <span class="txt-warning">
-                                等待确认
-                            </span>
+                            <span class="txt-warning">等待确认</span>
                         </template>
                         <template v-else>
-                            <template v-if='activeUnitInfo.status == "0"'>
-                                <span class="txt-success"> 成功 </span>
+                            <template v-if="activeUnitInfo.status == '0'">
+                                <span class="txt-success">成功</span>
                             </template>
-                            <template v-else-if='activeUnitInfo.status == "1"'>
-                                <span class="txt-danger"> 失败(1) </span>
+                            <template v-else-if="activeUnitInfo.status == '1'">
+                                <span class="txt-danger">失败(1)</span>
                             </template>
-                            <template v-else-if='activeUnitInfo.status == "2"'>
-                                <span class="txt-danger"> 失败(2) </span>
+                            <template v-else-if="activeUnitInfo.status == '2'">
+                                <span class="txt-danger">失败(2)</span>
                             </template>
-                            <template v-else-if='activeUnitInfo.status == "3"'>
-                                <span class="txt-danger"> 失败(3) </span>
+                            <template v-else-if="activeUnitInfo.status == '3'">
+                                <span class="txt-danger">失败(3)</span>
                             </template>
                         </template>
                     </span>
-
                 </div>
                 <div class="info-item-dev">
                     <span class="level-wrap">
@@ -136,43 +160,66 @@
                 </div>
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
-                    <template v-if='activeUnitInfo.witness_list_block === "0000000000000000000000000000000000000000000000000000000000000000"'>
-                        <strong :class="['switch',{'switch-show': showWitnessLink }]" @click="toggleParents('witness')">Witness List Block</strong>
+                    <template
+                        v-if="activeUnitInfo.witness_list_block === '0000000000000000000000000000000000000000000000000000000000000000'"
+                    >
+                        <strong
+                            :class="['switch',{'switch-show': showWitnessLink }]"
+                            @click="toggleParents('witness')"
+                        >Witness List Block</strong>
                     </template>
                     <template v-else>
                         <strong>Witness List Block</strong>
                     </template>
                     <span class="info-item-val">
-                        <template v-if='activeUnitInfo.witness_list_block === "0000000000000000000000000000000000000000000000000000000000000000"'>
-                            <div v-for="item in activeUnitInfo.witness_list" v-show="showWitnessLink==true" :key='item'>
-                                <router-link tag="a" :to="'/account/'+item" target="_blank">{{ item }}</router-link>
+                        <template
+                            v-if="activeUnitInfo.witness_list_block === '0000000000000000000000000000000000000000000000000000000000000000'"
+                        >
+                            <div
+                                v-for="item in activeUnitInfo.witness_list"
+                                v-show="showWitnessLink==true"
+                                :key="item"
+                            >
+                                <router-link
+                                    tag="a"
+                                    :to="'/account/'+item"
+                                    target="_blank"
+                                >{{ item }}</router-link>
                             </div>
                         </template>
                         <template v-else>
-                            <a href="javascript:;" @click="goBlockHash(activeUnitInfo.witness_list_block)">{{activeUnitInfo.witness_list_block}}</a>
+                            <a
+                                href="javascript:;"
+                                @click="goBlockHash(activeUnitInfo.witness_list_block)"
+                            >{{activeUnitInfo.witness_list_block}}</a>
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <strong>Last Summary Block</strong>:
                     <span class="info-item-val">
-                        <template v-if='activeUnitInfo.last_summary_block === "0000000000000000000000000000000000000000000000000000000000000000"'>
+                        <template
+                            v-if="activeUnitInfo.last_summary_block === '0000000000000000000000000000000000000000000000000000000000000000'"
+                        >
                             <span>-</span>
                         </template>
                         <template v-else>
-                            <a href="javascript:;" @click="goBlockHash(activeUnitInfo.last_summary_block)">{{activeUnitInfo.last_summary_block}}</a>
+                            <a
+                                href="javascript:;"
+                                @click="goBlockHash(activeUnitInfo.last_summary_block)"
+                            >{{activeUnitInfo.last_summary_block}}</a>
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <strong>Last Summary</strong>:
                     <span class="info-item-val">
-                        <template v-if='activeUnitInfo.last_summary === "0000000000000000000000000000000000000000000000000000000000000000"'>
+                        <template
+                            v-if="activeUnitInfo.last_summary === '0000000000000000000000000000000000000000000000000000000000000000'"
+                        >
                             <span>-</span>
                         </template>
-                        <template v-else>
-                            {{activeUnitInfo.last_summary}}
-                        </template>
+                        <template v-else>{{activeUnitInfo.last_summary}}</template>
                     </span>
                 </div>
                 <div class="info-item-dev">
@@ -183,13 +230,21 @@
                 <div class="info-item-dev">
                     <strong>From</strong>:
                     <span class="info-item-val">
-                        <router-link tag="a" :to="'/account/'+activeUnitInfo.from" target="_blank">{{activeUnitInfo.from}}</router-link>
+                        <router-link
+                            tag="a"
+                            :to="'/account/'+activeUnitInfo.from"
+                            target="_blank"
+                        >{{activeUnitInfo.from}}</router-link>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <strong>To</strong>:
                     <span class="info-item-val">
-                        <router-link tag="a" :to="'/account/'+activeUnitInfo.to" target="_blank">{{activeUnitInfo.to}}</router-link>
+                        <router-link
+                            tag="a"
+                            :to="'/account/'+activeUnitInfo.to"
+                            target="_blank"
+                        >{{activeUnitInfo.to}}</router-link>
                     </span>
                 </div>
                 <div class="info-item-dev">
@@ -199,14 +254,16 @@
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <strong>Signature</strong>:
-                        <span class="info-item-val">
-                            <template v-if='activeUnitInfo.signature === "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"'>
-                                <span>-</span>
-                            </template>
-                            <template v-else>
-                                <span>{{activeUnitInfo.signature}}</span>
-                            </template>
-                        </span>    
+                    <span class="info-item-val">
+                        <template
+                            v-if="activeUnitInfo.signature === '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
+                        >
+                            <span>-</span>
+                        </template>
+                        <template v-else>
+                            <span>{{activeUnitInfo.signature}}</span>
+                        </template>
+                    </span>
                 </div>
             </div>
         </div>
@@ -756,13 +813,11 @@ export default {
 
             //鼠标点击
             _cy.on("click", "node", function(evt) {
-                window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() ;
+                window.location.href = "/#/dag/" + evt.cyTarget.id();
             });
 
             _cy.on("tap", "node", function(evt) {
-                window.location.href =
-                    "/#/dag/" + evt.cyTarget.id() ;
+                window.location.href = "/#/dag/" + evt.cyTarget.id();
             });
 
             //拖动事件
@@ -829,7 +884,7 @@ export default {
                         classes += "is_minor ";
                     }
                     // if (isWt) {
-                        classes += _node.witness_from + " ";
+                    classes += _node.witness_from + " ";
                     // }
                     if (_node.is_stable) {
                         classes += "is_stable ";
@@ -998,7 +1053,7 @@ export default {
                     if (_node.is_on_main_chain) classes += "is_on_main_chain ";
                     if (_node.is_minor) classes += "is_minor ";
                     // if (isWt) {
-                        classes += _node.witness_from + " ";
+                    classes += _node.witness_from + " ";
                     // }
                     if (_node.is_stable) classes += "is_stable ";
                     if (_node.sequence === "final-bad") classes += "finalBad";
@@ -1095,7 +1150,7 @@ export default {
                         params: firstParameters
                     })
                     .then(function(response) {
-                        response = self.filterParent(response)
+                        response = self.filterParent(response);
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1146,7 +1201,7 @@ export default {
                         params: lastParameters
                     })
                     .then(function(response) {
-                        response = self.filterParent(response,"down");
+                        response = self.filterParent(response, "down");
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1197,7 +1252,7 @@ export default {
                         params: firstParameters
                     })
                     .then(function(response) {
-                        response = self.filterParent(response,'up');
+                        response = self.filterParent(response, "up");
                         self.loadingSwitch = false;
                         var responseData = response.data.units;
 
@@ -1268,7 +1323,7 @@ export default {
             },
         }
         */
-        filterParent: function(response,direction) {
+        filterParent: function(response, direction) {
             /* 
             1.选出接口中存在的unit，存在storageUnitAry;
             2.把缓存storageParents中的parent遍历，如果有接口unit相关的，拿出来存在target里
@@ -1276,22 +1331,27 @@ export default {
                 存在的：存target里；
                 不存在，存在缓存里；
             */
-           //1-
-           var units = response.data.units;
-           var tempUnitAry=[];
+            //1-
+            var units = response.data.units;
+            var tempUnitAry = [];
             units.nodes.forEach(item => {
                 storageUnitAry.push(item.data.unit);
                 tempUnitAry.push(item.data.unit);
             });
             //筛选
-            var propsVar= direction=="up"?"source":"target";
-            var currentUnitCont = direction=="up"?tempUnitAry:storageUnitAry;
+            var propsVar = direction == "up" ? "source" : "target";
+            var currentUnitCont =
+                direction == "up" ? tempUnitAry : storageUnitAry;
 
             let targetParent = {},
                 _edges = units.edges;
             //2-
             for (var itemProp in storageParents) {
-                if ((currentUnitCont.indexOf(storageParents[itemProp].data[propsVar]) > -1)) {
+                if (
+                    currentUnitCont.indexOf(
+                        storageParents[itemProp].data[propsVar]
+                    ) > -1
+                ) {
                     //存在的
                     targetParent[itemProp] = storageParents[itemProp];
                     delete storageParents[prop];
@@ -1303,7 +1363,7 @@ export default {
                 if (storageUnitAry.indexOf(_edges[prop].data.target) > -1) {
                     //存在的
                     targetParent[prop] = _edges[prop];
-                }else{
+                } else {
                     storageParents[prop] = _edges[prop];
                     delete _edges[prop];
                 }
@@ -1358,7 +1418,7 @@ export default {
                     }
                 );
             }
-            location.hash = "#/dag" ;
+            location.hash = "#/dag";
             if (activeNode) {
                 _cy.getElementById(activeNode).removeClass("active");
             }
@@ -1644,7 +1704,7 @@ export default {
             var text = $inputSearch.val();
             text = text.replace(/\s+/g, "");
             if (text.length == 64) {
-                location.hash = "#/dag/" + text ;
+                location.hash = "#/dag/" + text;
             } else if (text.length === 0) {
                 return;
             } else {
@@ -1673,7 +1733,7 @@ export default {
         //
         goBlockHash(hash) {
             self.loadingInfoSwitch = true;
-            location.hash = "#/dag/" + hash ;
+            location.hash = "#/dag/" + hash;
         }
     }
 };

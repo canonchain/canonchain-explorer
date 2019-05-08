@@ -1068,10 +1068,21 @@ router.get("/get_previous_units", async function (req, res, next) {
         PageUtility.timeLog(req, '[0] SELECT center exec_timestamp Before')
         let hashData = await pgPromise.query(sql)
         logger.info(`hashData.rows:`)
-        logger.info(hashData.rows)
+        // logger.info(hashData.rows)
+        // 如果数据库不存在，则返回空
+        if (hashData.rows.length === 0) {
+            responseData = {
+                units: {
+                    nodes: [],
+                    edges: {}
+                },
+                code: 200,
+                message: "success"
+            };
+            res.json(responseData);
+        }
         let centerHashInfo = hashData.rows[0]
         PageUtility.timeLog(req, '[0] SELECT center exec_timestamp Afer')
-
         sqlOptions = {
             text: `
             (
