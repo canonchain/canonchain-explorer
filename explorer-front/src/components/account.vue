@@ -136,7 +136,7 @@
                                             <span class="txt-warning">等待确认</span>
                                         </template>
                                         <template v-else>
-                                            <template v-if="scope.row.status == '9'">
+                                            <template v-if="scope.row.status == '0'">
                                                 <span class="txt-success">成功</span>
                                             </template>
                                             <template v-else-if="scope.row.status == '1'">
@@ -348,24 +348,6 @@ export default {
                 }&source=${self.url_parm.source}`
             );
         },
-        // async getAccountLists() {
-        //     //TODO 优化分页性能
-        //     let opt = {
-        //         account: self.accountInfo.address,
-        //         page: self.currentPage
-        //     };
-        //     let response = await self.$api.get("/api/get_account_list", opt);
-        //     if (response.success) {
-        //         if (self.TOTAL_VAL < response.tx_list.length) {
-        //             self.TOTAL_VAL = response.tx_list.length;
-        //         }
-        //         self.tx_list = response.tx_list;
-        //     } else {
-        //         console.error("/api/get_account_list Error");
-        //     }
-
-        //     self.loadingSwitch = false;
-        // },
         handlerChange(val) {
             self.$router.push(
                 `/account/${self.url_parm.account}?source=${val}`

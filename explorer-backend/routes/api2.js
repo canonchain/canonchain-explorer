@@ -683,67 +683,6 @@ router.get("/get_account", async function (req, res, next) {
     }
     res.json(responseData);
 })
-//获取账号的交易列表
-router.get("/get_account_list", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryInfo = req.query;
-    var queryAccount = queryInfo.account;// ?account=2
-    var queryPage = queryInfo.page;// ?page=2
-
-    var OFFSETVAL;//前面忽略的条数
-    OFFSETVAL = (queryPage - 1) * LIMIT_VAL || 0;
-
-    //TODO 这里需要优化，太慢了
-    // console.log(queryAccount, LIMIT_VAL, OFFSETVAL);
-    let opt2 = {
-        text: `
-            Select 
-                exec_timestamp,level,hash,"from","to",is_stable,"status",amount,mci 
-            FROM
-                transaction 
-            WHERE 
-                "from" = $1 OR "to"=$1
-            order by 
-                exec_timestamp desc, 
-                level desc,
-                pkid desc 
-            LIMIT 
-                $2 
-            OFFSET 
-                $3
-        `,
-        values: [queryAccount, LIMIT_VAL, OFFSETVAL]
-    }
-
-    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
-    let data = await pgPromise.query(opt2)
-    PageUtility.timeLog(req, '[1] SELECT transaction info After')
-
-    responseData = {
-        tx_list: data.rows,
-        page: Number(queryPage),
-        code: 200,
-        success: true,
-        message: "success"
-    }
-    //是否从此帐号发出
-    responseData.tx_list.forEach(item => {
-        if (item.from == queryAccount) {
-            item.is_from_this_account = true;
-        } else {
-            item.is_from_this_account = false;
-        }
-        //是否转给自己
-        if (item.from == item.to) {
-            item.is_to_self = true;
-        } else {
-            item.is_to_self = false;
-        }
-    })
-    res.json(responseData);
-})
-// --------------------- 测试
-
 //获取交易表中最近(LIMIT+1)项
 //参数： account
 router.get("/get_account_first_flag", async function (req, res, next) {
@@ -791,12 +730,12 @@ router.get("/get_account_first_flag", async function (req, res, next) {
         values: [queryAccount]
     }
 
-    console.log(start_sql);
+    // console.log(start_sql);
     PageUtility.timeLog(req, '[1] SELECT start_sql Before')
     let transStartInfo = await pgPromise.query(start_sql)
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
 
-    console.log(transStartInfo.rows);
+    // console.log(transStartInfo.rows);
     if (transStartInfo.code) {
         responseData = {
             near_item: errorInfo,
@@ -1028,8 +967,8 @@ router.get("/get_account_transactions", async function (req, res, next) {
         values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
     };
 
-    console.log(queryVal)
-    console.log(opt2)
+    // console.log(queryVal)
+    // console.log(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
@@ -1138,7 +1077,7 @@ router.get("/get_transaction", async function (req, res, next) {
                 pkid,hash,"type","from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,
                 signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp 
             FROM 
-                transaction  
+                transaction
             WHERE 
                 hash = $1
         `,
@@ -1183,9 +1122,9 @@ router.get("/get_transaction", async function (req, res, next) {
             message: "select items from transaction error"
         }
         res.json(responseData);
+        return;
     } else {
         transaction = data.rows[0];
-        // let currentHash = data.rows[0].hash;
     }
 
 
@@ -1206,6 +1145,7 @@ router.get("/get_transaction", async function (req, res, next) {
     PageUtility.timeLog(req, '[2] SELECT parents info Before')
     let result = await pgPromise.query(optParents);
     PageUtility.timeLog(req, '[2] SELECT parents info After')
+
     if (result.code) {
         responseData = {
             transaction: transaction,
@@ -1214,6 +1154,7 @@ router.get("/get_transaction", async function (req, res, next) {
             message: "select items from parents error"
         }
         res.json(responseData);
+        return;
     } else {
         transaction.parents = result.rows;
         transaction.witness_list = [];
@@ -1229,48 +1170,50 @@ router.get("/get_transaction", async function (req, res, next) {
             message: "success"
         }
         res.json(responseData);
-    }
 
-    let optWitness = {
-        text: `
-            Select 
-                item,account 
-            FROM 
-                witness 
-            WHERE 
-                item = $1 
-            ORDER BY 
-                witness_id DESC
-        `,
-        values: [queryTransaction]
-    }
-
-    PageUtility.timeLog(req, '[3] SELECT witness info Before')
-    let witnessResult = await pgPromise.query(optWitness);
-    PageUtility.timeLog(req, '[3] SELECT witness info After')
-
-    if (result.code) {
-        responseData = {
-            transaction: transaction,
-            code: 500,
-            success: false,
-            message: "select items from witness error"
-        }
-        res.json(responseData);
     } else {
-        let witnessAry = [];
-        witnessResult.rows.forEach(currentItem => {
-            witnessAry.push(currentItem.account);
-        })
-        transaction.witness_list = witnessAry;
-        responseData = {
-            transaction: transaction,
-            code: 200,
-            success: true,
-            message: "success"
+        let optWitness = {
+            text: `
+                Select 
+                    "item","account" 
+                FROM 
+                    witness 
+                WHERE 
+                    "item" = $1 
+                ORDER BY 
+                    witness_id DESC
+            `,
+            values: [queryTransaction]
         }
-        res.json(responseData);
+
+        PageUtility.timeLog(req, '[3] SELECT witness info Before')
+        let witnessResult = await pgPromise.query(optWitness);
+        PageUtility.timeLog(req, '[3] SELECT witness info After')
+
+        if (witnessResult.code) {
+            responseData = {
+                transaction: transaction,
+                code: 500,
+                success: false,
+                message: "select items from witness error"
+            }
+            res.json(responseData);
+        } else {
+            let witnessAry = [];
+            witnessResult.rows.forEach(currentItem => {
+                witnessAry.push(currentItem.account);
+            })
+            transaction.witness_list = witnessAry;
+            responseData = {
+                transaction: transaction,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+            res.json(responseData);
+        }
     }
+
 
 
 })
@@ -1321,6 +1264,7 @@ router.get("/get_previous_units", async function (req, res, next) {
     let filterFirstUnitSql = ' WHERE type = 1 ';
     let filterOtherUnitSql = ' and (type = 1 ) ';
 
+    // console.log(searchParameter);
     if (searchParameter.direction === 'down') {
         sqlOptions = {
             text: `
@@ -1465,6 +1409,9 @@ router.get("/get_previous_units", async function (req, res, next) {
     let data = await pgPromise.query(sqlOptions)
     PageUtility.timeLog(req, '[1] SELECT transaction list Afer')
 
+    // console.log("\n\n\n\n\n")
+    // console.log("data.rows")
+    // console.log(data.rows)
     if (data.code) {
         responseData = {
             units: {
@@ -1476,6 +1423,20 @@ router.get("/get_previous_units", async function (req, res, next) {
             message: "select xxx,xxx from transaction error"
         }
         res.json(responseData);
+        return;
+    }
+    if (data.rows.length === 0) {
+        responseData = {
+            units: {
+                nodes: [],
+                edges: {}
+            },
+            code: 200,
+            success: true,
+            message: "null"
+        }
+        res.json(responseData);
+        return;
     }
     let dataAry = [];
     data.rows.forEach(item => {
