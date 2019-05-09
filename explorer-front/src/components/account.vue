@@ -18,14 +18,33 @@
                     </div>
                     <div class="block-item-des">
                         <strong class="bui-dlist-tit">
-                            交易数
+                            稳定交易数
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
                     </div>
                 </div>
                 <div class="account-content">
-                    <h2 class="transfer-tit">交易记录</h2>
+                    <el-row>
+                        <el-col :span="6">
+                            <h2 class="transfer-tit">交易记录</h2>
+                        </el-col>
+                        <el-col :span="18" style="text-align: right;">
+                            <template>
+                                <el-radio
+                                    v-model="url_parm.source"
+                                    label="1"
+                                    @change="handlerChange"
+                                >发送记录</el-radio>
+                                <el-radio
+                                    v-model="url_parm.source"
+                                    label="2"
+                                    @change="handlerChange"
+                                >接收记录</el-radio>
+                            </template>
+                        </el-col>
+                    </el-row>
+
                     <div class="accounts-list-wrap" v-loading="loadingSwitch">
                         <template>
                             <el-table :data="database" style="width: 100%">
@@ -206,7 +225,6 @@ export default {
         return {
             TOTAL_VAL: 0,
             LIMIT_VAL: 20,
-
             loadingSwitch: true,
             btnSwitch: {
                 header: false,
@@ -220,9 +238,16 @@ export default {
                 account: this.$route.params.id,
                 exec_timestamp: 0,
                 level: 0,
-                pkid: 0
+                pkid: 0,
+                source: this.$route.query.source || "1" //1 发送方 2 接收方
             },
-            startOpt: {},
+            startOpt: {
+                account: this.$route.params.id,
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0,
+                source: this.$route.query.source || "1" //1 发送方 2 接收方
+            },
 
             accountInfo: {
                 address: this.$route.params.id,
@@ -235,12 +260,12 @@ export default {
     },
     created() {
         self = this;
-
         let queryInfo = this.$route.query;
-        if (Object.keys(queryInfo).length) {
+        if (Object.keys(queryInfo).length > 1) {
             self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
             self.url_parm.level = queryInfo.level;
             self.url_parm.pkid = queryInfo.pkid;
+            self.url_parm.source = queryInfo.source;
         }
 
         self.initDatabase();
@@ -269,13 +294,19 @@ export default {
                 self.$router.push(
                     `/account/${
                         self.url_parm.account
-                    }?exec_timestamp=0&level=0&pkid=0`
+                    }?exec_timestamp=0&level=0&pkid=0&source=${
+                        self.url_parm.source
+                    }`
                 );
                 return;
             }
             // 想取第一页
             if (val === "header") {
-                self.$router.push(`/account/${self.url_parm.account}`);
+                self.$router.push(
+                    `/account/${self.url_parm.account}?source=${
+                        self.url_parm.source
+                    }`
+                );
                 return;
             }
             if (
@@ -285,25 +316,36 @@ export default {
                     self.pageFirstItem.level == self.startOpt.level &&
                     self.pageFirstItem.pkid == self.startOpt.pkid)
             ) {
-                self.$router.push(`/account/${self.url_parm.account}`);
+                self.$router.push(
+                    `/account/${self.url_parm.account}?source=${
+                        self.url_parm.source
+                    }`
+                );
                 return;
             }
 
             let opt = {
+                account: self.url_parm.account,
                 exec_timestamp: self.url_parm.exec_timestamp,
                 level: self.url_parm.level,
                 pkid: self.url_parm.pkid,
+                source: self.url_parm.source,
                 direction: val
                 // page: self.url_parm.page, //当前页 1
                 // want_page: val
             };
-            let response = await self.$api.get("/api/get_want_page_flag", opt);
+            let response = await self.$api.get(
+                "/api/get_account_want_flag",
+                opt
+            );
             // self.loadingSwitch = false;
             let responseInfo = response.data;
             self.$router.push(
                 `/account/${self.url_parm.account}?exec_timestamp=${
                     responseInfo.exec_timestamp
-                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}`
+                }&level=${responseInfo.level}&pkid=${
+                    responseInfo.pkid
+                }&source=${self.url_parm.source}`
             );
         },
         // async getAccountLists() {
@@ -324,12 +366,15 @@ export default {
 
         //     self.loadingSwitch = false;
         // },
-        // handleCurrentChange(val) {
-        //     self.getAccountLists();
-        // },
+        handlerChange(val) {
+            self.$router.push(
+                `/account/${self.url_parm.account}?source=${val}`
+            );
+        },
 
         async getFlagTransactions() {
             let opt = {
+                source: self.url_parm.source,
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
@@ -338,8 +383,13 @@ export default {
             );
 
             if (response.success) {
-                self.startOpt = response.near_item;
-                if (!self.url_parm.exec_timestamp && response.near_item) {
+                self.startOpt.exec_timestamp =
+                    response.near_item.exec_timestamp;
+                self.startOpt.level = response.near_item.level;
+                self.startOpt.pkid = response.near_item.pkid;
+
+                //如果URL没有参数
+                if (!self.url_parm.exec_timestamp) {
                     isDefaultPage = true;
                     self.btnSwitch.header = true;
                     self.btnSwitch.footer = false;
@@ -348,19 +398,18 @@ export default {
                     self.url_parm.level = response.near_item.level;
                     self.url_parm.pkid = response.near_item.pkid;
                 }
+                // if (response.near_item.length) {
+
+                // }
             } else {
                 console.log("error");
             }
 
             //如果有字段信息
-            if (response.near_item.length) {
-                if (isDefaultPage) {
-                    self.startOpt && self.getTransactions(self.startOpt);
-                } else {
-                    self.getTransactions(self.url_parm);
-                }
+            if (isDefaultPage) {
+                self.startOpt && self.getTransactions(self.startOpt);
             } else {
-                self.loadingSwitch = false;
+                self.getTransactions(self.url_parm);
             }
         },
         async getTransactions(parm) {
@@ -368,18 +417,22 @@ export default {
             self.loadingSwitch = true;
             let opt = {
                 exec_timestamp: parm.exec_timestamp,
+                source: parm.source,
                 account: parm.account,
                 level: parm.level,
                 pkid: parm.pkid
             };
-            let response = await self.$api.get("/api/get_transactions", opt);
+            let response = await self.$api.get(
+                "/api/get_account_transactions",
+                opt
+            );
 
             if (response.success) {
                 self.database = response.transactions;
                 self.pageFirstItem = response.transactions[0];
-                if (response.transactions.length < 20) {
-                    self.$router.push(`/transactions`);
-                }
+                // if (response.transactions.length < 20) {
+                //     self.$router.push(`/transactions`);
+                // }
             } else {
                 self.database = [errorInfo];
             }

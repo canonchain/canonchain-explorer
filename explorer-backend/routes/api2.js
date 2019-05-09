@@ -750,6 +750,15 @@ router.get("/get_account_first_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
     var queryAccount = queryInfo.account;// ?account=2
+    var querySour = "";
+    if (queryInfo.source === '1') {
+        querySour = "from";
+    } else if (queryInfo.source === '2') {
+        querySour = "to";
+    } else {
+        querySour = "from";
+    }
+
     let errorInfo = {
         "exec_timestamp": "0",
         "level": "0",
@@ -769,7 +778,7 @@ router.get("/get_account_first_flag", async function (req, res, next) {
                     (exec_timestamp = 9999999999 and level = 9999999999 and pkid < 9999999999)
                 ) 
                 and 
-                ("from" = $1)
+                ("${querySour}" = $1)
             order by 
                 "exec_timestamp" desc, 
                 "level" desc,
@@ -782,6 +791,7 @@ router.get("/get_account_first_flag", async function (req, res, next) {
         values: [queryAccount]
     }
 
+    console.log(start_sql);
     PageUtility.timeLog(req, '[1] SELECT start_sql Before')
     let transStartInfo = await pgPromise.query(start_sql)
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
@@ -796,7 +806,7 @@ router.get("/get_account_first_flag", async function (req, res, next) {
         }
     } else {
         responseData = {
-            near_item: transStartInfo.rows[0] || [],
+            near_item: transStartInfo.rows[0] || errorInfo,
             code: 200,
             success: true,
             message: "success"
@@ -820,7 +830,15 @@ router.get("/get_account_want_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;
     var queryAccount = queryVal.account;// ?account=2
-    // var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
+    var querySour = "";
+    if (queryVal.source === '1') {
+        querySour = "from";
+    } else if (queryVal.source === '2') {
+        querySour = "to";
+    } else {
+        querySour = "from";
+    }
+
     let errorInfo = {
         "exec_timestamp": "0",
         "level": "0",
@@ -857,7 +875,7 @@ router.get("/get_account_want_flag", async function (req, res, next) {
                         (exec_timestamp = $1 and level = $2 and pkid < $3)
                     ) 
                     and 
-                    ("from" = $4)
+                    ("${querySour}" = $4)
                 order by 
                     "exec_timestamp" desc,
                     "level" desc,
@@ -911,7 +929,7 @@ router.get("/get_account_want_flag", async function (req, res, next) {
                         (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
                     ) 
                     and 
-                    ("from" = $4)
+                    ("${querySour}" = $4)
                 order by 
                     "exec_timestamp" ${ascVal},
                     "level"  ${ascVal},
@@ -976,6 +994,15 @@ router.get("/get_account_transactions", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
     var queryAccount = queryVal.account;// ?account=2
+    var querySour = "";
+    if (queryVal.source === '1') {
+        querySour = "from";
+    } else if (queryVal.source === '2') {
+        querySour = "to";
+    } else {
+        querySour = "from";
+    }
+
 
     let opt2 = {
         text: `
@@ -990,7 +1017,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
                     (exec_timestamp = $1 and level = $2 and pkid > $3)
                 )  
                 and 
-                ("from" = $5)
+                ("${querySour}" = $5)
             order by 
                 "exec_timestamp" asc, 
                 "level" asc,
@@ -1001,6 +1028,8 @@ router.get("/get_account_transactions", async function (req, res, next) {
         values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
     };
 
+    console.log(queryVal)
+    console.log(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt2)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
