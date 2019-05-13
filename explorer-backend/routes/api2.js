@@ -739,8 +739,8 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
         }
     } else {
         responseData = {
-            near_item: transStartInfo.rows[0],
-            end_item: transEndInfo.rows[0],
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
             code: 200,
             success: true,
             message: "success"
@@ -885,7 +885,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             formatInfo = data.rows;
         }
         responseData = {
-            transactions: formatInfo,
+            transactions: formatInfo || [],
             code: 200,
             success: true,
             message: "success"
