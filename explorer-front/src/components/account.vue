@@ -6,23 +6,29 @@
                 <search></search>
                 <div class="sub-header">
                     <strong class="sub_header-tit">账户信息</strong>
-                    <span class="sub_header-des">{{accountInfo.account}}</span>
+                    <span class="sub_header-des">{{accountInfo.address}}</span>
                 </div>
                 <div class="bui-dlist">
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            余额
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{accountInfo.balance | toCZRVal}} CZR</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            稳定交易数
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
-                    </div>
+                    <el-row>
+                        <el-col :span="12">
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    余额
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{accountInfo.balance | toCZRVal}} CZR</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="12">
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    交易数
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
+                            </div>
+                        </el-col>
+                    </el-row>
                 </div>
                 <div class="account-content">
                     <el-row>
@@ -223,7 +229,7 @@ export default {
     },
     data() {
         return {
-            TOTAL_VAL: 0,
+            TOTAL_VAL: "-",
             LIMIT_VAL: 20,
             loadingSwitch: true,
             btnSwitch: {
@@ -233,28 +239,31 @@ export default {
                 footer: false
             },
             database: [],
-            pageFirstItem: {},
+            pageFirstItem: {
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0
+            },
+            pageLastItem: {
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0
+            },
+            near_pkid: "",
+            end_pkid: "",
             url_parm: {
                 account: this.$route.params.id,
+                position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 exec_timestamp: 0,
                 level: 0,
                 pkid: 0,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方
-            },
-            startOpt: {
-                account: this.$route.params.id,
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方
+                source: this.$route.query.source || 1 //1 发送方 2 接收方
             },
 
             accountInfo: {
                 address: this.$route.params.id,
                 balance: 0
             },
-
-            tx_list: [],
             currentPage: 1
         };
     },
@@ -262,14 +271,14 @@ export default {
         self = this;
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length > 1) {
+            self.url_parm.position = queryInfo.position;
             self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
             self.url_parm.level = queryInfo.level;
             self.url_parm.pkid = queryInfo.pkid;
             self.url_parm.source = queryInfo.source;
         }
-
         self.initDatabase();
-        self.getFlagTransactions();
+        self.getFlagTransactions(self.url_parm);
     },
     methods: {
         initTransactionInfo() {},
@@ -296,7 +305,7 @@ export default {
                         self.url_parm.account
                     }?exec_timestamp=0&level=0&pkid=0&source=${
                         self.url_parm.source
-                    }`
+                    }&position=4`
                 );
                 return;
             }
@@ -309,44 +318,30 @@ export default {
                 );
                 return;
             }
-            if (
-                val == "left" &&
-                (self.pageFirstItem.exec_timestamp ==
-                    self.startOpt.exec_timestamp &&
-                    self.pageFirstItem.level == self.startOpt.level &&
-                    self.pageFirstItem.pkid == self.startOpt.pkid)
-            ) {
+
+            if (val == "left") {
+                //取第一个item
                 self.$router.push(
-                    `/account/${self.url_parm.account}?source=${
-                        self.url_parm.source
-                    }`
+                    `/account/${self.url_parm.account}?exec_timestamp=${
+                        self.pageFirstItem.exec_timestamp
+                    }&level=${self.pageFirstItem.level}&pkid=${
+                        self.pageFirstItem.pkid
+                    }&source=${self.url_parm.source}&position=2`
                 );
                 return;
             }
 
-            let opt = {
-                account: self.url_parm.account,
-                exec_timestamp: self.url_parm.exec_timestamp,
-                level: self.url_parm.level,
-                pkid: self.url_parm.pkid,
-                source: self.url_parm.source,
-                direction: val
-                // page: self.url_parm.page, //当前页 1
-                // want_page: val
-            };
-            let response = await self.$api.get(
-                "/api/get_account_want_flag",
-                opt
-            );
-            // self.loadingSwitch = false;
-            let responseInfo = response.data;
-            self.$router.push(
-                `/account/${self.url_parm.account}?exec_timestamp=${
-                    responseInfo.exec_timestamp
-                }&level=${responseInfo.level}&pkid=${
-                    responseInfo.pkid
-                }&source=${self.url_parm.source}`
-            );
+            if (val == "right") {
+                //取最后一个item
+                self.$router.push(
+                    `/account/${self.url_parm.account}?exec_timestamp=${
+                        self.pageLastItem.exec_timestamp
+                    }&level=${self.pageLastItem.level}&pkid=${
+                        self.pageLastItem.pkid
+                    }&source=${self.url_parm.source}&position=3`
+                );
+                return;
+            }
         },
         handlerChange(val) {
             self.$router.push(
@@ -355,52 +350,33 @@ export default {
         },
 
         async getFlagTransactions() {
+            //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
                 source: self.url_parm.source,
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
-                "/api/get_account_first_flag",
+                "/api/get_account_trans_flag",
                 opt
             );
 
             if (response.success) {
-                self.startOpt.exec_timestamp =
-                    response.near_item.exec_timestamp;
-                self.startOpt.level = response.near_item.level;
-                self.startOpt.pkid = response.near_item.pkid;
-
-                //如果URL没有参数
-                if (!self.url_parm.exec_timestamp) {
-                    isDefaultPage = true;
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.footer = false;
-                    self.url_parm.exec_timestamp =
-                        response.near_item.exec_timestamp;
-                    self.url_parm.level = response.near_item.level;
-                    self.url_parm.pkid = response.near_item.pkid;
-                }
-                // if (response.near_item.length) {
-
-                // }
+                self.near_pkid = response.near_item.pkid;
+                self.end_item = response.end_item.pkid;
+                self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
-            }
-
-            //如果有字段信息
-            if (isDefaultPage) {
-                self.startOpt && self.getTransactions(self.startOpt);
-            } else {
-                self.getTransactions(self.url_parm);
             }
         },
         async getTransactions(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
             let opt = {
-                exec_timestamp: parm.exec_timestamp,
+                position: parm.position,
                 source: parm.source,
                 account: parm.account,
+
+                exec_timestamp: parm.exec_timestamp,
                 level: parm.level,
                 pkid: parm.pkid
             };
@@ -412,27 +388,28 @@ export default {
             if (response.success) {
                 self.database = response.transactions;
                 self.pageFirstItem = response.transactions[0];
-                // if (response.transactions.length < 20) {
-                //     self.$router.push(`/transactions`);
-                // }
+                self.pageLastItem =
+                    response.transactions[response.transactions.length - 1];
             } else {
                 self.database = [errorInfo];
             }
             //禁止首页上一页
-            if (
-                parm.exec_timestamp == self.startOpt.exec_timestamp &&
-                parm.level == self.startOpt.level &&
-                parm.pkid == self.startOpt.pkid
-            ) {
+            if (parm.position === "1") {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
+            } else if (parm.position === "4") {
+                self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
+            }
+            if (self.near_pkid == self.pageFirstItem.pkid) {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
             }
-            //禁止尾页下一页
-            if (parm.exec_timestamp == 0 && parm.level == 0 && parm.pkid == 0) {
-                self.btnSwitch.footer = true;
-                self.btnSwitch.right = true;
-            }
 
+            if (self.end_item == self.pageLastItem.pkid) {
+                self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
+            }
             self.loadingSwitch = false;
         },
         goBlockPath(block) {
@@ -528,8 +505,8 @@ export default {
     }
     .bui-dlist-tit {
         float: left;
-        width: 45%; /* 默认值, 具体根据视觉可改 */
-        text-align: right;
+        width: 15%; /* 默认值, 具体根据视觉可改 */
+        text-align: left;
         margin: 0;
     }
     .bui-dlist-det {

@@ -162,29 +162,37 @@ export default {
                     amount: 0
                 }
             ],
-            pageFirstItem: {},
+            pageFirstItem: {
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0
+            },
+            pageLastItem: {
+                exec_timestamp: 0,
+                level: 0,
+                pkid: 0
+            },
             url_parm: {
+                position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 exec_timestamp: 0,
                 level: 0,
                 pkid: 0
             },
             // current_page: this.$route.query.page || 1,
-
             startOpt: {}
         };
     },
     created() {
         self = this;
+        self.getTransactionsCount();
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length) {
-            self.url_parm = {
-                exec_timestamp: queryInfo.exec_timestamp,
-                level: queryInfo.level,
-                pkid: queryInfo.pkid
-            };
+            self.url_parm.position = queryInfo.position;
+            self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
+            self.url_parm.level = queryInfo.level;
+            self.url_parm.pkid = queryInfo.pkid;
         }
-        self.getTransactionsCount();
-        self.getFlagTransactions();
+        self.getTransactions(self.url_parm);
     },
     methods: {
         async getPaginationFlag(val) {
@@ -192,7 +200,7 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/transactions?exec_timestamp=0&level=0&pkid=0`
+                    `/transactions?exec_timestamp=0&level=0&pkid=0&position=4`
                 );
                 return;
             }
@@ -201,38 +209,38 @@ export default {
                 self.$router.push(`/transactions`);
                 return;
             }
-            if (
-                val == "left" &&
-                (self.pageFirstItem.exec_timestamp ==
-                    self.startOpt.exec_timestamp &&
-                    self.pageFirstItem.level == self.startOpt.level &&
-                    self.pageFirstItem.pkid == self.startOpt.pkid)
-            ) {
-                self.$router.push(`/transactions`);
+
+            if (val == "left") {
+                //取第一个item
+                self.$router.push(
+                    `/transactions?exec_timestamp=${
+                        self.pageFirstItem.exec_timestamp
+                    }&level=${self.pageFirstItem.level}&pkid=${
+                        self.pageFirstItem.pkid
+                    }&position=2`
+                );
                 return;
             }
 
-            let opt = {
-                exec_timestamp: self.url_parm.exec_timestamp,
-                level: self.url_parm.level,
-                pkid: self.url_parm.pkid,
-                direction: val
-                // page: self.url_parm.page, //当前页 1
-                // want_page: val
-            };
-            let response = await self.$api.get("/api/get_want_page_flag", opt);
-            // self.loadingSwitch = false;
-            let responseInfo = response.data;
-            self.$router.push(
-                `/transactions?exec_timestamp=${
-                    responseInfo.exec_timestamp
-                }&level=${responseInfo.level}&pkid=${responseInfo.pkid}`
-            );
+            if (val == "right") {
+                //取最后一个item
+                self.$router.push(
+                    `/transactions?exec_timestamp=${
+                        self.pageLastItem.exec_timestamp
+                    }&level=${self.pageLastItem.level}&pkid=${
+                        self.pageLastItem.pkid
+                    }&position=3`
+                );
+                return;
+            }
         },
+
         async getTransactions(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
+            
             let opt = {
+                position: parm.position,
                 exec_timestamp: parm.exec_timestamp,
                 wt: self.wt,
                 level: parm.level,
@@ -243,28 +251,23 @@ export default {
             if (response.success) {
                 self.database = response.transactions;
                 self.pageFirstItem = response.transactions[0];
+                self.pageLastItem =
+                    response.transactions[response.transactions.length - 1];
                 if (response.transactions.length < 20) {
                     self.$router.push(`/transactions`);
                 }
             } else {
                 self.database = [errorInfo];
             }
-            //禁止首页上一页
-            if (
-                parm.exec_timestamp == self.startOpt.exec_timestamp &&
-                parm.level == self.startOpt.level &&
-                parm.pkid == self.startOpt.pkid
-            ) {
+
+            if (parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
-            }
-            //禁止尾页下一页
-            if (parm.exec_timestamp == 0 && parm.level == 0 && parm.pkid == 0) {
-                self.btnSwitch.footer = true;
+            } else if (parm.position === "4") {
                 self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
             }
-
-            self.loadingSwitch = false;
+            self.getFlagTransactions();
         },
 
         async getTransactionsCount() {
@@ -283,32 +286,21 @@ export default {
         },
 
         async getFlagTransactions() {
+            //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
                 wt: self.wt
             };
-            let response = await self.$api.get("/api/get_first_page_flag", opt);
+            let response = await self.$api.get("/api/get_trans_flag", opt);
 
-            if (response.success) {
-                self.startOpt = response.near_item;
-                if (!self.url_parm.exec_timestamp && response.near_item) {
-                    isDefaultPage = true;
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.footer = false;
-                    self.url_parm.exec_timestamp =
-                        response.near_item.exec_timestamp;
-                    self.url_parm.level = response.near_item.level;
-                    self.url_parm.pkid = response.near_item.pkid;
-                }
-            } else {
-                console.log("error");
+            if (response.near_item.pkid == self.pageFirstItem.pkid) {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
             }
-
-            //如果有字段信息
-            if (isDefaultPage) {
-                self.startOpt && self.getTransactions(self.startOpt);
-            } else {
-                self.getTransactions(self.url_parm);
+            if (response.end_item.pkid == self.pageLastItem.pkid) {
+                self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
             }
+            self.loadingSwitch = false;
         },
 
         goBlockPath(block) {

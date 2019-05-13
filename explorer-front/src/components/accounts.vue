@@ -103,8 +103,16 @@ export default {
                     type: 0
                 }
             ],
-            pageFirstItem: {},
+            pageFirstItem: {
+                account: "",
+                balance: 0
+            },
+            pageLastItem: {
+                account: "",
+                balance: 0
+            },
             url_parm: {
+                position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 balance: 0,
                 acc_id: 0
             },
@@ -113,23 +121,21 @@ export default {
     },
     created() {
         self = this;
-        let queryInfo = this.$route.query;
-
-        if (Object.keys(queryInfo).length) {
-            self.url_parm = {
-                balance: queryInfo.balance,
-                acc_id: queryInfo.acc_id
-            };
-        }
         self.getAccountsCount();
-        self.getFlagAccounts();
+        let queryInfo = this.$route.query;
+        if (Object.keys(queryInfo).length) {
+            self.url_parm.position = queryInfo.position;
+            self.url_parm.balance = queryInfo.balance;
+            self.url_parm.acc_id = queryInfo.acc_id;
+        }
+        self.getAccounts(self.url_parm);
     },
     methods: {
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
             // 想取最后一页
             if (val === "footer") {
-                self.$router.push(`/accounts?balance=-1&acc_id=-1`);
+                self.$router.push(`/accounts?balance=-1&acc_id=-1&position=4`);
                 return;
             }
             // 想取第一页
@@ -137,35 +143,30 @@ export default {
                 self.$router.push(`/accounts`);
                 return;
             }
-            if (
-                val == "left" &&
-                (self.pageFirstItem.balance == self.startOpt.balance &&
-                    self.pageFirstItem.acc_id == self.startOpt.acc_id)
-            ) {
-                self.$router.push(`/accounts`);
+
+            if (val == "left") {
+                //取第一个item
+                self.$router.push(
+                    `/accounts?balance=${self.pageFirstItem.balance}&acc_id=${
+                        self.pageFirstItem.acc_id
+                    }&position=2`
+                );
                 return;
             }
 
-            let opt = {
-                balance: self.url_parm.balance,
-                acc_id: self.url_parm.acc_id,
-                direction: val
-            };
-            let response = await self.$api.get(
-                "/api/get_want_balance_flag",
-                opt
-            );
-            let responseInfo = response.data;
-
-            self.$router.push(
-                `/accounts?balance=${responseInfo.balance}&acc_id=${
-                    responseInfo.acc_id
-                }`
-            );
+            if (val == "right") {
+                //取最后一个item
+                self.$router.push(
+                    `/accounts?balance=${self.pageLastItem.balance}&acc_id=${
+                        self.pageLastItem.acc_id
+                    }&position=3`
+                );
+                return;
+            }
         },
 
         async getAccountsCount() {
-            let response = await self.$api.get("/api/get_transactions_count");
+            let response = await self.$api.get("/api/get_accounts_count");
             if (response.success) {
                 self.TOTAL_VAL = response.count;
             } else {
@@ -174,37 +175,29 @@ export default {
         },
 
         async getFlagAccounts() {
-            let response = await self.$api.get("/api/get_first_balance_flag");
+            //获取交易表首位值；用来禁用首页和尾页的
+            let response = await self.$api.get("/api/get_accounts_flag");
 
-            if (response.success && response.item) {
-                self.startOpt.balance = response.item.balance || "0";
-                self.startOpt.acc_id = response.item.acc_id;
-
-                if (!self.url_parm.balance) {
-                    isDefaultPage = true;
+            if (response.success) {
+                if (response.near_item.acc_id == self.pageFirstItem.acc_id) {
                     self.btnSwitch.header = true;
-                    self.btnSwitch.footer = false;
-                    self.url_parm.balance = response.item.balance;
-                    self.url_parm.acc_id = response.item.acc_id;
+                    self.btnSwitch.left = true;
                 }
-            } else if (response.success) {
-                console.log("data is null");
+
+                if (response.end_item.acc_id == self.pageLastItem.acc_id) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
+                self.loadingSwitch = false;
             } else {
                 console.log("error");
             }
-
-            //如果有字段信息
-            if (isDefaultPage) {
-                self.startOpt && self.getAccounts(self.startOpt);
-            } else {
-                self.getAccounts(self.url_parm);
-            }
         },
-
         async getAccounts(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
             let opt = {
+                position: parm.position,
                 acc_id: parm.acc_id,
                 balance: parm.balance
             };
@@ -214,6 +207,8 @@ export default {
             if (response.success) {
                 self.database = response.accounts;
                 self.pageFirstItem = response.accounts[0];
+                self.pageLastItem =
+                    response.accounts[response.accounts.length - 1];
                 if (response.accounts.length < 20) {
                     self.$router.push(`/accounts`);
                 }
@@ -221,21 +216,15 @@ export default {
                 self.database = [errorInfo];
             }
 
-            //禁止首页上一页
-            if (
-                parm.acc_id == self.startOpt.acc_id &&
-                parm.balance == self.startOpt.balance
-            ) {
+            if (parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
-            }
-            //禁止尾页下一页
-            if (parm.acc_id == -1 && parm.balance == -1) {
-                self.btnSwitch.footer = true;
+            } else if (parm.position === "4") {
                 self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
             }
 
-            self.loadingSwitch = false;
+            self.getFlagAccounts();
         },
         handleClick(account) {
             this.$router.push("/account/" + account);

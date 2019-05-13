@@ -114,7 +114,7 @@ router.get("/get_accounts_count", async function (req, res, next) {
     }
 })
 //获取交易表中最近(LIMIT+1)项
-router.get("/get_first_balance_flag", async function (req, res, next) {
+router.get("/get_accounts_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let errorInfo = {
         acc_id: "0000",
@@ -127,16 +127,10 @@ router.get("/get_first_balance_flag", async function (req, res, next) {
             Select
                 "acc_id","balance"
             FROM 
-                accounts 
-            WHERE (
-                (balance < 1732623775600000000000000000 ) or 
-                ( balance < 1732623775600000000000000000 and acc_id < 1732623775600000000000000000)
-            )
+                accounts
             ORDER BY
                 balance desc,
                 acc_id desc
-            OFFSET 
-                ${LIMIT_VAL}
             LIMIT 
                 1
         `
@@ -147,14 +141,42 @@ router.get("/get_first_balance_flag", async function (req, res, next) {
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
     if (transStartInfo.code) {
         responseData = {
-            item: errorInfo,
+            near_item: errorInfo,
             code: 500,
             success: false,
             message: "select start_sql Error"
         }
+    }
+
+    let opt = {
+        text: `
+        Select
+            "acc_id","balance"
+        FROM 
+            accounts
+        ORDER BY
+            balance asc,
+            acc_id asc
+        LIMIT 
+            1
+        `
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
     } else {
         responseData = {
-            item: transStartInfo.rows[0],
+            near_item: transStartInfo.rows[0],
+            end_item: transEndInfo.rows[0],
             code: 200,
             success: true,
             message: "success"
@@ -163,117 +185,100 @@ router.get("/get_first_balance_flag", async function (req, res, next) {
     res.json(responseData);
 })
 
-//获取想要获取分页的 balance 等信息
-/**
- * 需要参数：
- * {
-        "balance": "0",
-        "acc_id": "0",
-        "page": "1",//当前页 1
-        "want_page":"3"//想要跳转的页面
-    }
- * 
- */
-router.get("/get_want_balance_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;
-    let errorInfo = {
-        acc_id: "0000",
-        balance: "000000",
-    }
-
-    let ascVal;
-    let symbol_str;
-    if (queryVal.direction === 'left') {
-        symbol_str = ">";
-        ascVal = "asc";
-    } else {
-        symbol_str = "<";
-        ascVal = "desc";
-    }
-    let offsetNum = 20;
-
-    let start_sql = {
-        text: `
-            Select 
-                acc_id,balance
-            FROM 
-                accounts
-            WHERE (
-                (balance ${symbol_str} $1 ) or 
-                ( balance = $1 and acc_id ${symbol_str} $2)
-            )
-            ORDER BY 
-                balance ${ascVal},
-                acc_id ${ascVal}
-            offset
-                ${offsetNum - 1}
-            LIMIT
-                1
-        `,
-        values: [Number(queryVal.balance), Number(queryVal.acc_id)]
-    }
-
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-    if (transStartInfo.code) {
-        responseData = {
-            data: errorInfo,
-            code: 500,
-            success: false,
-            message: "select start_sql Error"
-        }
-    } else {
-        if (transStartInfo.rows.length) {
-            responseData = {
-                data: transStartInfo.rows[0],
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: {
-                    acc_id: "-1",
-                    balance: "-1",
-                },
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        }
-
-    }
-    res.json(responseData);
-})
-
 //获取交易列表
+//    position:1,//1 首页  2 上一页 3 下一页 4 尾页
 router.get("/get_accounts", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
 
-    let sql = {
-        text: `
-            Select 
-                account,balance 
-            FROM 
-                accounts 
-            WHERE (
-                (balance > $1 ) or 
-                (balance = $1 and acc_id > $2)
+    // 首页：
+    /** 
+     * 首页：倒序 limit 20
+     * 尾页：顺序 limit 20
+    */
+    if (queryVal.position === "1") {
+        opt = {
+            text: `
+               Select 
+                    "account","balance","acc_id"
+               FROM
+                    accounts
+               order by 
+                   "balance" desc,
+                   "acc_id" desc
+               LIMIT
+                   $1
+           `,
+            values: [LIMIT_VAL]
+        }
+
+    } else if (queryVal.position === "4") {
+        // 尾页
+        opt = {
+            text: `
+               Select 
+                   "account","balance","acc_id"
+               FROM
+                    accounts
+               order by 
+                    "balance" asc,
+                    "acc_id" asc
+               LIMIT
+                   $1
+           `,
+            values: [LIMIT_VAL]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        // console.log(queryVal.position, direction, sortInfo)
+        opt = {
+            text: `
+           (
+               select
+                    "account","balance","acc_id"
+               FROM
+                    accounts 
+               WHERE 
+                    (balance = $2 and acc_id ${direction} $1 )
+               order by 
+                    "balance" ${sortInfo} ,
+                    "acc_id" ${sortInfo}
+               LIMIT
+                    $3
+           )
+           union
+           (
+                Select 
+                    "account","balance","acc_id"
+                FROM 
+                    accounts 
+                WHERE 
+                    (balance ${direction} $2)
+                order by 
+                    "balance" ${sortInfo},
+                    "acc_id" ${sortInfo}
+                LIMIT
+                    $3
             )
-            ORDER BY
-                balance asc,
-                acc_id asc
-            LIMIT
-                ${LIMIT_VAL}
-        `,
-        values: [queryVal.balance, queryVal.acc_id]
-    };
+           order by
+               "balance" ${sortInfo},
+               "acc_id" ${sortInfo}
+           LIMIT
+               $3
+           `,
+            values: [Number(queryVal.acc_id), Number(queryVal.balance), LIMIT_VAL]
+        }
+    }
 
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
-    let data = await pgPromise.query(sql)
+    let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
 
     if (data.code) {
@@ -285,32 +290,36 @@ router.get("/get_accounts", async function (req, res, next) {
         }
         logger.info(data)
     } else {
-
         //查询成功
-        // var basePage = Number(queryVal.page) - 1; // 1 2
-        var accounts = data.rows.reverse();
+        let accounts;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            accounts = data.rows.reverse()
+        } else {
+            accounts = data.rows;
+        }
         // var accounts = data.rows;
         accounts.forEach((element, index) => {
+            // element.true_balance = element.balance;
             //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
             element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
             //并保留6位精度
-            let tempVal = element.balance
-            if (tempVal == 0) {
-                element.balance = 0; //TODO Keep 6 decimal places
-            } else {
-                var reg = /(\d+(?:\.)?)(\d{0,6})/;
-                var regAry = reg.exec(tempVal);
-                var integer = regAry[1];
-                var decimal = regAry[2];
-                if (decimal) {
-                    while (decimal.length < 6) {
-                        decimal += "0";
-                    }
-                } else {
-                    decimal = ".000000"
-                }
-                element.balance = integer + decimal; //TODO Keep 6 decimal places
-            }
+            // let tempVal = element.balance
+            // if (tempVal == 0) {
+            //     element.balance = 0; //TODO Keep 6 decimal places
+            // } else {
+            //     var reg = /(\d+(?:\.)?)(\d{0,6})/;
+            //     var regAry = reg.exec(tempVal);
+            //     var integer = regAry[1];
+            //     var decimal = regAry[2];
+            //     if (decimal) {
+            //         while (decimal.length < 6) {
+            //             decimal += "0";
+            //         }
+            //     } else {
+            //         decimal = ".000000"
+            //     }
+            //     element.balance = integer + decimal; //TODO Keep 6 decimal places
+            // }
             // element.rank = LIMIT_VAL * basePage + (index + 1);
         });
 
@@ -362,7 +371,7 @@ router.get("/get_transactions_count", async function (req, res, next) {
 
 //获取交易表中最近(LIMIT+1)项
 //参数：wt
-router.get("/get_first_page_flag", async function (req, res, next) {
+router.get("/get_trans_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
     let errorInfo = {
@@ -371,26 +380,19 @@ router.get("/get_first_page_flag", async function (req, res, next) {
         "pkid": "0"
     }
 
-    let shown = (wt == true) ? '' : ' and is_shown = true ';
+    let shown = (wt == true) ? '' : ' where is_shown = true ';
 
     let start_sql = {
         text: `
             Select 
                 "exec_timestamp","level","pkid"
             FROM 
-                transaction 
-            WHERE 
-                (
-                    (exec_timestamp < 9999999999 ) or 
-                    (exec_timestamp = 9999999999 and level < 9999999999) or 
-                    (exec_timestamp = 9999999999 and level = 9999999999 and pkid < 9999999999)
-                ) ${shown} 
+                transaction
+            ${shown}
             order by 
                 "exec_timestamp" desc, 
                 "level" desc,
-                "pkid" desc 
-            offset 
-                ${LIMIT_VAL}
+                "pkid" desc
             LIMIT
                 1
         `
@@ -399,6 +401,7 @@ router.get("/get_first_page_flag", async function (req, res, next) {
     PageUtility.timeLog(req, '[1] SELECT start_sql Before')
     let transStartInfo = await pgPromise.query(start_sql)
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
     if (transStartInfo.code) {
         responseData = {
             near_item: errorInfo,
@@ -406,9 +409,41 @@ router.get("/get_first_page_flag", async function (req, res, next) {
             success: false,
             message: "select start_sql Error"
         }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "exec_timestamp","level","pkid"
+            FROM
+                transaction
+            ${shown}
+            order by 
+                "exec_timestamp" asc, 
+                "level" asc,
+                "pkid" asc
+            LIMIT
+                1
+        `
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
     } else {
         responseData = {
             near_item: transStartInfo.rows[0],
+            end_item: transEndInfo.rows[0],
             code: 200,
             success: true,
             message: "success"
@@ -417,199 +452,127 @@ router.get("/get_first_page_flag", async function (req, res, next) {
     res.json(responseData);
 })
 
-//获取想要获取分页的pkid等信息
-/**
- * 需要参数：
- * {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0",
-        "page": "1",//当前页 1
-        "want_page":"3"//想要跳转的页面
-    }
- * 
- */
-router.get("/get_want_page_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;
-    var wt = queryVal.wt;// ?wt=all 代表查找含有见证节点的交易列表
-    // var offsetPage = Number(queryVal.page) - Number(queryVal.want_page);
-    let errorInfo = {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0",
-    }
-    let shown = (wt == true) ? '' : ' and is_shown = true ';
-    let ascVal;
-    let symbol_str;
-    if (queryVal.direction === 'left') {
-        symbol_str = ">";
-        ascVal = "asc";
-    } else {
-        symbol_str = "<";
-        ascVal = "desc";
-    }
-    let offsetNum = 20;
-
-    let start_sql;
-
-    //union用来解决大数据时候，搜索慢的场景（desc < 查询的情况）
-
-    if (symbol_str == "<") {
-        //向右 点下一页
-        start_sql = {
-            text: `
-            (
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp = $1 and level < $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid < $3)
-                    ) ${shown} 
-                order by 
-                    "exec_timestamp" desc,
-                    "level" desc,
-                    "pkid" desc
-                LIMIT
-                    ${offsetNum}
-            )
-            union
-            (
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp < $1)
-                    ) ${shown} 
-                order by 
-                    "exec_timestamp" desc,
-                    "level" desc,
-                    "pkid" desc
-                LIMIT
-                    ${offsetNum}
-            )
-            order by
-                "exec_timestamp" desc,
-                "level" desc,
-                "pkid" desc
-            offset
-                ${offsetNum - 1}
-            LIMIT
-                1
-            `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
-        }
-
-
-    } else {
-        start_sql = {
-            text: `
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp ${symbol_str} $1) or 
-                        (exec_timestamp = $1 and level ${symbol_str} $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
-                    ) ${shown} 
-                order by 
-                    "exec_timestamp" ${ascVal},
-                    "level"  ${ascVal},
-                    "pkid"  ${ascVal}
-                offset
-                    ${offsetNum - 1}
-                LIMIT
-                    1
-            `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid)]
-        }
-    }
-
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
-    if (transStartInfo.code) {
-        responseData = {
-            data: errorInfo,
-            code: 500,
-            success: false,
-            message: "select start_sql Error"
-        }
-    } else {
-        if (transStartInfo.rows.length) {
-            responseData = {
-                data: transStartInfo.rows[0],
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: {
-                    "exec_timestamp": 0,
-                    "level": 0,
-                    "pkid": 0
-                },
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        }
-
-    }
-
-    res.json(responseData);
-})
-
 //获取交易列表
 /**
  * 参数
 { 
+    position:1,//1 首页  2 上一页 3 下一页 4 尾页
     exec_timestamp: '1555893967',
     wt: '12',
     level: '232877',
-    pkid: '822014828' ,
+    pkid: '822014828'
 }
  */
 router.get("/get_transactions", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+    let opt;
 
     //如果有wt，则查询含见证节点的交易
     let shown = (queryVal.wt == true) ? '' : ' and is_shown = true ';
+    let whereInfo = (queryVal.wt == true) ? '' : ' WHERE is_shown = true ';
 
-    let opt2 = {
-        text: `
-            Select 
-                "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
-            FROM 
-                transaction 
-            WHERE 
-                (
-                    (exec_timestamp > $1) or 
-                    (exec_timestamp = $1 and level > $2) or 
-                    (exec_timestamp = $1 and level = $2 and pkid > $3)
-                ) ${shown} 
-            order by 
-                "exec_timestamp" asc, 
-                "level" asc,
-                "pkid" asc 
+    // 首页：
+    /** 
+     * 首页：倒序 limit 20
+     * 尾页：顺序 limit 20
+    */
+
+    if (queryVal.position === "1") {
+        opt = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction
+                ${whereInfo}
+                order by 
+                    "exec_timestamp" desc, 
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    $1
+            `,
+            values: [LIMIT_VAL]
+        }
+
+    } else if (queryVal.position === "4") {
+        // 尾页
+        opt = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction
+                ${whereInfo}
+                order by 
+                    "exec_timestamp" asc, 
+                    "level" asc,
+                    "pkid" asc
+                LIMIT
+                    $1
+            `,
+            values: [LIMIT_VAL]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+            (
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM 
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp ${direction} $1)
+                    ) ${shown} 
+                order by 
+                    "exec_timestamp" ${sortInfo},
+                    "level" ${sortInfo},
+                    "pkid" ${sortInfo}
+                LIMIT
+                    $4
+            )
+            union
+            (
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp = $1 and level ${direction} $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid ${direction} $3)
+                    ) ${shown} 
+                order by 
+                    "exec_timestamp" ${sortInfo},
+                    "level" ${sortInfo},
+                    "pkid" ${sortInfo}
+                LIMIT
+                    $4
+            )
+            order by
+                "exec_timestamp"  ${sortInfo},
+                "level"  ${sortInfo},
+                "pkid"  ${sortInfo}
             LIMIT
                 $4
-        `,
-        values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL]
-    };
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL]
+        }
+    }
+
 
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
-    let data = await pgPromise.query(opt2)
+    let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
     if (data.code) {
         responseData = {
@@ -620,8 +583,14 @@ router.get("/get_transactions", async function (req, res, next) {
         }
         logger.info(data)
     } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
         responseData = {
-            transactions: data.rows.reverse(),
+            transactions: formatInfo,
             code: 200,
             success: true,
             message: "success"
@@ -685,7 +654,7 @@ router.get("/get_account", async function (req, res, next) {
 })
 //获取交易表中最近(LIMIT+1)项
 //参数： account
-router.get("/get_account_first_flag", async function (req, res, next) {
+router.get("/get_account_trans_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
     var queryAccount = queryInfo.account;// ?account=2
@@ -710,27 +679,19 @@ router.get("/get_account_first_flag", async function (req, res, next) {
                 "exec_timestamp","level","pkid"
             FROM 
                 transaction 
-            WHERE 
-                (
-                    (exec_timestamp < 9999999999 ) or 
-                    (exec_timestamp = 9999999999 and level < 9999999999) or 
-                    (exec_timestamp = 9999999999 and level = 9999999999 and pkid < 9999999999)
-                ) 
-                and 
+            WHERE
                 ("${querySour}" = $1)
             order by 
                 "exec_timestamp" desc, 
                 "level" desc,
-                "pkid" desc 
-            offset 
-                ${LIMIT_VAL}
+                "pkid" desc
             LIMIT
                 1
         `,
         values: [queryAccount]
     }
 
-    // console.log(start_sql);
+    // console.log(querySour);
     PageUtility.timeLog(req, '[1] SELECT start_sql Before')
     let transStartInfo = await pgPromise.query(start_sql)
     PageUtility.timeLog(req, '[1] SELECT start_sql After')
@@ -743,179 +704,48 @@ router.get("/get_account_first_flag", async function (req, res, next) {
             success: false,
             message: "select start_sql Error"
         }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "exec_timestamp","level","pkid"
+            FROM 
+                transaction 
+            WHERE
+                ("${querySour}" = $1)
+            order by 
+                "exec_timestamp" asc, 
+                "level" asc,
+                "pkid" asc
+            LIMIT
+                1
+        `,
+        values: [queryAccount]
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
     } else {
         responseData = {
-            near_item: transStartInfo.rows[0] || errorInfo,
+            near_item: transStartInfo.rows[0],
+            end_item: transEndInfo.rows[0],
             code: 200,
             success: true,
             message: "success"
         }
     }
-    res.json(responseData);
-})
-
-//获取想要获取分页的pkid等信息
-/**
- * 需要参数：
- * {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0",
-        "account": "1"
-    }
- *
- */
-router.get("/get_account_want_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;
-    var queryAccount = queryVal.account;// ?account=2
-    var querySour = "";
-    if (queryVal.source === '1') {
-        querySour = "from";
-    } else if (queryVal.source === '2') {
-        querySour = "to";
-    } else {
-        querySour = "from";
-    }
-
-    let errorInfo = {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0",
-    }
-
-    let ascVal;
-    let symbol_str;
-    if (queryVal.direction === 'left') {
-        symbol_str = ">";
-        ascVal = "asc";
-    } else {
-        symbol_str = "<";
-        ascVal = "desc";
-    }
-    let offsetNum = 20;
-
-    let start_sql;
-
-    //union用来解决大数据时候，搜索慢的场景（desc < 查询的情况）
-
-    if (symbol_str == "<") {
-        //向右 点下一页
-        start_sql = {
-            text: `
-            (
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp = $1 and level < $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid < $3)
-                    ) 
-                    and 
-                    ("${querySour}" = $4)
-                order by 
-                    "exec_timestamp" desc,
-                    "level" desc,
-                    "pkid" desc
-                LIMIT
-                    ${offsetNum}
-            )
-            union
-            (
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp < $1)
-                    ) 
-                    and 
-                    ("from" = $4)
-                order by 
-                    "exec_timestamp" desc,
-                    "level" desc,
-                    "pkid" desc
-                LIMIT
-                    ${offsetNum}
-            )
-            order by
-                "exec_timestamp" desc,
-                "level" desc,
-                "pkid" desc
-            offset
-                ${offsetNum - 1}
-            LIMIT
-                1
-            `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), queryAccount]
-        }
-
-
-    } else {
-        start_sql = {
-            text: `
-                Select 
-                    "exec_timestamp","level","pkid"
-                FROM 
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp ${symbol_str} $1) or 
-                        (exec_timestamp = $1 and level ${symbol_str} $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid ${symbol_str} $3)
-                    ) 
-                    and 
-                    ("${querySour}" = $4)
-                order by 
-                    "exec_timestamp" ${ascVal},
-                    "level"  ${ascVal},
-                    "pkid"  ${ascVal}
-                offset
-                    ${offsetNum - 1}
-                LIMIT
-                    1
-            `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), queryAccount]
-        }
-    }
-
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
-    if (transStartInfo.code) {
-        responseData = {
-            data: errorInfo,
-            code: 500,
-            success: false,
-            message: "select start_sql Error"
-        }
-    } else {
-        if (transStartInfo.rows.length) {
-            responseData = {
-                data: transStartInfo.rows[0],
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: {
-                    "exec_timestamp": 0,
-                    "level": 0,
-                    "pkid": 0
-                },
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        }
-
-    }
-
     res.json(responseData);
 })
 
@@ -942,35 +772,99 @@ router.get("/get_account_transactions", async function (req, res, next) {
         querySour = "from";
     }
 
+    if (queryVal.position === "1") {
+        opt = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "exec_timestamp" desc, 
+                    "level" desc,
+                    "pkid" desc
+                LIMIT
+                    $2
+            `,
+            values: [queryAccount, LIMIT_VAL]
+        }
+    } else if (queryVal.position === "4") {
+        // 尾页
+        opt = {
+            text: `
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "exec_timestamp" asc, 
+                    "level" asc,
+                    "pkid" asc
+                LIMIT
+                    $2
+            `,
+            values: [queryAccount, LIMIT_VAL]
+        }
 
-    let opt2 = {
-        text: `
-            Select 
-                "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
-            FROM 
-                transaction 
-            WHERE 
-                (
-                    (exec_timestamp > $1) or 
-                    (exec_timestamp = $1 and level > $2) or 
-                    (exec_timestamp = $1 and level = $2 and pkid > $3)
-                )  
-                and 
-                ("${querySour}" = $5)
-            order by 
-                "exec_timestamp" asc, 
-                "level" asc,
-                "pkid" asc 
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+            (
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM 
+                    transaction 
+                WHERE 
+                    (exec_timestamp ${direction} $1) and ("${querySour}" = $5)
+                order by 
+                    "exec_timestamp" ${sortInfo},
+                    "level" ${sortInfo},
+                    "pkid" ${sortInfo}
+                LIMIT
+                    $4
+            )
+            union
+            (
+                Select 
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                FROM
+                    transaction 
+                WHERE 
+                    (
+                        (exec_timestamp = $1 and level ${direction} $2) or 
+                        (exec_timestamp = $1 and level = $2 and pkid ${direction} $3)
+                    ) and ("${querySour}" = $5)
+                order by 
+                    "exec_timestamp" ${sortInfo},
+                    "level" ${sortInfo},
+                    "pkid" ${sortInfo}
+                LIMIT
+                    $4
+            )
+            order by
+                "exec_timestamp" ${sortInfo},
+                "level" ${sortInfo},
+                "pkid" ${sortInfo}
             LIMIT
                 $4
-        `,
-        values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
-    };
-
-    // console.log(queryVal)
-    // console.log(opt2)
+            `,
+            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
+        }
+    }
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
-    let data = await pgPromise.query(opt2)
+    let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
     if (data.code) {
         responseData = {
@@ -981,13 +875,37 @@ router.get("/get_account_transactions", async function (req, res, next) {
         }
         logger.info(data)
     } else {
+        let formatInfo;
+        // console.log(data.rows);
+        // console.log(queryVal.position);
+        // console.log((queryVal.position === "4") || (queryVal.position === "2"));
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
         responseData = {
-            transactions: data.rows.reverse(),
+            transactions: formatInfo,
             code: 200,
             success: true,
             message: "success"
         }
     }
+    //是否从此帐号发出
+    responseData.transactions.forEach(item => {
+        if (item.from == queryAccount) {
+            item.is_from_this_account = true;
+        } else {
+            item.is_from_this_account = false;
+        }
+        //是否转给自己
+        if (item.from == item.to) {
+            item.is_to_self = true;
+        } else {
+            item.is_to_self = false;
+        }
+    })
+
     res.json(responseData);
 })
 //************************** 账号详情 结束
