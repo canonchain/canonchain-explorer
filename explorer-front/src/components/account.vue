@@ -401,7 +401,10 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            if (self.database.length === 0) return;
+            if (self.database.length === 0) {
+                self.loadingSwitch = false;
+                return;
+            }
             if (self.near_pkid == self.pageFirstItem.pkid) {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
