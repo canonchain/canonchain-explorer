@@ -257,7 +257,7 @@ export default {
                 exec_timestamp: 0,
                 level: 0,
                 pkid: 0,
-                source: this.$route.query.source || 1 //1 发送方 2 接收方
+                source: this.$route.query.source || "1" //1 发送方 2 接收方
             },
 
             accountInfo: {
