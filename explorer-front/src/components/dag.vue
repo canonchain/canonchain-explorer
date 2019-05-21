@@ -298,17 +298,13 @@ var firstPkid,
 
 var firstParameters = {
     direction: "up",
-    is_free: "",
     exec_timestamp: "",
     level: "",
-    is_prototype: false,
     pkid: ""
 };
 var lastParameters = {
     direction: "down",
-    is_free: "",
     exec_timestamp: "",
-    is_prototype: false,
     level: "",
     pkid: ""
 };
@@ -429,14 +425,12 @@ export default {
             var lastItem = nodes[nodes.length - 1];
             firstParameters = {
                 direction: "up",
-                is_free: firstItem.is_free,
                 exec_timestamp: firstItem.exec_timestamp,
                 level: firstItem.level,
                 pkid: firstItem.pkid
             };
             lastParameters = {
                 direction: "down",
-                is_free: lastItem.is_free,
                 exec_timestamp: lastItem.exec_timestamp,
                 level: lastItem.level,
                 pkid: lastItem.pkid
@@ -1139,59 +1133,58 @@ export default {
             }
         },
 
-        getNew: function() {
-            if (notLastUnitUp) {
-                return;
-            }
-            if (!bWaitingForNew) {
-                bWaitingForNew = true;
-                self.$axios
-                    .get("/api/get_previous_units", {
-                        params: firstParameters
-                    })
-                    .then(function(response) {
-                        response = self.filterParent(response);
-                        self.loadingSwitch = false;
-                        var responseData = response.data.units;
+        // getNew: function() {
+        //     if (notLastUnitUp) {
+        //         return;
+        //     }
+        //     if (!bWaitingForNew) {
+        //         bWaitingForNew = true;
+        //         self.$axios
+        //             .get("/api/get_previous_units", {
+        //                 params: firstParameters
+        //             })
+        //             .then(function(response) {
+        //                 response = self.filterParent(response);
+        //                 self.loadingSwitch = false;
+        //                 var responseData = response.data.units;
 
-                        if (responseData.nodes.length) {
-                            nodes = [].concat(responseData.nodes, nodes);
-                            for (var k in responseData.edges) {
-                                if (responseData.edges.hasOwnProperty(k)) {
-                                    edges[k] = responseData.edges[k];
-                                }
-                            }
-                            // firstPkid = nodes[0].pkid;
-                            var firstItem = nodes[0];
-                            firstParameters = {
-                                direction: "up",
-                                is_free: firstItem.is_free,
-                                exec_timestamp: firstItem.exec_timestamp,
-                                level: firstItem.level,
-                                pkid: firstItem.pkid
-                            };
+        //                 if (responseData.nodes.length) {
+        //                     nodes = [].concat(responseData.nodes, nodes);
+        //                     for (var k in responseData.edges) {
+        //                         if (responseData.edges.hasOwnProperty(k)) {
+        //                             edges[k] = responseData.edges[k];
+        //                         }
+        //                     }
+        //                     // firstPkid = nodes[0].pkid;
+        //                     var firstItem = nodes[0];
+        //                     firstParameters = {
+        //                         direction: "up",
+        //                         exec_timestamp: firstItem.exec_timestamp,
+        //                         level: firstItem.level,
+        //                         pkid: firstItem.pkid
+        //                     };
 
-                            self.setNew(
-                                responseData.nodes,
-                                responseData.edges,
-                                true
-                            );
-                            if (bHaveDelayedNewRequests) {
-                                bHaveDelayedNewRequests = false;
-                                self.getNew();
-                            }
-                            if (responseData.nodes.length >= 100) {
-                                notLastUnitUp = true;
-                            }
-                        }
-                        bWaitingForNew = false;
-                        //把不稳定的设置为稳定的
-                        // setChangesStableUnits(response.data.arrStableUnits);
-                    });
-            } else {
-                bHaveDelayedNewRequests = true;
-            }
-        },
+        //                     self.setNew(
+        //                         responseData.nodes,
+        //                         responseData.edges,
+        //                         true
+        //                     );
+        //                     if (bHaveDelayedNewRequests) {
+        //                         bHaveDelayedNewRequests = false;
+        //                         self.getNew();
+        //                     }
+        //                     if (responseData.nodes.length >= 100) {
+        //                         notLastUnitUp = true;
+        //                     }
+        //                 }
+        //                 bWaitingForNew = false;
+        //                 //把不稳定的设置为稳定的
+        //                 // setChangesStableUnits(response.data.arrStableUnits);
+        //             });
+        //     } else {
+        //         bHaveDelayedNewRequests = true;
+        //     }
+        // },
         getNext: function() {
             if (!bWaitingForNext && isInit) {
                 self.loadingSwitch = true;
@@ -1218,7 +1211,6 @@ export default {
                             var lastItem = nodes[nodes.length - 1];
                             lastParameters = {
                                 direction: "down",
-                                is_free: lastItem.is_free,
                                 exec_timestamp: lastItem.exec_timestamp,
                                 level: lastItem.level,
                                 pkid: lastItem.pkid
@@ -1261,6 +1253,7 @@ export default {
                         }
 
                         if (responseData.nodes.length) {
+                            responseData.nodes = responseData.nodes.reverse();
                             nodes = [].concat(responseData.nodes, nodes);
                             for (var k in responseData.edges) {
                                 if (responseData.edges.hasOwnProperty(k)) {
@@ -1271,7 +1264,6 @@ export default {
                             var firstItem = nodes[0];
                             firstParameters = {
                                 direction: "up",
-                                is_free: firstItem.is_free,
                                 exec_timestamp: firstItem.exec_timestamp,
                                 level: firstItem.level,
                                 pkid: firstItem.pkid

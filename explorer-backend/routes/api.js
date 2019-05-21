@@ -919,8 +919,8 @@ router.get("/get_transaction_short", async function (req, res, next) {
         responseData = {
             transaction: {
                 "hash": queryTransaction,
-                "from": "-",
-                "to": "-",
+                "from": "",
+                "to": "",
                 "amount": "0",
                 "data": "",
                 "exec_timestamp": "1534146836",
@@ -955,8 +955,8 @@ router.get("/get_transaction_short", async function (req, res, next) {
         responseData = {
             transaction: {
                 "hash": queryTransaction,
-                "from": "-",
-                "to": "-",
+                "from": "",
+                "to": "",
                 "amount": "0",
                 "data": "",
                 "exec_timestamp": "1534146836",
@@ -1009,23 +1009,23 @@ router.get("/get_transaction", async function (req, res, next) {
     if (data.code) {
         responseData = {
             transaction: {
-                "pkid": "-",
-                "hash": "-",
-                "type": "-",
-                "from": "-",
-                "to": "-",
+                "pkid": "",
+                "hash": "",
+                "type": "",
+                "from": "",
+                "to": "",
                 "amount": "0",
-                "previous": "-",
-                "witness_list_block": "-",
-                "last_summary": "-",
-                "last_summary_block": "-",
+                "previous": "",
+                "witness_list_block": "",
+                "last_summary": "",
+                "last_summary_block": "",
                 "data": "",
                 "exec_timestamp": "1534146836",
-                "signature": "-",
+                "signature": "",
                 "is_free": false,
                 "level": "0",
                 "witnessed_level": "0",
-                "best_parent": "-",
+                "best_parent": "",
                 "is_stable": false,
                 "status": "0",
                 "is_on_mc": false,
@@ -1217,7 +1217,9 @@ router.get("/get_previous_units", async function (req, res, next) {
                         (exec_timestamp = $1 and level = $2 and pkid > $3)
                     ) ${filterOtherUnitSql} 
                 order by 
-                    exec_timestamp desc, level desc, pkid desc 
+                    exec_timestamp asc, 
+                    level asc, 
+                    pkid asc 
                 limit 
                     100
             `,
@@ -1270,7 +1272,7 @@ router.get("/get_previous_units", async function (req, res, next) {
                         (exec_timestamp = $2 and level = $3 and pkid > $4 )
                     ) ${filterOtherUnitSql}
                 order by 
-                    exec_timestamp desc, level desc,pkid desc 
+                    exec_timestamp asc, level asc,pkid asc 
                 limit 
                     49
             )
@@ -1290,7 +1292,7 @@ router.get("/get_previous_units", async function (req, res, next) {
                 Select 
                     hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent
                 FROM 
-                    transaction 
+                    transaction
                 WHERE 
                     (
                         (exec_timestamp < $2) or

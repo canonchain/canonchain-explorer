@@ -50,6 +50,9 @@
                                     <template v-else-if="blockInfo.status == '3'">
                                         <span class="txt-danger">失败(3)</span>
                                     </template>
+                                    <template v-else-if="blockInfo.status == '99'">
+                                        <span class="txt-danger">不存在</span>
+                                    </template>
                                     <template v-else>
                                         <span class="txt-info">-</span>
                                     </template>
@@ -125,12 +128,12 @@ export default {
             blockHash: this.$route.params.id,
             isSuccess: false,
             blockInfo: {
-                from: "-",
-                to: "-",
+                from: "",
+                to: "",
                 amount: "0",
                 data: "",
                 exec_timestamp: "0",
-                status: "0",
+                status: "99",
                 is_stable: "0"
             }
         };
@@ -150,14 +153,16 @@ export default {
             );
             if (response.success) {
                 self.isSuccess = true;
-                self.blockInfo.from = response.transaction.from;
-                self.blockInfo.to = response.transaction.to;
-                self.blockInfo.amount = response.transaction.amount;
-                self.blockInfo.data = response.transaction.data;
-                self.blockInfo.exec_timestamp =
-                    response.transaction.exec_timestamp;
-                self.blockInfo.status = response.transaction.status;
-                self.blockInfo.is_stable = response.transaction.is_stable;
+                if (response.transaction) {
+                    self.blockInfo.from = response.transaction.from;
+                    self.blockInfo.to = response.transaction.to;
+                    self.blockInfo.amount = response.transaction.amount;
+                    self.blockInfo.data = response.transaction.data;
+                    self.blockInfo.exec_timestamp =
+                        response.transaction.exec_timestamp;
+                    self.blockInfo.status = response.transaction.status;
+                    self.blockInfo.is_stable = response.transaction.is_stable;
+                }
             } else {
                 console.error("/api/get_transaction_short Error");
             }
