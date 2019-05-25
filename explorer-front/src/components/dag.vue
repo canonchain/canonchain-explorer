@@ -5,7 +5,8 @@
             <div id="menuSocial">
                 <router-link class="dag-link" to="/">首页</router-link>
                 <router-link class="dag-link" to="/accounts">账户</router-link>
-                <router-link class="dag-link" to="/transactions">交易</router-link>
+                <router-link class="dag-link" to="/normal_trans">普通交易</router-link>
+                <router-link class="dag-link" to="/witness_trans">见证交易</router-link>
                 <router-link class="dag-link" to="/dag">DAG</router-link>
             </div>
             <div id="menuLeft">
@@ -237,20 +238,6 @@
                         >{{activeUnitInfo.from}}</router-link>
                     </span>
                 </div>
-                <div class="info-item-dev">
-                    <strong>To</strong>:
-                    <span class="info-item-val">
-                        <router-link
-                            tag="a"
-                            :to="'/account/'+activeUnitInfo.to"
-                            target="_blank"
-                        >{{activeUnitInfo.to}}</router-link>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Amount</strong>:
-                    <span class="info-item-val">{{activeUnitInfo.amount | toCZRVal}}</span>
-                </div>
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <strong>Signature</strong>:
@@ -298,15 +285,11 @@ var firstPkid,
 
 var firstParameters = {
     direction: "up",
-    exec_timestamp: "",
-    level: "",
-    pkid: ""
+    stable_index: ""
 };
 var lastParameters = {
     direction: "down",
-    exec_timestamp: "",
-    level: "",
-    pkid: ""
+    stable_index: ""
 };
 
 var nextPositionUpdates; //下一个位置更新
@@ -358,11 +341,8 @@ export default {
             showParentsLink: true,
             showWitnessLink: true,
             activeUnitInfo: {
-                pkid: "-",
                 hash: "-",
                 from: "-",
-                to: "-",
-                amount: "0",
                 previous: "-",
                 witness_list_block: "-",
                 last_summary: "-",
@@ -425,15 +405,7 @@ export default {
             var lastItem = nodes[nodes.length - 1];
             firstParameters = {
                 direction: "up",
-                exec_timestamp: firstItem.exec_timestamp,
-                level: firstItem.level,
-                pkid: firstItem.pkid
-            };
-            lastParameters = {
-                direction: "down",
-                exec_timestamp: lastItem.exec_timestamp,
-                level: lastItem.level,
-                pkid: lastItem.pkid
+                stable_index: firstItem.stable_index
             };
 
             phantoms = {};
@@ -568,8 +540,21 @@ export default {
                         window.location.href = "/#/dag/";
                         return;
                     }
+
                     nodes = response.data.units.nodes;
                     edges = response.data.units.edges;
+
+                    lastParameters = {
+                        direction: "down",
+                        stable_index: nodes[nodes.length - 1].stable_index
+                    };
+                    firstParameters = {
+                        direction: "up",
+                        stable_index: nodes[0].stable_index
+                    };
+                    console.log(firstParameters, nodes[0]);
+                    console.log(lastParameters, nodes[nodes.length - 1]);
+
                     self.loadingSwitch = false;
                     self.init(nodes, edges);
                     notLastUnitDown = true;
@@ -1211,9 +1196,7 @@ export default {
                             var lastItem = nodes[nodes.length - 1];
                             lastParameters = {
                                 direction: "down",
-                                exec_timestamp: lastItem.exec_timestamp,
-                                level: lastItem.level,
-                                pkid: lastItem.pkid
+                                stable_index: lastItem.stable_index
                             };
 
                             self.generate(
@@ -1264,9 +1247,7 @@ export default {
                             var firstItem = nodes[0];
                             firstParameters = {
                                 direction: "up",
-                                exec_timestamp: firstItem.exec_timestamp,
-                                level: firstItem.level,
-                                pkid: firstItem.pkid
+                                stable_index: firstItem.stable_index
                             };
 
                             self.setNew(responseData.nodes, responseData.edges);

@@ -9,16 +9,22 @@
                 <div class="home-dashboard">
                     <div class="dashboard-left">
                         <el-row>
-                            <el-col :span="12">
+                            <el-col :span="8">
                                 <div class="grid-content bg-purple">
                                     <h4 class="mci-tit">最新MCI</h4>
                                     <p class="mci-number">{{mci.last_mci}}</p>
                                 </div>
                             </el-col>
-                            <el-col :span="12">
+                            <el-col :span="8">
                                 <div class="grid-content bg-purple">
                                     <h4 class="mci-tit">最新稳定MCI</h4>
                                     <p class="mci-number">{{mci.last_stable_mci}}</p>
+                                </div>
+                            </el-col>
+                            <el-col :span="8">
+                                <div class="grid-content bg-purple">
+                                    <h4 class="mci-tit">最新稳定INDEX</h4>
+                                    <p class="mci-number">{{mci.last_stable_block_index}}</p>
                                 </div>
                             </el-col>
                         </el-row>
@@ -138,7 +144,8 @@ export default {
             loadingSwitch: true,
             mci: {
                 last_stable_mci: "-",
-                last_mci: "-"
+                last_mci: "-",
+                last_stable_block_index: "-"
             },
             radio: "1",
             start_data: 0,
@@ -170,13 +177,17 @@ export default {
                 self.database = lastTranResponse.transactions;
                 self.loadingSwitch = false;
             } else {
-                self.database = {
-                    mc_timestamp: "-",
-                    hash: "-",
-                    from: "-",
-                    to: "-",
-                    amount: 0
-                };
+                self.database = [
+                    {
+                        mc_timestamp: "-",
+                        hash: "-",
+                        from: "-",
+                        to: "-",
+                        is_stable: 0,
+                        status: 0,
+                        amount: 0
+                    }
+                ];
                 self.loadingSwitch = false;
             }
         },
@@ -193,6 +204,7 @@ export default {
             let response = await self.$api.get("/api/get_mci");
             if ({}.toString.call(response) === "[object Object]") {
                 self.mci.last_stable_mci = response.mci.last_stable_mci;
+                self.mci.last_stable_block_index = response.mci.last_stable_block_index;
                 self.mci.last_mci = response.mci.last_mci;
             } else {
                 console.error("/api/get_mci Error");

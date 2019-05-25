@@ -62,48 +62,113 @@
                     </div>
                     <div class="block-item-des">
                         <strong class="bui-dlist-tit">
-                            发款方
+                            交易类型
                             <span class="space-des"></span>
                         </strong>
                         <div class="bui-dlist-det">
-                            <span v-if="isSuccess === false">-</span>
-                            <router-link
-                                v-else
-                                :to="'/account/'+blockInfo.from"
-                            >{{blockInfo.from || '-'}}</router-link>
-                        </div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            收款方
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">
-                            <span v-if="isSuccess === false">-</span>
+                            <template v-if="blockInfo.type === '0'">
+                                <span class="txt-info">创世交易</span>
+                            </template>
+                            <template v-else-if="blockInfo.type === '1'">
+                                <span class="txt-success">见证交易</span>
+                            </template>
+                            <template v-else-if="blockInfo.type === '2'">
+                                <span class="txt-info">普通交易</span>
+                            </template>
                             <template v-else>
-                                <template v-if="blockInfo.to">
-                                    <router-link :to="'/account/'+blockInfo.to">{{blockInfo.to}}</router-link>
-                                </template>
-                                <template v-else>
-                                    <span>-</span>
-                                </template>
+                                <span class="txt-info">-</span>
                             </template>
                         </div>
                     </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            金额
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.amount | toCZRVal}} CZR</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            数据
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
-                    </div>
+                    <template v-if="blockInfo.type === '1'">
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                账户
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">
+                                <span v-if="isSuccess === false">-</span>
+                                <router-link
+                                    v-else
+                                    :to="'/account/'+blockInfo.from"
+                                >{{blockInfo.from || '-'}}</router-link>
+                            </div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                IS_ON_MC
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">
+                                <template v-if="blockInfo.is_on_mc == '0'">
+                                    <span class="txt-danger">False</span>
+                                </template>
+                                <template v-else-if="blockInfo.is_on_mc == '1'">
+                                    <span class="txt-success">True</span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                IS_FREE
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">
+                                <template v-if="blockInfo.is_free == '0'">
+                                    <span class="txt-danger">False</span>
+                                </template>
+                                <template v-else-if="blockInfo.is_free == '1'">
+                                    <span class="txt-success">True</span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                发款方
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">
+                                <span v-if="isSuccess === false">-</span>
+                                <router-link
+                                    v-else
+                                    :to="'/account/'+blockInfo.from"
+                                >{{blockInfo.from || '-'}}</router-link>
+                            </div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                收款方
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">
+                                <span v-if="isSuccess === false">-</span>
+                                <template v-else>
+                                    <template v-if="blockInfo.to">
+                                        <router-link :to="'/account/'+blockInfo.to">{{blockInfo.to}}</router-link>
+                                    </template>
+                                    <template v-else>
+                                        <span>-</span>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                金额
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.amount | toCZRVal}} CZR</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                数据
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -113,7 +178,6 @@
 <script>
 import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
-import transactionsVue from "./transactions.vue";
 
 let self = null;
 
@@ -128,10 +192,13 @@ export default {
             blockHash: this.$route.params.id,
             isSuccess: false,
             blockInfo: {
+                type: 0,
                 from: "",
                 to: "",
                 amount: "0",
                 data: "",
+                is_free: "",
+                is_on_mc: "",
                 exec_timestamp: "0",
                 status: "99",
                 is_stable: "0"
@@ -160,6 +227,9 @@ export default {
                     self.blockInfo.data = response.transaction.data;
                     self.blockInfo.exec_timestamp =
                         response.transaction.exec_timestamp;
+                    self.blockInfo.type = response.transaction.type; //
+                    self.blockInfo.is_on_mc = response.transaction.is_on_mc; //
+                    self.blockInfo.is_free = response.transaction.is_free; //
                     self.blockInfo.status = response.transaction.status;
                     self.blockInfo.is_stable = response.transaction.is_stable;
                 }

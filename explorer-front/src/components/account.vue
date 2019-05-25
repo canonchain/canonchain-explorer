@@ -50,7 +50,6 @@
                             </template>
                         </el-col>
                     </el-row>
-
                     <div class="accounts-list-wrap" v-loading="loadingSwitch">
                         <template>
                             <el-table :data="database" style="width: 100%">
@@ -166,34 +165,35 @@
                                     </template>
                                 </el-table-column>
                             </el-table>
-                            <div class="pagin-block">
-                                <el-button-group>
-                                    <el-button
-                                        size="mini"
-                                        :disabled="btnSwitch.header"
-                                        @click="getPaginationFlag('header')"
-                                    >首页</el-button>
-                                    <el-button
-                                        size="mini"
-                                        icon="el-icon-arrow-left"
-                                        :disabled="btnSwitch.left"
-                                        @click="getPaginationFlag('left')"
-                                    >上一页</el-button>
-                                    <el-button
-                                        size="mini"
-                                        :disabled="btnSwitch.right"
-                                        @click="getPaginationFlag('right')"
-                                    >
-                                        下一页
-                                        <i class="el-icon-arrow-right el-icon--right"></i>
-                                    </el-button>
-                                    <el-button
-                                        size="mini"
-                                        :disabled="btnSwitch.footer"
-                                        @click="getPaginationFlag('footer')"
-                                    >尾页</el-button>
-                                </el-button-group>
-                                <!-- <el-pagination
+                            <template v-if="database.length">
+                                <div class="pagin-block">
+                                    <el-button-group>
+                                        <el-button
+                                            size="mini"
+                                            :disabled="btnSwitch.header"
+                                            @click="getPaginationFlag('header')"
+                                        >首页</el-button>
+                                        <el-button
+                                            size="mini"
+                                            icon="el-icon-arrow-left"
+                                            :disabled="btnSwitch.left"
+                                            @click="getPaginationFlag('left')"
+                                        >上一页</el-button>
+                                        <el-button
+                                            size="mini"
+                                            :disabled="btnSwitch.right"
+                                            @click="getPaginationFlag('right')"
+                                        >
+                                            下一页
+                                            <i class="el-icon-arrow-right el-icon--right"></i>
+                                        </el-button>
+                                        <el-button
+                                            size="mini"
+                                            :disabled="btnSwitch.footer"
+                                            @click="getPaginationFlag('footer')"
+                                        >尾页</el-button>
+                                    </el-button-group>
+                                    <!-- <el-pagination
                                     small
                                     background
                                     layout="total,prev, pager, next"
@@ -202,8 +202,9 @@
                                     :page-size="LIMIT_VAL"
                                     :total="TOTAL_VAL"
                                     :pager-count="5"
-                                ></el-pagination>-->
-                            </div>
+                                    ></el-pagination>-->
+                                </div>
+                            </template>
                         </template>
                     </div>
                 </div>
@@ -249,14 +250,12 @@ export default {
                 level: 0,
                 pkid: 0
             },
-            near_pkid: "",
-            end_pkid: "",
+            first_stable_index: "",
+            end_stable_index: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0,
+                stable_index: 999999999999,
                 source: this.$route.query.source || "1" //1 发送方 2 接收方
             },
 
@@ -272,9 +271,7 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
-            self.url_parm.level = queryInfo.level;
-            self.url_parm.pkid = queryInfo.pkid;
+            self.url_parm.stable_index = queryInfo.stable_index;
             self.url_parm.source = queryInfo.source;
         }
         self.initDatabase();
@@ -301,9 +298,7 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }?exec_timestamp=0&level=0&pkid=0&source=${
+                    `/account/${self.url_parm.account}?stable_index=0&source=${
                         self.url_parm.source
                     }&position=4`
                 );
@@ -322,10 +317,8 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/account/${self.url_parm.account}?exec_timestamp=${
-                        self.pageFirstItem.exec_timestamp
-                    }&level=${self.pageFirstItem.level}&pkid=${
-                        self.pageFirstItem.pkid
+                    `/account/${self.url_parm.account}?stable_index=${
+                        self.pageFirstItem.stable_index
                     }&source=${self.url_parm.source}&position=2`
                 );
                 return;
@@ -334,10 +327,8 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/account/${self.url_parm.account}?exec_timestamp=${
-                        self.pageLastItem.exec_timestamp
-                    }&level=${self.pageLastItem.level}&pkid=${
-                        self.pageLastItem.pkid
+                    `/account/${self.url_parm.account}?stable_index=${
+                        self.pageLastItem.stable_index
                     }&source=${self.url_parm.source}&position=3`
                 );
                 return;
@@ -361,24 +352,21 @@ export default {
             );
 
             if (response.success) {
-                self.near_pkid = response.near_item.pkid;
-                self.end_item = response.end_item.pkid;
+                self.first_stable_index = response.near_item.stable_index;
+                self.end_stable_index = response.end_item.stable_index;
                 self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
             }
         },
         async getTransactions(parm) {
-            //TODO 当尾页中，点击下一页时候，数组记录
+            //TODO 没有搜见证交易
             self.loadingSwitch = true;
             let opt = {
                 position: parm.position,
                 source: parm.source,
                 account: parm.account,
-
-                exec_timestamp: parm.exec_timestamp,
-                level: parm.level,
-                pkid: parm.pkid
+                stable_index: parm.stable_index
             };
             let response = await self.$api.get(
                 "/api/get_account_transactions",
@@ -405,12 +393,12 @@ export default {
                 self.loadingSwitch = false;
                 return;
             }
-            if (self.near_pkid == self.pageFirstItem.pkid) {
+            if (self.first_stable_index === self.pageFirstItem.stable_index) {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
             }
 
-            if (self.end_item == self.pageLastItem.pkid) {
+            if (self.end_stable_index === self.pageLastItem.stable_index) {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }

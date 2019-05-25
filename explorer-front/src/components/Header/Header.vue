@@ -27,7 +27,10 @@
                             <router-link class="nav-link" to="/accounts">账户</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/transactions">交易</router-link>
+                            <router-link class="nav-link" to="/normal_trans">普通交易</router-link>
+                        </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" to="/witness_trans">见证交易</router-link>
                         </li>
                         <li class="nav-item" v-if="is_mobile == false">
                             <router-link class="nav-link" to="/dag">DAG</router-link>

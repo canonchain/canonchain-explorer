@@ -45,6 +45,7 @@ let PageUtility = {
         var tempInfo;
         var tempStatus;
         var isMinor;
+        //hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
         unitsAry.forEach(function (item) {
             if (item.is_stable) {
                 if (item.status == "1") {
@@ -70,12 +71,10 @@ let PageUtility = {
                     "unit_s": item.hash.substring(0, 7) + "..."
                 },
                 "is_free": item.is_free,
-                "exec_timestamp": item.exec_timestamp,
+                "stable_index": item.stable_index,
                 "level": item.level,
-                "pkid": Number(item.pkid),
                 "is_on_main_chain": Number(item.is_on_mc),
                 "is_stable": Number(item.is_stable),
-                "is_minor": isMinor,
                 "witness_from": item.from,
                 "sequence": tempStatus
             }
@@ -189,7 +188,7 @@ router.get("/get_accounts_flag", async function (req, res, next) {
 //    position:1,//1 首页  2 上一页 3 下一页 4 尾页
 router.get("/get_accounts", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+    let queryVal = req.query;
 
     // 首页：
     /** 
@@ -338,17 +337,14 @@ router.get("/get_accounts", async function (req, res, next) {
 
 //************************** 交易列表开始
 //获取交易总数量
-//参数：wt
-router.get("/get_transactions_count", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
-    let sql = (wt == true) ?
-        "SELECT value AS count FROM global WHERE key = 'transaction_count'" :
-        "SELECT value AS count FROM global WHERE key = 'transaction_shown_count'";
+router.get("/get_trans_count", async function (req, res, next) {
+    let tableName = (req.query.type === '2') ? "normal_count" : "witness_count";
 
-    PageUtility.timeLog(req, '[1] SELECT transaction_count Before')
+    PageUtility.timeLog(req, 'start')
+    let sql = `SELECT value AS count FROM global WHERE key = '${tableName}'`;
+    PageUtility.timeLog(req, `[1] SELECT ${tableName} Before`)
     let count = await pgPromise.query(sql)
-    PageUtility.timeLog(req, '[1] SELECT transaction_count After')
+    PageUtility.timeLog(req, `[1] SELECT ${tableName} After`)
 
     if (count.code) {
         responseData = {
@@ -370,29 +366,20 @@ router.get("/get_transactions_count", async function (req, res, next) {
 })
 
 //获取交易表中最近(LIMIT+1)项
-//参数：wt
 router.get("/get_trans_flag", async function (req, res, next) {
+    let tableName = (req.query.type === '2') ? "trans_normal" : "trans_witness"
     PageUtility.timeLog(req, 'start')
-    var wt = req.query.wt;// ?wt=all 代表查找含有见证节点的交易列表
     let errorInfo = {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0"
+        "stable_index": "0"
     }
-
-    let shown = (wt == true) ? '' : ' where is_shown = true ';
-
     let start_sql = {
         text: `
             Select 
-                "exec_timestamp","level","pkid"
+                "stable_index"
             FROM 
-                transaction
-            ${shown}
-            order by 
-                "exec_timestamp" desc, 
-                "level" desc,
-                "pkid" desc
+                ${tableName}
+            order by
+                "stable_index" desc
             LIMIT
                 1
         `
@@ -416,14 +403,11 @@ router.get("/get_trans_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "exec_timestamp","level","pkid"
+                "stable_index"
             FROM
-                transaction
-            ${shown}
-            order by 
-                "exec_timestamp" asc, 
-                "level" asc,
-                "pkid" asc
+                ${tableName}
+            order by
+                "stable_index" asc
             LIMIT
                 1
         `
@@ -457,20 +441,22 @@ router.get("/get_trans_flag", async function (req, res, next) {
  * 参数
 { 
     position:1,//1 首页  2 上一页 3 下一页 4 尾页
-    exec_timestamp: '1555893967',
-    wt: '12',
-    level: '232877',
-    pkid: '822014828'
+    stable_index: '1555893967'
 }
  */
-router.get("/get_transactions", async function (req, res, next) {
+router.get("/get_trans", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
-    let opt;
+    let queryVal = req.query;
+    let tableName, columnName;
+    if (queryVal.type === '2') {
+        tableName = 'trans_normal';
+        columnName = '"exec_timestamp", "level", "hash", "from", "to", "is_stable", "status", "amount", "stable_index"'
+    } else {
+        tableName = 'trans_witness';
+        columnName = '"mc_timestamp", "stable_timestamp", "hash", "from", "is_stable", "status", "stable_index"'
+    }
 
-    //如果有wt，则查询含见证节点的交易
-    let shown = (queryVal.wt == true) ? '' : ' and is_shown = true ';
-    let whereInfo = (queryVal.wt == true) ? '' : ' WHERE is_shown = true ';
+    let opt;
 
     // 首页：
     /** 
@@ -482,14 +468,11 @@ router.get("/get_transactions", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    ${columnName}
                 FROM
-                    transaction
-                ${whereInfo}
+                    ${tableName}
                 order by 
-                    "exec_timestamp" desc, 
-                    "level" desc,
-                    "pkid" desc
+                    stable_index desc
                 LIMIT
                     $1
             `,
@@ -501,14 +484,11 @@ router.get("/get_transactions", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    ${columnName}
                 FROM
-                    transaction
-                ${whereInfo}
+                    ${tableName}
                 order by 
-                    "exec_timestamp" asc, 
-                    "level" asc,
-                    "pkid" asc
+                    "stable_index" asc
                 LIMIT
                     $1
             `,
@@ -525,61 +505,31 @@ router.get("/get_transactions", async function (req, res, next) {
         }
         opt = {
             text: `
-            (
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    ${columnName}
                 FROM 
-                    transaction 
+                    ${tableName} 
                 WHERE 
-                    (
-                        (exec_timestamp ${direction} $1)
-                    ) ${shown} 
+                    stable_index ${direction} $1
                 order by 
-                    "exec_timestamp" ${sortInfo},
-                    "level" ${sortInfo},
-                    "pkid" ${sortInfo}
+                    "stable_index" ${sortInfo}
                 LIMIT
-                    $4
-            )
-            union
-            (
-                Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
-                FROM
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp = $1 and level ${direction} $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid ${direction} $3)
-                    ) ${shown} 
-                order by 
-                    "exec_timestamp" ${sortInfo},
-                    "level" ${sortInfo},
-                    "pkid" ${sortInfo}
-                LIMIT
-                    $4
-            )
-            order by
-                "exec_timestamp"  ${sortInfo},
-                "level"  ${sortInfo},
-                "pkid"  ${sortInfo}
-            LIMIT
-                $4
+                    $2
             `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL]
+            values: [Number(queryVal.stable_index), LIMIT_VAL]
         }
     }
 
 
-    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    PageUtility.timeLog(req, '[1] SELECT ${tableName} info Before')
     let data = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    PageUtility.timeLog(req, '[1] SELECT ${tableName} info After')
     if (data.code) {
         responseData = {
             transactions: [],
             code: 500,
             success: false,
-            message: 'Select trans list FROM transaction Error'
+            message: `Select trans list FROM ${tableName} Error`
         }
         logger.info(data)
     } else {
@@ -653,7 +603,9 @@ router.get("/get_account", async function (req, res, next) {
     res.json(responseData);
 })
 //获取交易表中最近(LIMIT+1)项
-//参数： account
+//参数： 
+//account
+//source 1:from     2:to
 router.get("/get_account_trans_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
@@ -676,15 +628,13 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
     let start_sql = {
         text: `
             Select 
-                "exec_timestamp","level","pkid"
+                "stable_index"
             FROM 
-                transaction 
+                trans_normal 
             WHERE
                 ("${querySour}" = $1)
             order by 
-                "exec_timestamp" desc, 
-                "level" desc,
-                "pkid" desc
+                "stable_index" desc
             LIMIT
                 1
         `,
@@ -711,15 +661,13 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "exec_timestamp","level","pkid"
+                "stable_index"
             FROM 
-                transaction 
+                trans_normal 
             WHERE
                 ("${querySour}" = $1)
             order by 
-                "exec_timestamp" asc, 
-                "level" asc,
-                "pkid" asc
+                "stable_index" asc
             LIMIT
                 1
         `,
@@ -753,15 +701,13 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
 /**
  * 参数
 {
-    exec_timestamp: '1555893967',
-    level: '232877',
-    pkid: '822014828' ,
+    stable_index: '1',
     account: '12',
 }
  */
 router.get("/get_account_transactions", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//  wt=all 代表查找含有见证节点的交易列表
+    let queryVal = req.query;
     var queryAccount = queryVal.account;// ?account=2
     var querySour = "";
     if (queryVal.source === '1') {
@@ -776,38 +722,34 @@ router.get("/get_account_transactions", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
                 FROM
-                    transaction
+                    trans_normal
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "exec_timestamp" desc, 
-                    "level" desc,
-                    "pkid" desc
+                    "stable_index" desc
                 LIMIT
-                    $2
+                    ${LIMIT_VAL}
             `,
-            values: [queryAccount, LIMIT_VAL]
+            values: [queryAccount]
         }
     } else if (queryVal.position === "4") {
         // 尾页
         opt = {
             text: `
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
                 FROM
-                    transaction
+                    trans_normal
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "exec_timestamp" asc, 
-                    "level" asc,
-                    "pkid" asc
+                    "stable_index" asc
                 LIMIT
-                    $2
+                    ${LIMIT_VAL}
             `,
-            values: [queryAccount, LIMIT_VAL]
+            values: [queryAccount]
         }
 
     } else {
@@ -821,57 +763,31 @@ router.get("/get_account_transactions", async function (req, res, next) {
         }
         opt = {
             text: `
-            (
                 Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
+                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
                 FROM 
-                    transaction 
+                    trans_normal 
                 WHERE 
-                    (exec_timestamp ${direction} $1) and ("${querySour}" = $5)
+                    (stable_index ${direction} $1)
+                    and
+                    ("${querySour}" = $2)
                 order by 
-                    "exec_timestamp" ${sortInfo},
-                    "level" ${sortInfo},
-                    "pkid" ${sortInfo}
+                    "stable_index" ${sortInfo}
                 LIMIT
-                    $4
-            )
-            union
-            (
-                Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount"
-                FROM
-                    transaction 
-                WHERE 
-                    (
-                        (exec_timestamp = $1 and level ${direction} $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid ${direction} $3)
-                    ) and ("${querySour}" = $5)
-                order by 
-                    "exec_timestamp" ${sortInfo},
-                    "level" ${sortInfo},
-                    "pkid" ${sortInfo}
-                LIMIT
-                    $4
-            )
-            order by
-                "exec_timestamp" ${sortInfo},
-                "level" ${sortInfo},
-                "pkid" ${sortInfo}
-            LIMIT
-                $4
+                    ${LIMIT_VAL}
             `,
-            values: [Number(queryVal.exec_timestamp), Number(queryVal.level), Number(queryVal.pkid), LIMIT_VAL, queryAccount]
+            values: [Number(queryVal.stable_index), queryAccount]
         }
     }
-    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    PageUtility.timeLog(req, '[1] SELECT acc trans_normal info Before')
     let data = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    PageUtility.timeLog(req, '[1] SELECT acc trans_normal info After')
     if (data.code) {
         responseData = {
             transactions: [],
             code: 500,
             success: false,
-            message: 'Select trans list FROM transaction Error'
+            message: 'Select trans list FROM acc trans_normal Error'
         }
         logger.info(data)
     } else {
@@ -915,6 +831,9 @@ router.get("/get_account_transactions", async function (req, res, next) {
 router.get("/get_transaction_short", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryTransaction = req.query.transaction;// TODO 验证格式
+    let tableName = '';
+    let tableCol = ''
+    let typeValue = 0;
     if (queryTransaction.length !== 64) {
         responseData = {
             transaction: {
@@ -933,14 +852,40 @@ router.get("/get_transaction_short", async function (req, res, next) {
         }
         res.json(responseData);
     }
+    //DO 选择HASH类型
+    let type_sql = {
+        text: `
+            Select 
+                "type"
+            FROM 
+                trans_type  
+            WHERE 
+                hash = $1
+        `,
+        values: [queryTransaction]
+    }
+    let type = await pgPromise.query(type_sql);
+    typeValue = type.rows[0].type;
+    // console.log(typeValue, typeof typeValue);
+
+    if (typeValue === '0') {
+        tableName = 'trans_genesis';
+        tableCol = '"hash","type","from","to","amount","data","exec_timestamp","status","is_stable"';
+    } else if (typeValue === '1') {
+        tableName = 'trans_witness';
+        tableCol = '"hash","type","from","is_on_mc","is_free","exec_timestamp","status","is_stable"';
+    } else {
+        tableName = 'trans_normal'
+        tableCol = '"hash","type","from","to","amount","data","exec_timestamp","status","is_stable"';
+    }
 
     //TODO 少选点信息
     let opt = {
         text: `
             Select 
-                "hash","from","to","amount","data","exec_timestamp","status","is_stable"
+                ${tableCol}
             FROM 
-                transaction  
+                ${tableName}  
             WHERE 
                 hash = $1
         `,
@@ -992,19 +937,20 @@ router.get("/get_transaction", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                pkid,hash,"type","from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,
-                signature,is_free,level,witnessed_level,best_parent,is_stable,"status",is_on_mc,mci,latest_included_mci,mc_timestamp,stable_timestamp 
+                hash,"type","from",previous,last_summary,last_summary_block,exec_timestamp,
+                signature,is_free,level,witnessed_level,best_parent,is_stable,"status",
+                is_on_mc,mci,mc_timestamp,stable_timestamp 
             FROM 
-                transaction
+                trans_witness
             WHERE 
                 hash = $1
         `,
         values: [queryTransaction]
     }
 
-    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    PageUtility.timeLog(req, '[1] SELECT trans_witness info Before')
     let data = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    PageUtility.timeLog(req, '[1] SELECT trans_witness info After')
 
     if (data.code) {
         responseData = {
@@ -1037,7 +983,7 @@ router.get("/get_transaction", async function (req, res, next) {
             },
             code: 500,
             success: false,
-            message: "select items from transaction error"
+            message: "select items from trans_witness error"
         }
         res.json(responseData);
         return;
@@ -1077,59 +1023,69 @@ router.get("/get_transaction", async function (req, res, next) {
         transaction.parents = result.rows;
         transaction.witness_list = [];
     }
-
+    responseData = {
+        transaction: transaction,
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
 
     //witness_list_block
     if (transaction.witness_list_block !== '0000000000000000000000000000000000000000000000000000000000000000') {
-        responseData = {
-            transaction: transaction,
-            code: 200,
-            success: true,
-            message: "success"
-        }
-        res.json(responseData);
+
 
     } else {
-        let optWitness = {
-            text: `
-                Select 
-                    "item","account" 
-                FROM 
-                    witness 
-                WHERE 
-                    "item" = $1 
-                ORDER BY 
-                    witness_id DESC
-            `,
-            values: [queryTransaction]
-        }
 
-        PageUtility.timeLog(req, '[3] SELECT witness info Before')
-        let witnessResult = await pgPromise.query(optWitness);
-        PageUtility.timeLog(req, '[3] SELECT witness info After')
+        // responseData = {
+        //     transaction: transaction,
+        //     code: 200,
+        //     success: true,
+        //     message: "success"
+        // }
+        // res.json(responseData);
 
-        if (witnessResult.code) {
-            responseData = {
-                transaction: transaction,
-                code: 500,
-                success: false,
-                message: "select items from witness error"
-            }
-            res.json(responseData);
-        } else {
-            let witnessAry = [];
-            witnessResult.rows.forEach(currentItem => {
-                witnessAry.push(currentItem.account);
-            })
-            transaction.witness_list = witnessAry;
-            responseData = {
-                transaction: transaction,
-                code: 200,
-                success: true,
-                message: "success"
-            }
-            res.json(responseData);
-        }
+
+        // let optWitness = {
+        //     text: `
+        //         Select 
+        //             "item","account" 
+        //         FROM 
+        //             witness 
+        //         WHERE 
+        //             "item" = $1 
+        //         ORDER BY 
+        //             witness_id DESC
+        //     `,
+        //     values: [queryTransaction]
+        // }
+
+        // PageUtility.timeLog(req, '[3] SELECT witness info Before')
+        // let witnessResult = await pgPromise.query(optWitness);
+        // PageUtility.timeLog(req, '[3] SELECT witness info After')
+
+        // if (witnessResult.code) {
+        //     responseData = {
+        //         transaction: transaction,
+        //         code: 500,
+        //         success: false,
+        //         message: "select items from witness error"
+        //     }
+        //     res.json(responseData);
+        // } else {
+        //     let witnessAry = [];
+        //     witnessResult.rows.forEach(currentItem => {
+        //         witnessAry.push(currentItem.account);
+        //     })
+        //     transaction.witness_list = witnessAry;
+        //     responseData = {
+        //         transaction: transaction,
+        //         code: 200,
+        //         success: true,
+        //         message: "success"
+        //     }
+        //     res.json(responseData);
+        // }
     }
 
 
@@ -1138,32 +1094,6 @@ router.get("/get_transaction", async function (req, res, next) {
 //获取以前的unit
 router.get("/get_previous_units", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-
-    //下一个
-    //is_free exec_timestamp
-    //is_free exec_timestamp level    
-    //is_free exec_timestamp level    pkid
-    /* 
-
-        (is_free < 1) 
-        or 
-        (is_free = 1 and exec_timestamp < xxx)    
-        or 
-        (is_free = 1 and exec_timestamp = xxx and level < yyy)
-        or 
-        (is_free = 1 and exec_timestamp = xxx and level = yyy and pkid < zzz)
-    */
-
-    //上一个
-    /* 
-        (is_free > 1) 
-    or 
-       (is_free = 1 and exec_timestamp > xxx)    
-    or 
-       (is_free = 1 and exec_timestamp = xxx and level > yyy)
-    or 
-       (is_free = 1 and exec_timestamp = xxx and level = yyy and pkid > zzz)
-    */
 
     var searchParameter = req.query;
     /*
@@ -1178,61 +1108,47 @@ router.get("/get_previous_units", async function (req, res, next) {
     */
     var sqlOptions;
 
-
-    let filterFirstUnitSql = ' WHERE type = 1 ';
-    let filterOtherUnitSql = ' and (type = 1 ) ';
-
     // console.log(searchParameter);
     if (searchParameter.direction === 'down') {
         sqlOptions = {
             text: `
                 Select 
-                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                    hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
                 FROM 
-                    transaction 
+                    trans_witness 
                 WHERE 
-                    (
-                        (exec_timestamp < $1) or 
-                        (exec_timestamp = $1 and level < $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid < $3)
-                    ) ${filterOtherUnitSql} 
-                order by 
-                    exec_timestamp desc, level desc, pkid desc 
+                    stable_index < $1
+                order by
+                    stable_index desc
                 limit 
                     100`,
-            values: [searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
+            values: [searchParameter.stable_index]
         }
     } else if (searchParameter.direction === 'up') {
 
         sqlOptions = {
             text: `
                 Select 
-                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent 
+                    hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent  
                 FROM 
-                    transaction 
+                    trans_witness 
                 WHERE 
-                    (
-                        (exec_timestamp > $1) or 
-                        (exec_timestamp = $1 and level > $2) or 
-                        (exec_timestamp = $1 and level = $2 and pkid > $3)
-                    ) ${filterOtherUnitSql} 
+                    stable_index > $1
                 order by 
-                    exec_timestamp asc, 
-                    level asc, 
-                    pkid asc 
+                    stable_index asc
                 limit 
                     100
             `,
-            values: [searchParameter.exec_timestamp, searchParameter.level, searchParameter.pkid]
+            values: [searchParameter.stable_index]
         }
 
     } else if ((searchParameter.direction === 'center') && searchParameter.active_unit) {
         let sql = {
             text: `
                 select 
-                    exec_timestamp , level ,pkid
+                    stable_index
                 from 
-                    transaction 
+                    trans_witness 
                 where
                     hash = $1
                 limit 
@@ -1240,7 +1156,7 @@ router.get("/get_previous_units", async function (req, res, next) {
             `,
             values: [searchParameter.active_unit]
         };
-        PageUtility.timeLog(req, '[0] SELECT center exec_timestamp Before')
+        PageUtility.timeLog(req, '[0] SELECT center stable_index Before')
         let hashData = await pgPromise.query(sql)
         logger.info(`hashData.rows:`)
         // logger.info(hashData.rows)
@@ -1257,31 +1173,27 @@ router.get("/get_previous_units", async function (req, res, next) {
             res.json(responseData);
         }
         let centerHashInfo = hashData.rows[0]
-        PageUtility.timeLog(req, '[0] SELECT center exec_timestamp Afer')
+        PageUtility.timeLog(req, '[0] SELECT center stable_index Afer')
         sqlOptions = {
             text: `
             (
                 Select 
-                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent
+                    hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
                 FROM 
-                    transaction 
+                    trans_witness 
                 WHERE 
-                    (
-                        (exec_timestamp > $2) or 
-                        (exec_timestamp = $2 and level > $3) or 
-                        (exec_timestamp = $2 and level = $3 and pkid > $4 )
-                    ) ${filterOtherUnitSql}
+                    stable_index > $2
                 order by 
-                    exec_timestamp asc, level asc,pkid asc 
+                    stable_index asc
                 limit 
                     49
             )
             UNION
             (
                 select 
-                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent
+                    hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
                 from 
-                    transaction 
+                    trans_witness 
                 where 
                     hash = $1 
                 limit 
@@ -1290,44 +1202,38 @@ router.get("/get_previous_units", async function (req, res, next) {
             UNION 
             (
                 Select 
-                    hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent
+                    hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
                 FROM 
-                    transaction
+                    trans_witness
                 WHERE 
-                    (
-                        (exec_timestamp < $2) or
-                        (exec_timestamp = $2 and level < $3) or 
-                        (exec_timestamp = $2 and level = $3 and pkid < $4)
-                    ) ${filterOtherUnitSql} 
+                    stable_index < $2
                 order by 
-                    exec_timestamp desc, level desc, pkid desc
+                    stable_index desc
                 limit
                     50
             )
             order by 
-                exec_timestamp desc, level desc, pkid desc
+                stable_index desc
             `,
-            values: [searchParameter.active_unit, centerHashInfo.exec_timestamp, centerHashInfo.level, centerHashInfo.pkid]
+            values: [searchParameter.active_unit, centerHashInfo.stable_index]
         }
     } else {
         sqlOptions = `
             Select
-                hash,pkid,level,exec_timestamp,is_free,is_stable,"status",is_on_mc,"from","to",amount ,best_parent
-            FROM transaction
-                ${filterFirstUnitSql}
+                hash,level,stable_index,is_free,is_stable,"status",is_on_mc,"from",best_parent 
+            FROM 
+                trans_witness
             order by
-                exec_timestamp desc,
-                level desc,
-                pkid desc
+                stable_index desc
             limit
                 100
         `;
     }
 
 
-    PageUtility.timeLog(req, '[1] SELECT transaction list Before')
+    PageUtility.timeLog(req, '[1] SELECT trans_witness list Before')
     let data = await pgPromise.query(sqlOptions)
-    PageUtility.timeLog(req, '[1] SELECT transaction list Afer')
+    PageUtility.timeLog(req, '[1] SELECT trans_witness list Afer')
 
     // console.log("\n\n\n\n\n")
     // console.log("data.rows")
@@ -1340,7 +1246,7 @@ router.get("/get_previous_units", async function (req, res, next) {
             },
             code: 500,
             success: false,
-            message: "select xxx,xxx from transaction error"
+            message: "select xxx,xxx from trans_witness error"
         }
         res.json(responseData);
         return;
@@ -1427,15 +1333,11 @@ router.get("/get_latest_transactions", async function (req, res, next) {
     let sql = {
         text: `
             Select 
-                exec_timestamp,level,hash,"from","to",is_stable,"status",amount 
+                exec_timestamp,hash,"from","to",is_stable,"status",amount 
             FROM 
-                transaction 
-            where 
-                is_shown = true 
+                trans_normal
             order by 
-                exec_timestamp desc, 
-                level desc,
-                pkid desc 
+                stable_index desc 
             LIMIT 10
         `
     };
@@ -1448,7 +1350,7 @@ router.get("/get_latest_transactions", async function (req, res, next) {
             transactions: [],
             code: 500,
             success: false,
-            message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from transaction error'
+            message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from trans_normal error'
         }
     } else {
         responseData = {
@@ -1472,6 +1374,8 @@ router.get("/get_mci", async function (req, res, next) {
                 key='last_mci'
                 or
                 key ='last_stable_mci'
+                or
+                key = 'last_stable_block_index'
         `
     };
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mci Before')

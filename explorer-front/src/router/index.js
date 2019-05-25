@@ -6,7 +6,8 @@ import Block from '@/components/block'
 import Dag from '@/components/dag'
 import Account from '@/components/account'
 import Accounts from '@/components/accounts'
-import Transactions from '@/components/transactions'
+import Normal_Trans from '@/components/normal_trans'
+import WitnessTrans from '@/components/witness_trans'
 import NotFound from '@/components/NotFound/NotFound'
 
 Vue.use(Router)
@@ -24,9 +25,14 @@ export default new Router({
       component: Accounts
     },
     {
-      path: '/transactions',
-      name: 'Transactions',
-      component: Transactions
+      path: '/normal_trans',
+      name: 'Normal_Trans',
+      component: Normal_Trans
+    },
+    {
+      path: '/witness_trans',
+      name: 'WitnessTrans',
+      component: WitnessTrans
     },
     {
       path: '/dag',

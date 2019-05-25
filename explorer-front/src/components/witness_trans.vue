@@ -5,17 +5,17 @@
             <div class="container">
                 <search></search>
                 <div class="sub-header">
-                    <strong>交易列表</strong>
+                    <strong>见证交易列表</strong>
                     <span class="sub_header-des">合计 {{TOTAL_VAL}} 笔交易</span>
                 </div>
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
                     <template>
                         <el-table :data="database" style="width: 100%">
-                            <el-table-column label="时间" width="200">
+                            <el-table-column label="主链时间" width="200">
                                 <template slot-scope="scope">
                                     <span
                                         class="table-long-item"
-                                    >{{scope.row.exec_timestamp | toDate}}</span>
+                                    >{{scope.row.mc_timestamp | toDate}}</span>
                                 </template>
                             </el-table-column>
                             <el-table-column label="交易号" width="200">
@@ -25,7 +25,7 @@
                                     </el-button>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="发款方" width="200">
+                            <el-table-column label="账户" width="200">
                                 <template slot-scope="scope">
                                     <template v-if="scope.row.mci <= 0">
                                         <span class="table-long-item">GENESIS</span>
@@ -37,18 +37,6 @@
                                         >
                                             <span class="table-long-item">{{scope.row.from}}</span>
                                         </el-button>
-                                    </template>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="收款方" width="200">
-                                <template slot-scope="scope">
-                                    <template v-if="scope.row.to">
-                                        <el-button @click="goAccountPath(scope.row.to)" type="text">
-                                            <span class="table-long-item">{{scope.row.to}}</span>
-                                        </el-button>
-                                    </template>
-                                    <template v-else>
-                                        <span>-</span>
                                     </template>
                                 </template>
                             </el-table-column>
@@ -76,9 +64,11 @@
                                     </template>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="金额 / CZR" align="right" min-width="230">
+                            <el-table-column label="稳定时间" width="200">
                                 <template slot-scope="scope">
-                                    <span>{{scope.row.amount | toCZRVal}}</span>
+                                    <span
+                                        class="table-long-item"
+                                    >{{scope.row.stable_timestamp | toDate}}</span>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -145,8 +135,8 @@ export default {
         return {
             TOTAL_VAL: 0,
             LIMIT_VAL: 20,
-            wt: window.location.hash.indexOf("wt=") > 1 ? "all" : "",
             loadingSwitch: true,
+            TRANS_TYPE: 1,
             btnSwitch: {
                 header: false,
                 left: false,
@@ -163,20 +153,14 @@ export default {
                 }
             ],
             pageFirstItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 0
             },
             pageLastItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 0
             },
             url_parm: {
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 999999999999999999
             },
             // current_page: this.$route.query.page || 1,
             startOpt: {}
@@ -188,9 +172,7 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.exec_timestamp = queryInfo.exec_timestamp;
-            self.url_parm.level = queryInfo.level;
-            self.url_parm.pkid = queryInfo.pkid;
+            self.url_parm.stable_index = queryInfo.stable_index;
         }
         self.getTransactions(self.url_parm);
     },
@@ -199,24 +181,20 @@ export default {
             self.loadingSwitch = true;
             // 想取最后一页
             if (val === "footer") {
-                self.$router.push(
-                    `/transactions?exec_timestamp=0&level=0&pkid=0&position=4`
-                );
+                self.$router.push(`/witness_trans?stable_index=0&position=4`);
                 return;
             }
             // 想取第一页
             if (val === "header") {
-                self.$router.push(`/transactions`);
+                self.$router.push(`/witness_trans`);
                 return;
             }
 
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/transactions?exec_timestamp=${
-                        self.pageFirstItem.exec_timestamp
-                    }&level=${self.pageFirstItem.level}&pkid=${
-                        self.pageFirstItem.pkid
+                    `/witness_trans?stable_index=${
+                        self.pageFirstItem.stable_index
                     }&position=2`
                 );
                 return;
@@ -225,10 +203,8 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/transactions?exec_timestamp=${
-                        self.pageLastItem.exec_timestamp
-                    }&level=${self.pageLastItem.level}&pkid=${
-                        self.pageLastItem.pkid
+                    `/witness_trans?stable_index=${
+                        self.pageLastItem.stable_index
                     }&position=3`
                 );
                 return;
@@ -238,23 +214,18 @@ export default {
         async getTransactions(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
-            
             let opt = {
                 position: parm.position,
-                exec_timestamp: parm.exec_timestamp,
-                wt: self.wt,
-                level: parm.level,
-                pkid: parm.pkid
+                stable_index: parm.stable_index
             };
-            let response = await self.$api.get("/api/get_transactions", opt);
-
+            let response = await self.$api.get("/api/get_trans", opt);
             if (response.success) {
                 self.database = response.transactions;
                 self.pageFirstItem = response.transactions[0];
                 self.pageLastItem =
                     response.transactions[response.transactions.length - 1];
                 if (response.transactions.length < 20) {
-                    self.$router.push(`/transactions`);
+                    self.$router.push(`/witness_trans`);
                 }
             } else {
                 self.database = [errorInfo];
@@ -271,13 +242,9 @@ export default {
         },
 
         async getTransactionsCount() {
-            let opt = {
-                wt: self.wt
-            };
-            let response = await self.$api.get(
-                "/api/get_transactions_count",
-                opt
-            );
+            let response = await self.$api.get("/api/get_trans_count", {
+                type: self.TRANS_TYPE
+            });
             if (response.success) {
                 self.TOTAL_VAL = response.count;
             } else {
@@ -287,16 +254,19 @@ export default {
 
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
-            let opt = {
-                wt: self.wt
-            };
-            let response = await self.$api.get("/api/get_trans_flag", opt);
-
-            if (response.near_item.pkid == self.pageFirstItem.pkid) {
+            let response = await self.$api.get("/api/get_trans_flag", {
+                type: self.TRANS_TYPE
+            });
+            if (
+                response.near_item.stable_index ==
+                self.pageFirstItem.stable_index
+            ) {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
             }
-            if (response.end_item.pkid == self.pageLastItem.pkid) {
+            if (
+                response.end_item.stable_index == self.pageLastItem.stable_index
+            ) {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
