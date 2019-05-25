@@ -318,15 +318,11 @@ HttpRequest.prototype.mciBlocks = async function (mci, limit, next_index) {
 
 /**
  * 获取已稳定的指定mci下的多笔交易。
- * @param {number} mci - 指定的mci
  * @param {number} limit - 返回交易上限，如果超过1000，默认1000
  * @param {string} [index] - （可选）当前查询索引，来自返回结果中next_index，默认为空。
  * @returns {Promise<{code, msg, blocks, next_index}>}
  * */
-HttpRequest.prototype.stableBlocks = async function (mci, limit, index) {
-    if (mci < 0) {
-        return {code: 110, msg: `param not valid - mci: ${JSON.stringify(mci)}`}
-    }
+HttpRequest.prototype.stableBlocks = async function (limit, index) {
     if (!limit || limit > 1000) {
         limit = 1000
     }
@@ -334,15 +330,13 @@ HttpRequest.prototype.stableBlocks = async function (mci, limit, index) {
     if (index === undefined) {
         opt = {
             "action": "stable_blocks",
-            "mci": mci,
             "limit": limit,
         }
     } else {
         opt = {
             "action": "stable_blocks",
-            "mci": mci,
-            "limit": limit,
-            "index": index
+            "limit": Number(limit),
+            "index": Number(index)
         }
     }
     return await asyncfunc(opt);

@@ -70,26 +70,49 @@
     }
 
     let opt5 = {
-        text: `truncate table transaction`
+        text: `truncate table trans_normal`
     };
     let data5 = await pgPromise.query(opt5)
     if (data5.code) {
-        console.log("删除 transaction 失败")
+        console.log("删除 trans_normal 失败")
         console.log(data5)
     } else {
-        console.log("删除 transaction 成功")
+        console.log("删除 trans_normal 成功")
     }
 
     let opt6 = {
-        text: `truncate table witness`
+        text: `truncate table trans_witness`
     };
     let data6 = await pgPromise.query(opt6)
     if (data6.code) {
-        console.log("删除 witness 失败")
+        console.log("删除 trans_witness 失败")
         console.log(data6)
     } else {
-        console.log("删除 witness 成功")
+        console.log("删除 trans_witness 成功")
     }
+
+    let opt7 = {
+        text: `truncate table trans_genesis`
+    };
+    let data7 = await pgPromise.query(opt7)
+    if (data7.code) {
+        console.log("删除 trans_genesis 失败")
+        console.log(data7)
+    } else {
+        console.log("删除 trans_genesis 成功")
+    }
+
+    let opt8 = {
+        text: `truncate table trans_type`
+    };
+    let data8 = await pgPromise.query(opt8)
+    if (data8.code) {
+        console.log("删除 trans_type 失败")
+        console.log(data8)
+    } else {
+        console.log("删除 trans_type 成功")
+    }
+
     console.log("************* 删除数据 结束 ************* ")
 
 })()
