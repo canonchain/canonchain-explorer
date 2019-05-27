@@ -866,17 +866,16 @@ router.get("/get_transaction_short", async function (req, res, next) {
     }
     let type = await pgPromise.query(type_sql);
     typeValue = type.rows[0].type;
-    // console.log(typeValue, typeof typeValue);
 
     if (typeValue === '0') {
         tableName = 'trans_genesis';
-        tableCol = '"hash","type","from","to","amount","data","exec_timestamp","status","is_stable"';
+        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","to","amount","data","data_hash"';
     } else if (typeValue === '1') {
         tableName = 'trans_witness';
-        tableCol = '"hash","type","from","is_on_mc","is_free","exec_timestamp","status","is_stable"';
+        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","last_stable_block","last_summary_block","last_summary","is_free","witnessed_level","best_parent","is_on_mc"';
     } else {
         tableName = 'trans_normal'
-        tableCol = '"hash","type","from","to","amount","data","exec_timestamp","status","is_stable"';
+        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","to","amount","data","data_hash","gas","gas_used","gas_price","contract_address","log","log_bloom"';
     }
 
     //TODO 少选点信息

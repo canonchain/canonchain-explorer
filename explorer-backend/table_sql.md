@@ -127,6 +127,13 @@ CREATE UNIQUE INDEX hash_index
     ON public.trans_normal USING btree
     (hash)
     TABLESPACE pg_default;
+
+-- Index: mormal_stable_index
+-- DROP INDEX public.mormal_stable_index;
+CREATE INDEX mormal_stable_index
+    ON public.trans_normal USING btree
+    (stable_index)
+    TABLESPACE pg_default;
 ```
 
 ## 见证交易表(存创始hash的简要信息)
@@ -174,6 +181,13 @@ CREATE UNIQUE INDEX witness_hash_index
     ON public.trans_witness USING btree
     (hash)
     TABLESPACE pg_default;
+    
+-- Index: witness_stable_index
+-- DROP INDEX public.witness_stable_index;
+CREATE INDEX witness_stable_index
+    ON public.trans_witness USING btree
+    (stable_index)
+    TABLESPACE pg_default;
 ```
 
 ## 创世表
@@ -218,6 +232,12 @@ TABLESPACE pg_default;
 CREATE UNIQUE INDEX genesis_hash_index
     ON public.trans_witness USING btree
     (hash)
+    TABLESPACE pg_default;
+-- Index: gen_stable_index
+-- DROP INDEX public.gen_stable_index;
+CREATE INDEX gen_stable_index
+    ON public.trans_genesis USING btree
+    (stable_index)
     TABLESPACE pg_default;
 ```
 

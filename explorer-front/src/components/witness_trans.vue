@@ -9,9 +9,9 @@
                     <span class="sub_header-des">合计 {{TOTAL_VAL}} 笔交易</span>
                 </div>
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                    <template>
+                    <template v-if="IS_GET_INFO">
                         <el-table :data="database" style="width: 100%">
-                            <el-table-column label="主链时间" width="200">
+                            <el-table-column label="时间" width="200">
                                 <template slot-scope="scope">
                                     <span
                                         class="table-long-item"
@@ -136,6 +136,7 @@ export default {
             TOTAL_VAL: 0,
             LIMIT_VAL: 20,
             loadingSwitch: true,
+            IS_GET_INFO: false,
             TRANS_TYPE: 1,
             btnSwitch: {
                 header: false,
@@ -144,13 +145,13 @@ export default {
                 footer: false
             },
             database: [
-                {
-                    exec_timestamp: "-",
-                    hash: "0",
-                    from: 0,
-                    to: 0,
-                    amount: 0
-                }
+                // {
+                //     exec_timestamp: "-",
+                //     hash: "0",
+                //     from: 0,
+                //     to: 0,
+                //     amount: 0
+                // }
             ],
             pageFirstItem: {
                 stable_index: 0
@@ -270,6 +271,7 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
+            self.IS_GET_INFO = true;
             self.loadingSwitch = false;
         },
 

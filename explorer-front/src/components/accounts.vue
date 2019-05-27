@@ -9,7 +9,7 @@
                     <span class="sub_header-des">合计 {{TOTAL_VAL}} 个账户</span>
                 </div>
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                    <template>
+                    <template v-if="IS_GET_INFO">
                         <el-table :data="database" style="width: 100%">
                             <!-- <el-table-column prop="rank" label="排行榜" width="70"></el-table-column> -->
                             <el-table-column label="账户" width="580">
@@ -96,13 +96,14 @@ export default {
                 footer: false
             },
             database: [
-                {
-                    account: "-",
-                    balance: "0",
-                    tran_count: 0,
-                    type: 0
-                }
+                // {
+                //     account: "-",
+                //     balance: "0",
+                //     tran_count: 0,
+                //     type: 0
+                // }
             ],
+            IS_GET_INFO: false,
             pageFirstItem: {
                 account: "",
                 balance: 0
@@ -115,8 +116,7 @@ export default {
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 balance: 0,
                 acc_id: 0
-            },
-            startOpt: {}
+            }
         };
     },
     created() {
@@ -133,35 +133,31 @@ export default {
     methods: {
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
-            // 想取最后一页
-            if (val === "footer") {
-                self.$router.push(`/accounts?balance=-1&acc_id=-1&position=4`);
-                return;
-            }
-            // 想取第一页
-            if (val === "header") {
-                self.$router.push(`/accounts`);
-                return;
-            }
-
-            if (val == "left") {
-                //取第一个item
-                self.$router.push(
-                    `/accounts?balance=${self.pageFirstItem.balance}&acc_id=${
-                        self.pageFirstItem.acc_id
-                    }&position=2`
-                );
-                return;
-            }
-
-            if (val == "right") {
-                //取最后一个item
-                self.$router.push(
-                    `/accounts?balance=${self.pageLastItem.balance}&acc_id=${
-                        self.pageLastItem.acc_id
-                    }&position=3`
-                );
-                return;
+            switch (val) {
+                case "footer":
+                    self.$router.push(
+                        `/accounts?balance=-1&acc_id=-1&position=4`
+                    );
+                    break;
+                case "header":
+                    self.$router.push(`/accounts`);
+                    break;
+                case "left":
+                    //取前
+                    self.$router.push(
+                        `/accounts?balance=${
+                            self.pageFirstItem.balance
+                        }&acc_id=${self.pageFirstItem.acc_id}&position=2`
+                    );
+                    break;
+                case "right":
+                    //取后
+                    self.$router.push(
+                        `/accounts?balance=${
+                            self.pageLastItem.balance
+                        }&acc_id=${self.pageLastItem.acc_id}&position=3`
+                    );
+                    break;
             }
         },
 
@@ -188,6 +184,7 @@ export default {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }
+                self.IS_GET_INFO = true;
                 self.loadingSwitch = false;
             } else {
                 console.log("error");

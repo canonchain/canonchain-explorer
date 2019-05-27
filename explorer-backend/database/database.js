@@ -735,9 +735,9 @@
                     Number(item.gas) + "," +
                     Number(item.gas_used || 2) + "," +
                     Number(item.gas_price) + ",'" +
-                    item.contract_address + "','" +
-                    item.log + "','" +
-                    item.log_bloom + "','" +
+                    (item.contract_address || "") + "','" +
+                    (item.log || "") + "','" +
+                    (item.log_bloom || "") + "','" +
 
 
                     item.to + "'," +

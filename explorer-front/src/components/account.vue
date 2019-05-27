@@ -16,7 +16,11 @@
                                     余额
                                     <span class="space-des"></span>
                                 </strong>
-                                <div class="bui-dlist-det">{{accountInfo.balance | toCZRVal}} CZR</div>
+                                <template v-if="IS_GET_ACC">
+                                    <div
+                                        class="bui-dlist-det"
+                                    >{{accountInfo.balance | toCZRVal}} CZR</div>
+                                </template>
                             </div>
                         </el-col>
                         <el-col :span="12">
@@ -25,7 +29,9 @@
                                     交易数
                                     <span class="space-des"></span>
                                 </strong>
-                                <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
+                                <template v-if="IS_GET_ACC">
+                                    <div class="bui-dlist-det">{{TOTAL_VAL}} 次</div>
+                                </template>
                             </div>
                         </el-col>
                     </el-row>
@@ -51,7 +57,7 @@
                         </el-col>
                     </el-row>
                     <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                        <template>
+                        <template v-if="IS_GET_INFO">
                             <el-table :data="database" style="width: 100%">
                                 <el-table-column label="时间" width="180">
                                     <template slot-scope="scope">
@@ -230,7 +236,7 @@ export default {
     },
     data() {
         return {
-            TOTAL_VAL: "-",
+            TOTAL_VAL: 0,
             LIMIT_VAL: 20,
             loadingSwitch: true,
             btnSwitch: {
@@ -240,6 +246,8 @@ export default {
                 footer: false
             },
             database: [],
+            IS_GET_INFO: false,
+            IS_GET_ACC: false,
             pageFirstItem: {
                 exec_timestamp: 0,
                 level: 0,
@@ -287,11 +295,13 @@ export default {
 
             if (response.success) {
                 let accInfo = response.account;
-                self.accountInfo.balance = accInfo.balance;
+                self.accountInfo.balance =
+                    accInfo.balance < 0 ? 0 : accInfo.balance;
                 self.TOTAL_VAL = Number(accInfo.transaction_count);
             } else {
                 console.error("/api/get_account Error");
             }
+            self.IS_GET_ACC = true;
         },
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
@@ -389,19 +399,20 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            if (self.database.length === 0) {
-                self.loadingSwitch = false;
-                return;
-            }
-            if (self.first_stable_index === self.pageFirstItem.stable_index) {
-                self.btnSwitch.header = true;
-                self.btnSwitch.left = true;
-            }
+            if (self.database.length > 0) {
+                if (
+                    self.first_stable_index === self.pageFirstItem.stable_index
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
 
-            if (self.end_stable_index === self.pageLastItem.stable_index) {
-                self.btnSwitch.right = true;
-                self.btnSwitch.footer = true;
+                if (self.end_stable_index === self.pageLastItem.stable_index) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
             }
+            self.IS_GET_INFO = true;
             self.loadingSwitch = false;
         },
         goBlockPath(block) {

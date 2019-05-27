@@ -37,8 +37,26 @@
     }
 
     let opt2 = {
-        text: `truncate table global`
-    };
+        text: `
+        update 
+            global 
+        set 
+            value=temp.value 
+                from (values 
+                        ('witness_count',0),
+                        ('accounts_count',0),
+                        ('normal_count',0),
+                        ('done_stable_index',0),
+                        ('last_mci',0),
+                        ('last_stable_mci',0),
+                        ('last_stable_block_index',0 )
+                    ) 
+            as 
+                temp(key,value)
+        where 
+            global.key = temp.key
+        `
+    }
     let data2 = await pgPromise.query(opt2)
     if (data2.code) {
         console.log("删除 global 失败")

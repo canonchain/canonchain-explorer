@@ -96,7 +96,7 @@
                         </div>
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                IS_ON_MC
+                                是否在主链
                                 <span class="space-des"></span>
                             </strong>
                             <div class="bui-dlist-det">
@@ -110,7 +110,7 @@
                         </div>
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                IS_FREE
+                                Free
                                 <span class="space-des"></span>
                             </strong>
                             <div class="bui-dlist-det">
@@ -121,6 +121,41 @@
                                     <span class="txt-success">True</span>
                                 </template>
                             </div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                last_stable_block
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.last_stable_block || ''}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Last Summary Block
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.last_summary_block || ''}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Last Summary
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.last_summary || ''}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                见证级别
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.witnessed_level || ''}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Best Parent
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.best_parent || ''}}</div>
                         </div>
                     </template>
                     <template v-else>
@@ -163,12 +198,122 @@
                         </div>
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                数据
+                                Data
                                 <span class="space-des"></span>
                             </strong>
                             <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
                         </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Data Hash
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.data_hash || '-'}}</div>
+                        </div>
                     </template>
+                    <template v-if="blockInfo.type === '2'">
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Gas
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.gas || '-'}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Gas Used
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.gas_used || '-'}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Gas Price
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.gas_price || '-'}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Contract Address
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.contract_address || '-'}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Log
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
+                        </div>
+                        <div class="block-item-des">
+                            <strong class="bui-dlist-tit">
+                                Log Bloom
+                                <span class="space-des"></span>
+                            </strong>
+                            <div class="bui-dlist-det">{{blockInfo.log_bloom || '-'}}</div>
+                        </div>
+                    </template>
+                    <!-- 公共的 -->
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Previous
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.previous || '-'}}</div>
+                    </div>
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Work
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.work || '-'}}</div>
+                    </div>
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Signature
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.signature || '-'}}</div>
+                    </div>
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Level
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.level || '-'}}</div>
+                    </div>
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Stable Index
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.stable_index || '-'}}</div>
+                    </div>
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Mci
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.mci || '-'}}</div>
+                    </div>
+
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Mc Timestamp
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.mc_timestamp |toDate}}</div>
+                    </div>
+
+                    <div class="block-item-des">
+                        <strong class="bui-dlist-tit">
+                            Stable Timestamp
+                            <span class="space-des"></span>
+                        </strong>
+                        <div class="bui-dlist-det">{{blockInfo.stable_timestamp |toDate}}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -180,6 +325,7 @@ import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let self = null;
+let trsns_info;
 
 export default {
     name: "Block",
@@ -192,16 +338,42 @@ export default {
             blockHash: this.$route.params.id,
             isSuccess: false,
             blockInfo: {
+                //所有类型共有的
+                hash: "",
                 type: 0,
                 from: "",
+
+                previous: "",
+                exec_timestamp: "",
+                work: "",
+                signature: "",
+                level: "",
+                is_stable: "",
+                stable_index: "",
+                status: "",
+                mci: "",
+                mc_timestamp: "",
+                stable_timestamp: "",
+                //普通交易和创始交易私有的
                 to: "",
-                amount: "0",
+                amount: "",
                 data: "",
+                data_hash: "",
+                // 普通交易私有的
+                gas: "",
+                gas_used: "",
+                gas_price: "",
+                contract_address: "",
+                log: "",
+                log_bloom: "",
+                // 见证交易
+                last_stable_block: "",
+                last_summary_block: "",
+                last_summary: "",
+                witnessed_level: "",
+                best_parent: "",
                 is_free: "",
-                is_on_mc: "",
-                exec_timestamp: "0",
-                status: "99",
-                is_stable: "0"
+                is_on_mc: ""
             }
         };
     },
@@ -220,18 +392,10 @@ export default {
             );
             if (response.success) {
                 self.isSuccess = true;
-                if (response.transaction) {
-                    self.blockInfo.from = response.transaction.from;
-                    self.blockInfo.to = response.transaction.to;
-                    self.blockInfo.amount = response.transaction.amount;
-                    self.blockInfo.data = response.transaction.data;
-                    self.blockInfo.exec_timestamp =
-                        response.transaction.exec_timestamp;
-                    self.blockInfo.type = response.transaction.type; //
-                    self.blockInfo.is_on_mc = response.transaction.is_on_mc; //
-                    self.blockInfo.is_free = response.transaction.is_free; //
-                    self.blockInfo.status = response.transaction.status;
-                    self.blockInfo.is_stable = response.transaction.is_stable;
+                trsns_info = response.transaction;
+                if (trsns_info) {
+                    //所有类型共有的
+                    self.blockInfo = trsns_info;
                 }
             } else {
                 console.error("/api/get_transaction_short Error");
