@@ -5,7 +5,7 @@ var options = {
     // host: '192.168.10.232',
     // host: '192.168.10.153',
     host: "127.0.0.1",
-    port: 8765,
+    port: 8765,//8765 || 6765
 };
 
 
@@ -339,6 +339,8 @@ HttpRequest.prototype.stableBlocks = async function (limit, index) {
             "index": Number(index)
         }
     }
+    console.log("stable_blocks opt");
+    console.log(opt);
     return await asyncfunc(opt);
 }
 

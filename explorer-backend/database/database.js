@@ -22,7 +22,7 @@
     //辅助数据 End
 
     // 操作稳定Unit相关变量 Start
-    let MCI_LIMIT = 200;
+    let MCI_LIMIT = 500;
     let stableCount = 0;//异步控制
 
     let BLOCKS_LENGTH = 0;
@@ -424,7 +424,6 @@
             pageUtility.spreadParent(parentsTotalAry, pageUtility.stableInsertControl);
         },
         stableInsertControl() {
-            //TODO 改为同步了，不能这么做了
             stableCount++;
             if (stableCount === 4) {
                 logger.info(`数据过滤分装完成，完成分类操作`);
@@ -527,8 +526,8 @@
                 pageUtility.getUnitByLSBI();
                 // console.log("OKle")
             } else {
-                //最后：获取 不稳定的unstable_blocks 存储
-                // pageUtility.getUnstableBlocks();
+                //写完了
+                pageUtility.init();
             }
         },
         //插入稳定的Unit ------------------------------------------------ End
