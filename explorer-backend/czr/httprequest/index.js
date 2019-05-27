@@ -339,8 +339,8 @@ HttpRequest.prototype.stableBlocks = async function (limit, index) {
             "index": Number(index)
         }
     }
-    console.log("stable_blocks opt");
-    console.log(opt);
+    // console.log("stable_blocks opt");
+    // console.log(opt);
     return await asyncfunc(opt);
 }
 
