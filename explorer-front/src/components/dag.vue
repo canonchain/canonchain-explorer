@@ -53,7 +53,6 @@
                     <strong>Hash</strong>:
                     <span class="info-item-val">{{activeUnitInfo.hash}}</span>
                 </div>
-
                 <div class="info-item-dev">
                     <span class="level-wrap">
                         <strong>Level</strong>:
@@ -62,6 +61,19 @@
                     <span class="level-wrap">
                         <strong>Witnessed Level</strong>:
                         <span class="info-item-val">{{activeUnitInfo.witnessed_level}}</span>
+                    </span>
+                    <span class="level-wrap">
+                        <strong>Stable Index</strong>:
+                        <span class="info-item-val">{{activeUnitInfo.stable_index}}</span>
+                    </span>
+                    <span class="level-wrap">
+                        <strong>类型</strong>:
+                        <template v-if="activeUnitInfo.type === '0'">
+                            <span class="txt-success">创世交易</span>
+                        </template>
+                        <template v-else-if="activeUnitInfo.type === '1'">
+                            <span class="txt-info">见证交易</span>
+                        </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
@@ -159,43 +171,13 @@
                         <span class="info-item-val">{{activeUnitInfo.mc_timestamp | toDate}}</span>
                     </span>
                 </div>
-                <div class="dashed-line"></div>
                 <div class="info-item-dev">
-                    <template
-                        v-if="activeUnitInfo.witness_list_block === '0000000000000000000000000000000000000000000000000000000000000000'"
-                    >
-                        <strong
-                            :class="['switch',{'switch-show': showWitnessLink }]"
-                            @click="toggleParents('witness')"
-                        >Witness List Block</strong>
-                    </template>
-                    <template v-else>
-                        <strong>Witness List Block</strong>
-                    </template>
-                    <span class="info-item-val">
-                        <template
-                            v-if="activeUnitInfo.witness_list_block === '0000000000000000000000000000000000000000000000000000000000000000'"
-                        >
-                            <div
-                                v-for="item in activeUnitInfo.witness_list"
-                                v-show="showWitnessLink==true"
-                                :key="item"
-                            >
-                                <router-link
-                                    tag="a"
-                                    :to="'/account/'+item"
-                                    target="_blank"
-                                >{{ item }}</router-link>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <a
-                                href="javascript:;"
-                                @click="goBlockHash(activeUnitInfo.witness_list_block)"
-                            >{{activeUnitInfo.witness_list_block}}</a>
-                        </template>
+                    <span class="level-wrap">
+                        <strong>Stable Time</strong>:
+                        <span class="info-item-val">{{activeUnitInfo.stable_timestamp | toDate}}</span>
                     </span>
                 </div>
+                <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <strong>Last Summary Block</strong>:
                     <span class="info-item-val">
@@ -224,6 +206,13 @@
                     </span>
                 </div>
                 <div class="info-item-dev">
+                    <strong>Last Stable Block</strong>:
+                    <a
+                        href="javascript:;"
+                        @click="goBlockHash(activeUnitInfo.last_stable_block)"
+                    >{{activeUnitInfo.last_stable_block}}</a>
+                </div>
+                <div class="info-item-dev">
                     <strong>Is Free</strong>:
                     <span class="info-item-val">{{activeUnitInfo.is_free}}</span>
                 </div>
@@ -249,6 +238,17 @@
                         </template>
                         <template v-else>
                             <span>{{activeUnitInfo.signature}}</span>
+                        </template>
+                    </span>
+                </div>
+                <div class="info-item-dev">
+                    <strong>Work</strong>:
+                    <span class="info-item-val">
+                        <template v-if="activeUnitInfo.work === '0000000000000000'">
+                            <span>-</span>
+                        </template>
+                        <template v-else>
+                            <span>{{activeUnitInfo.work}}</span>
                         </template>
                     </span>
                 </div>
@@ -344,7 +344,6 @@ export default {
                 hash: "-",
                 from: "-",
                 previous: "-",
-                witness_list_block: "-",
                 last_summary: "-",
                 last_summary_block: "-",
                 data: "",

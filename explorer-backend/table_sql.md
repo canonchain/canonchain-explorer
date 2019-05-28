@@ -194,7 +194,6 @@ CREATE INDEX witness_stable_index
 
 ```postgresql
 -- Table: public.trans_genesis
- 
 -- DROP TABLE public.trans_genesis;
  
 CREATE TABLE public.trans_genesis
@@ -293,6 +292,14 @@ COMMENT ON COLUMN public.parents.item
  
 COMMENT ON COLUMN public.parents.parent
     IS 'parent';
+
+-- Index: parent_item_index
+-- DROP INDEX public.parent_item_index;
+CREATE INDEX parent_item_index
+    ON public.parents USING btree
+    (item COLLATE pg_catalog."default")
+    TABLESPACE pg_default;
+
 ```
 
 ## timestap表的创建

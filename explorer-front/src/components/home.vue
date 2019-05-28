@@ -173,7 +173,7 @@ export default {
             let lastTranResponse = await self.$api.get(
                 "/api/get_latest_transactions"
             );
-            if ({}.toString.call(lastTranResponse) === "[object Object]") {
+            if (lastTranResponse.success) {
                 self.database = lastTranResponse.transactions;
                 self.loadingSwitch = false;
             } else {
@@ -202,35 +202,66 @@ export default {
             self.mci.last_stable_mci = "-";
             self.mci.last_mci = "-";
             let response = await self.$api.get("/api/get_mci");
-            if ({}.toString.call(response) === "[object Object]") {
+            if (response.success) {
                 self.mci.last_stable_mci = response.mci.last_stable_mci;
-                self.mci.last_stable_block_index = response.mci.last_stable_block_index;
+                self.mci.last_stable_block_index =
+                    response.mci.last_stable_block_index;
                 self.mci.last_mci = response.mci.last_mci;
             } else {
                 console.error("/api/get_mci Error");
             }
         },
         //echarts
-        async initEcharts(vaule) {
+        async initEcharts(value) {
             let data = {
                 timestamp: [],
                 count: []
             };
             let opt;
+
             if (self.start_data > 0) {
                 opt = {
-                    type: vaule,
+                    type: value,
                     start: self.start_data
                 };
             } else {
                 opt = {
-                    type: vaule
+                    type: value
                 };
             }
+
+            let stampNow =
+                value === "1"
+                    ? Date.parse(new Date()) / 1000
+                    : Math.floor(Date.parse(new Date()) / 10000);
+            // let stampNow =    155841466
+            // let stampNow = value === '1' ? 1558414662 :155841466
+            let cltObj = {};
+            let srvObj = {};
+
+            for (let i = 0; i < 300; i++) {
+                cltObj[(stampNow - i).toString()] = 0;
+            }
+
             let response = await self.$api.get("/api/get_timestamp", opt);
-            if ({}.toString.call(response) === "[object Object]") {
-                data.timestamp = response.timestamp;
-                data.count = response.count;
+            if (response.success) {
+                response.timestamp.forEach((item, index) => {
+                    srvObj[item] = response.count[index];
+                });
+
+                Object.keys(cltObj).forEach(item => {
+                    cltObj[item] = srvObj[item] || 0;
+                    // console.log(item);
+                    // console.log(cltObj[item]);
+                });
+
+                Object.keys(cltObj).forEach((items, index) => {
+                    data.timestamp[index] = items;
+                    data.count[index] = cltObj[items];
+                    // console.log(items);
+                    // console.log(cltObj[items]);
+                });
+
                 data.timestamp.forEach((item, index) => {
                     data.timestamp[index] = self.toTime(item);
                 });

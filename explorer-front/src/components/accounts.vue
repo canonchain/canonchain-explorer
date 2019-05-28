@@ -32,34 +32,37 @@
                         </el-table>
                     </template>
                 </div>
-                <div class="pagin-block">
-                    <el-button-group>
-                        <el-button
-                            size="mini"
-                            :disabled="btnSwitch.header"
-                            @click="getPaginationFlag('header')"
-                        >首页</el-button>
-                        <el-button
-                            size="mini"
-                            icon="el-icon-arrow-left"
-                            :disabled="btnSwitch.left"
-                            @click="getPaginationFlag('left')"
-                        >上一页</el-button>
-                        <el-button
-                            size="mini"
-                            :disabled="btnSwitch.right"
-                            @click="getPaginationFlag('right')"
-                        >
-                            下一页
-                            <i class="el-icon-arrow-right el-icon--right"></i>
-                        </el-button>
-                        <el-button
-                            size="mini"
-                            :disabled="btnSwitch.footer"
-                            @click="getPaginationFlag('footer')"
-                        >尾页</el-button>
-                    </el-button-group>
-                </div>
+
+                <template v-if="database.length">
+                    <div class="pagin-block">
+                        <el-button-group>
+                            <el-button
+                                size="mini"
+                                :disabled="btnSwitch.header"
+                                @click="getPaginationFlag('header')"
+                            >首页</el-button>
+                            <el-button
+                                size="mini"
+                                icon="el-icon-arrow-left"
+                                :disabled="btnSwitch.left"
+                                @click="getPaginationFlag('left')"
+                            >上一页</el-button>
+                            <el-button
+                                size="mini"
+                                :disabled="btnSwitch.right"
+                                @click="getPaginationFlag('right')"
+                            >
+                                下一页
+                                <i class="el-icon-arrow-right el-icon--right"></i>
+                            </el-button>
+                            <el-button
+                                size="mini"
+                                :disabled="btnSwitch.footer"
+                                @click="getPaginationFlag('footer')"
+                            >尾页</el-button>
+                        </el-button-group>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -203,11 +206,17 @@ export default {
 
             if (response.success) {
                 self.database = response.accounts;
-                self.pageFirstItem = response.accounts[0];
-                self.pageLastItem =
-                    response.accounts[response.accounts.length - 1];
-                if (response.accounts.length < 20) {
-                    self.$router.push(`/accounts`);
+                if (response.accounts.length) {
+                    self.pageFirstItem = response.accounts[0];
+                    self.pageLastItem =
+                        response.accounts[response.accounts.length - 1];
+                    if (response.accounts.length < 20) {
+                        self.$router.push(`/accounts`);
+                    }
+                } else {
+                    self.IS_GET_INFO = true;
+                    self.loadingSwitch = false;
+                    return;
                 }
             } else {
                 self.database = [errorInfo];

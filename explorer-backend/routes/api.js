@@ -936,9 +936,10 @@ router.get("/get_transaction", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                hash,"type","from",previous,last_summary,last_summary_block,exec_timestamp,
-                signature,is_free,level,witnessed_level,best_parent,is_stable,"status",
-                is_on_mc,mci,mc_timestamp,stable_timestamp 
+                "hash","type","from","previous","exec_timestamp","work","signature","level","is_stable",
+                "stable_index","status","mci","mc_timestamp","stable_timestamp",
+                "last_stable_block","last_summary_block",
+                "last_summary","is_free","witnessed_level","best_parent","is_on_mc"
             FROM 
                 trans_witness
             WHERE 
@@ -961,7 +962,6 @@ router.get("/get_transaction", async function (req, res, next) {
                 "to": "",
                 "amount": "0",
                 "previous": "",
-                "witness_list_block": "",
                 "last_summary": "",
                 "last_summary_block": "",
                 "data": "",
@@ -1020,7 +1020,6 @@ router.get("/get_transaction", async function (req, res, next) {
         return;
     } else {
         transaction.parents = result.rows;
-        transaction.witness_list = [];
     }
     responseData = {
         transaction: transaction,
@@ -1029,66 +1028,6 @@ router.get("/get_transaction", async function (req, res, next) {
         message: "success"
     }
     res.json(responseData);
-
-    //witness_list_block
-    if (transaction.witness_list_block !== '0000000000000000000000000000000000000000000000000000000000000000') {
-
-
-    } else {
-
-        // responseData = {
-        //     transaction: transaction,
-        //     code: 200,
-        //     success: true,
-        //     message: "success"
-        // }
-        // res.json(responseData);
-
-
-        // let optWitness = {
-        //     text: `
-        //         Select 
-        //             "item","account" 
-        //         FROM 
-        //             witness 
-        //         WHERE 
-        //             "item" = $1 
-        //         ORDER BY 
-        //             witness_id DESC
-        //     `,
-        //     values: [queryTransaction]
-        // }
-
-        // PageUtility.timeLog(req, '[3] SELECT witness info Before')
-        // let witnessResult = await pgPromise.query(optWitness);
-        // PageUtility.timeLog(req, '[3] SELECT witness info After')
-
-        // if (witnessResult.code) {
-        //     responseData = {
-        //         transaction: transaction,
-        //         code: 500,
-        //         success: false,
-        //         message: "select items from witness error"
-        //     }
-        //     res.json(responseData);
-        // } else {
-        //     let witnessAry = [];
-        //     witnessResult.rows.forEach(currentItem => {
-        //         witnessAry.push(currentItem.account);
-        //     })
-        //     transaction.witness_list = witnessAry;
-        //     responseData = {
-        //         transaction: transaction,
-        //         code: 200,
-        //         success: true,
-        //         message: "success"
-        //     }
-        //     res.json(responseData);
-        // }
-    }
-
-
-
 })
 //获取以前的unit
 router.get("/get_previous_units", async function (req, res, next) {

@@ -10,311 +10,313 @@
                     <strong class="sub_header-tit">交易号</strong>
                     <span class="sub_header-des">{{blockHash}}</span>
                 </div>
-                <div class="bui-dlist">
-                    <!-- <div class="block-item-des">
-                        <strong class="bui-dlist-tit">交易号
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockHash}}</div>
-                    </div>-->
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            发送时间
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.exec_timestamp|toDate}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            状态
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">
-                            <template v-if="isSuccess === false">
-                                <span class="txt-info">暂无信息</span>
-                            </template>
-                            <template v-else>
-                                <template v-if="blockInfo.is_stable === false">
-                                    <span class="txt-warning">等待确认</span>
-                                </template>
-                                <template v-else>
-                                    <template v-if="blockInfo.status == '0'">
-                                        <span class="txt-success">成功</span>
+                <template v-loading="loadingSwitch">
+                    <template v-if="IS_GET_INFO">
+                        <div class="bui-dlist">
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    发送时间
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.exec_timestamp|toDate}}</div>
+                            </div>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    状态
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">
+                                    <template v-if="isSuccess === false">
+                                        <span class="txt-info">暂无信息</span>
                                     </template>
-                                    <template v-else-if="blockInfo.status == '1'">
-                                        <span class="txt-danger">失败(1)</span>
+                                    <template v-else>
+                                        <template v-if="blockInfo.is_stable === false">
+                                            <span class="txt-warning">等待确认</span>
+                                        </template>
+                                        <template v-else>
+                                            <template v-if="blockInfo.status == '0'">
+                                                <span class="txt-success">成功</span>
+                                            </template>
+                                            <template v-else-if="blockInfo.status == '1'">
+                                                <span class="txt-danger">失败(1)</span>
+                                            </template>
+                                            <template v-else-if="blockInfo.status == '2'">
+                                                <span class="txt-danger">失败(2)</span>
+                                            </template>
+                                            <template v-else-if="blockInfo.status == '3'">
+                                                <span class="txt-danger">失败(3)</span>
+                                            </template>
+                                            <template v-else-if="blockInfo.status == '99'">
+                                                <span class="txt-danger">不存在</span>
+                                            </template>
+                                            <template v-else>
+                                                <span class="txt-info">-</span>
+                                            </template>
+                                        </template>
                                     </template>
-                                    <template v-else-if="blockInfo.status == '2'">
-                                        <span class="txt-danger">失败(2)</span>
+                                </div>
+                            </div>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    交易类型
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">
+                                    <template v-if="blockInfo.type === '0'">
+                                        <span class="txt-info">创世交易</span>
                                     </template>
-                                    <template v-else-if="blockInfo.status == '3'">
-                                        <span class="txt-danger">失败(3)</span>
+                                    <template v-else-if="blockInfo.type === '1'">
+                                        <span class="txt-success">见证交易</span>
                                     </template>
-                                    <template v-else-if="blockInfo.status == '99'">
-                                        <span class="txt-danger">不存在</span>
+                                    <template v-else-if="blockInfo.type === '2'">
+                                        <span class="txt-info">普通交易</span>
                                     </template>
                                     <template v-else>
                                         <span class="txt-info">-</span>
                                     </template>
-                                </template>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            交易类型
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">
-                            <template v-if="blockInfo.type === '0'">
-                                <span class="txt-info">创世交易</span>
-                            </template>
-                            <template v-else-if="blockInfo.type === '1'">
-                                <span class="txt-success">见证交易</span>
-                            </template>
-                            <template v-else-if="blockInfo.type === '2'">
-                                <span class="txt-info">普通交易</span>
+                                </div>
+                            </div>
+                            <template v-if="blockInfo.type === '1'">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        账户
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <span v-if="isSuccess === false">-</span>
+                                        <router-link
+                                            v-else
+                                            :to="'/account/'+blockInfo.from"
+                                        >{{blockInfo.from || '-'}}</router-link>
+                                    </div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        是否在主链
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template v-if="blockInfo.is_on_mc == '0'">
+                                            <span class="txt-danger">False</span>
+                                        </template>
+                                        <template v-else-if="blockInfo.is_on_mc == '1'">
+                                            <span class="txt-success">True</span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Free
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template v-if="blockInfo.is_free == '0'">
+                                            <span class="txt-danger">False</span>
+                                        </template>
+                                        <template v-else-if="blockInfo.is_free == '1'">
+                                            <span class="txt-success">True</span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        last_stable_block
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.last_stable_block || ''}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Last Summary Block
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div
+                                        class="bui-dlist-det"
+                                    >{{blockInfo.last_summary_block || ''}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Last Summary
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.last_summary || ''}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        见证级别
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.witnessed_level || ''}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Best Parent
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.best_parent || ''}}</div>
+                                </div>
                             </template>
                             <template v-else>
-                                <span class="txt-info">-</span>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        发款方
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <span v-if="isSuccess === false">-</span>
+                                        <router-link
+                                            v-else
+                                            :to="'/account/'+blockInfo.from"
+                                        >{{blockInfo.from || '-'}}</router-link>
+                                    </div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        收款方
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <span v-if="isSuccess === false">-</span>
+                                        <template v-else>
+                                            <template v-if="blockInfo.to">
+                                                <router-link
+                                                    :to="'/account/'+blockInfo.to"
+                                                >{{blockInfo.to}}</router-link>
+                                            </template>
+                                            <template v-else>
+                                                <span>-</span>
+                                            </template>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        金额
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.amount | toCZRVal}} CZR</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Data
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Data Hash
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.data_hash || '-'}}</div>
+                                </div>
                             </template>
-                        </div>
-                    </div>
-                    <template v-if="blockInfo.type === '1'">
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                账户
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">
-                                <span v-if="isSuccess === false">-</span>
-                                <router-link
-                                    v-else
-                                    :to="'/account/'+blockInfo.from"
-                                >{{blockInfo.from || '-'}}</router-link>
+                            <template v-if="blockInfo.type === '2'">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Gas
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.gas || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Gas Used
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.gas_used || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Gas Price
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.gas_price || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Contract Address
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.contract_address || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Log
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
+                                </div>
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Log Bloom
+                                        <span class="space-des"></span>
+                                    </strong>
+                                    <div class="bui-dlist-det">{{blockInfo.log_bloom || '-'}}</div>
+                                </div>
+                            </template>
+                            <!-- 公共的 -->
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Previous
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.previous || '-'}}</div>
                             </div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                是否在主链
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">
-                                <template v-if="blockInfo.is_on_mc == '0'">
-                                    <span class="txt-danger">False</span>
-                                </template>
-                                <template v-else-if="blockInfo.is_on_mc == '1'">
-                                    <span class="txt-success">True</span>
-                                </template>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Work
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.work || '-'}}</div>
                             </div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Free
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">
-                                <template v-if="blockInfo.is_free == '0'">
-                                    <span class="txt-danger">False</span>
-                                </template>
-                                <template v-else-if="blockInfo.is_free == '1'">
-                                    <span class="txt-success">True</span>
-                                </template>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Signature
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.signature || '-'}}</div>
                             </div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                last_stable_block
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.last_stable_block || ''}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Last Summary Block
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.last_summary_block || ''}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Last Summary
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.last_summary || ''}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                见证级别
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.witnessed_level || ''}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Best Parent
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.best_parent || ''}}</div>
-                        </div>
-                    </template>
-                    <template v-else>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                发款方
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">
-                                <span v-if="isSuccess === false">-</span>
-                                <router-link
-                                    v-else
-                                    :to="'/account/'+blockInfo.from"
-                                >{{blockInfo.from || '-'}}</router-link>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Level
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.level || '-'}}</div>
                             </div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                收款方
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">
-                                <span v-if="isSuccess === false">-</span>
-                                <template v-else>
-                                    <template v-if="blockInfo.to">
-                                        <router-link :to="'/account/'+blockInfo.to">{{blockInfo.to}}</router-link>
-                                    </template>
-                                    <template v-else>
-                                        <span>-</span>
-                                    </template>
-                                </template>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Stable Index
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.stable_index || '-'}}</div>
                             </div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                金额
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.amount | toCZRVal}} CZR</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Data
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Data Hash
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.data_hash || '-'}}</div>
-                        </div>
-                    </template>
-                    <template v-if="blockInfo.type === '2'">
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Gas
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.gas || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Gas Used
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.gas_used || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Gas Price
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.gas_price || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Contract Address
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.contract_address || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Log
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
-                        </div>
-                        <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                Log Bloom
-                                <span class="space-des"></span>
-                            </strong>
-                            <div class="bui-dlist-det">{{blockInfo.log_bloom || '-'}}</div>
-                        </div>
-                    </template>
-                    <!-- 公共的 -->
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Previous
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.previous || '-'}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Work
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.work || '-'}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Signature
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.signature || '-'}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Level
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.level || '-'}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Stable Index
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.stable_index || '-'}}</div>
-                    </div>
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Mci
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.mci || '-'}}</div>
-                    </div>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Mci
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.mci || '-'}}</div>
+                            </div>
 
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Mc Timestamp
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.mc_timestamp |toDate}}</div>
-                    </div>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Mc Timestamp
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.mc_timestamp |toDate}}</div>
+                            </div>
 
-                    <div class="block-item-des">
-                        <strong class="bui-dlist-tit">
-                            Stable Timestamp
-                            <span class="space-des"></span>
-                        </strong>
-                        <div class="bui-dlist-det">{{blockInfo.stable_timestamp |toDate}}</div>
-                    </div>
-                </div>
+                            <div class="block-item-des">
+                                <strong class="bui-dlist-tit">
+                                    Stable Timestamp
+                                    <span class="space-des"></span>
+                                </strong>
+                                <div class="bui-dlist-det">{{blockInfo.stable_timestamp |toDate}}</div>
+                            </div>
+                        </div>
+                    </template>
+                </template>
             </div>
         </div>
     </div>
@@ -337,6 +339,8 @@ export default {
         return {
             blockHash: this.$route.params.id,
             isSuccess: false,
+            loadingSwitch: true,
+            IS_GET_INFO: false,
             blockInfo: {
                 //所有类型共有的
                 hash: "",
@@ -400,6 +404,7 @@ export default {
             } else {
                 console.error("/api/get_transaction_short Error");
             }
+            self.IS_GET_INFO = true;
             self.loadingSwitch = false;
         }
     }
