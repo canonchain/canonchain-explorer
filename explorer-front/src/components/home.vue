@@ -229,7 +229,7 @@ export default {
                 opt = {
                     type: value
                 };
-                value === "1"? Date.parse(new Date()) / 1000: Math.floor(Date.parse(new Date()) / 10000);
+                stampNow = value === "1"? Date.parse(new Date()) / 1000: Math.floor(Date.parse(new Date()) / 10000);
             }
                 
             // let stampNow =    155841466
