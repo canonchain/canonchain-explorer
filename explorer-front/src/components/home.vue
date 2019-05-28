@@ -133,6 +133,8 @@ import "echarts/lib/component/tooltip";
 import "echarts/lib/component/title";
 
 let myChart;
+let stampNow;
+
 export default {
     name: "Home",
     components: {
