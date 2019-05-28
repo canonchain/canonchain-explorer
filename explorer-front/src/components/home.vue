@@ -224,16 +224,14 @@ export default {
                     type: value,
                     start: self.start_data
                 };
+                stampNow = self.start_data
             } else {
                 opt = {
                     type: value
                 };
+                stampNow = value === "1"? Date.parse(new Date()) / 1000: Math.floor(Date.parse(new Date()) / 10000);
             }
-
-            let stampNow =
-                value === "1"
-                    ? Date.parse(new Date()) / 1000
-                    : Math.floor(Date.parse(new Date()) / 10000);
+                
             // let stampNow =    155841466
             // let stampNow = value === '1' ? 1558414662 :155841466
             let cltObj = {};
