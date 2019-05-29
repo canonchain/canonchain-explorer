@@ -108,21 +108,16 @@ WITH (
 TABLESPACE pg_default;
 
 -- Index: from_index
-
--- DROP INDEX public.from_index;
-
+-- DROP INDEX public.mormal_from_index;
 CREATE INDEX from_index
     ON public.trans_normal USING btree
     ("from")
     TABLESPACE pg_default;
-
 COMMENT ON INDEX public.from_index
     IS 'from_index';
 
 -- Index: hash_index
-
--- DROP INDEX public.hash_index;
-
+-- DROP INDEX public.mormal_hash_index;
 CREATE UNIQUE INDEX hash_index
     ON public.trans_normal USING btree
     (hash)
@@ -181,7 +176,14 @@ CREATE UNIQUE INDEX witness_hash_index
     ON public.trans_witness USING btree
     (hash)
     TABLESPACE pg_default;
-    
+
+-- Index: witness_from_index
+-- DROP INDEX public.witness_from_index;
+CREATE INDEX witness_from_index
+    ON public.trans_witness USING btree
+    ("from")
+    TABLESPACE pg_default;
+
 -- Index: witness_stable_index
 -- DROP INDEX public.witness_stable_index;
 CREATE INDEX witness_stable_index
@@ -229,12 +231,12 @@ WITH (
 )
 TABLESPACE pg_default;
 CREATE UNIQUE INDEX genesis_hash_index
-    ON public.trans_witness USING btree
+    ON public.trans_genesis USING btree
     (hash)
     TABLESPACE pg_default;
 -- Index: gen_stable_index
 -- DROP INDEX public.gen_stable_index;
-CREATE INDEX gen_stable_index
+CREATE INDEX genesis_stable_index
     ON public.trans_genesis USING btree
     (stable_index)
     TABLESPACE pg_default;
@@ -262,7 +264,7 @@ WITH (
 )
 TABLESPACE pg_default;
 CREATE UNIQUE INDEX type_hash_index
-    ON public.trans_witness USING btree
+    ON public.trans_type USING btree
     (hash)
     TABLESPACE pg_default;
 ```
@@ -328,6 +330,13 @@ IS 'type';
 
 COMMENT ON COLUMN public.timestamp.count
 IS 'count';
+
+-- Index: time_timestamp_index
+-- DROP INDEX public.time_timestamp_index;
+CREATE INDEX time_timestamp_index
+    ON public."timestamp" USING btree
+    (timestamp)
+    TABLESPACE pg_default;
 ```
 
 ## global
@@ -349,3 +358,19 @@ WITH(
 TABLESPACE pg_default;
 ```
 
+### witness_list
+
+```postgresql
+-- Table: public.witness_list
+-- DROP TABLE public.witness_list;
+CREATE TABLE public.witness_list
+(
+    witness_id bigserial,
+    account text NOT NULL,
+    CONSTRAINT witness_account_pkid PRIMARY KEY (account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```

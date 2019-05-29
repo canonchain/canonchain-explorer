@@ -2,52 +2,52 @@
     let BigNumber = require('bignumber.js').default;
     // let profiler = require("./profiler");//写 N 条MCI数据，算出每个阶段的耗时占比，方便针对性优化
 
-    let pgPromise = require("./PG-promise");//引入
-    let client = await pgPromise.pool.connect();//获取连接
+    let pgPromise = require("./PG-promise"); //引入
+    let client = await pgPromise.pool.connect(); //获取连接
 
     let Czr = require("../czr/index");
     let czr = new Czr();
 
     //写日志
     let log4js = require('./log_config');
-    let logger = log4js.getLogger('write_db');//此处使用category的值
+    let logger = log4js.getLogger('write_db'); //此处使用category的值
     let self;
 
     //辅助数据 Start
     let getRpcTimer = null,
         getUnstableTimer = null;
-    let db_LSBI,                //本地数据库的最高稳定 last stable block index
-        rpc_LSBI;               //RPC接口请求到的最高稳定 last stable block index
-    let isStableDone = false;   //稳定的MCI是否插入完成
+    let db_LSBI, //本地数据库的最高稳定 last stable block index
+        rpc_LSBI; //RPC接口请求到的最高稳定 last stable block index
+    let isStableDone = false; //稳定的MCI是否插入完成
     //辅助数据 End
 
     // 操作稳定Unit相关变量 Start
     let MCI_LIMIT = 500;
-    let stableCount = 0;//异步控制
+    let stableCount = 0; //异步控制
 
     let BLOCKS_LENGTH = 0;
     let allTransTypeAry = [];
-    let witnessTransInsertAry = [];//储存数据库不存在的unit,插入[Db]
-    let genesisTransInsertAry = [];//插入[Db]
-    let normalTransInsertAry = [];//插入[Db]
+    let witnessTransInsertAry = []; //储存数据库不存在的unit,插入[Db]
+    let genesisTransInsertAry = []; //插入[Db]
+    let normalTransInsertAry = []; //插入[Db]
 
-    let accountsInsertAry = [];//不存在的账户,插入[Db]
-    let accountsUpdateAry = [];//存在的账户,更新[Db]
-    let parentsTotalAry = [];//储存预处理的parents信息[Db]
+    let accountsInsertAry = []; //不存在的账户,插入[Db]
+    let accountsUpdateAry = []; //存在的账户,更新[Db]
+    let parentsTotalAry = []; //储存预处理的parents信息[Db]
 
-    let accountsTotal = {};//储存预处理的账户信息
+    let accountsTotal = {}; //储存预处理的账户信息
 
-    let timestampTotal = {};//储存预处理的时间戳信息
-    let timestampInsertAry = [];//没有的timestamp,插入[Db]
-    let timestampUpdateAry = [];//存在的timestamp,更新[Db]
+    let timestampTotal = {}; //储存预处理的时间戳信息
+    let timestampInsertAry = []; //没有的timestamp,插入[Db]
+    let timestampUpdateAry = []; //存在的timestamp,更新[Db]
 
-    let timestamp10Total = {};//储存预处理的时间戳信息
-    let timestamp10InsertAry = [];//没有的timestamp,插入[Db]
-    let timestamp10UpdateAry = [];//存在的timestamp,更新[Db]
+    let timestamp10Total = {}; //储存预处理的时间戳信息
+    let timestamp10InsertAry = []; //没有的timestamp,插入[Db]
+    let timestamp10UpdateAry = []; //存在的timestamp,更新[Db]
     // 操作稳定Unit相关变量 End
 
     const getCount = require('./helper/count').getCount;
-    const calcAccountTranCount = require('./account/transaction-count').calcCount;//更新账户交易计数
+    const calcAccountTranCount = require('./account/transaction-count').calcCount; //更新账户交易计数
 
     let pageUtility = {
         async init() {
@@ -55,13 +55,13 @@
             //标记由 MCI 改为 last_stable_block_index
             let SearchOptions = {
                 text: `
-                select 
-                    value 
-                from 
-                    global 
-                where 
-                    "key" = $1
-            `,
+                    select 
+                        value 
+                    from 
+                        global 
+                    where 
+                        "key" = $1
+                `,
                 values: ["done_stable_index"]
             };
             let data = await client.query(SearchOptions);
@@ -92,13 +92,55 @@
                 //成功
                 logger.info(`Global新建Mci : 成功`);
                 db_LSBI = 0;
-                pageUtility.readyGetData();
+                // pageUtility.readyGetData();
+                pageUtility.getWitness_list()
             }
         },
         setDbStableMci(data) {
             // logger.info(`sql db_LSBI : ${data[0].value}`);
             db_LSBI = Number(data[0].value) + 1;
-            pageUtility.readyGetData();
+            // pageUtility.readyGetData();
+            pageUtility.getWitness_list()
+        },
+
+        //写入 witness_list
+        async getWitness_list() {
+            /**
+             * 搜索 witness_list 表是否有数据
+             *      有数据，忽略 
+             *      没有数据，插入
+             */
+            let SearchWitnessOptions = {
+                text: `
+                    select 
+                        count(1) 
+                    from
+                        witness_list 
+                `
+            };
+            let witData = await client.query(SearchWitnessOptions);
+            if (witData.rows[0].count === "0") {
+                //需要插入
+                pageUtility.insertWitnessLiss();
+            } else {
+                pageUtility.readyGetData();
+            }
+        },
+        async insertWitnessLiss() {
+            czr.request.getWitnessList().then(function (wit_list) {
+                logger.info(`获取网络中witness_list -Success `);
+                logger.info(wit_list);
+                return wit_list;
+            }).catch((err) => {
+                logger.info(`获取网络中witness_list -Error : ${err}`);
+            }).then(async function (wit_list) {
+                let witnessInfo = "('";
+                witnessInfo += wit_list.witness_list.join("'),('");
+                witnessInfo += "')";
+                let witnessInsertSql = "INSERT INTO witness_list (account) VALUES " + witnessInfo;
+                let res = await client.query(witnessInsertSql);
+                pageUtility.readyGetData();
+            })
         },
         readyGetData() {
             getRpcTimer = setTimeout(function () {
@@ -148,7 +190,7 @@
                         logger.info("需要更新 LAST_STABLE_MCI");
                         pageUtility.updateMci(status);
                     } else {
-                        pageUtility.readyGetData();//相同的
+                        pageUtility.readyGetData(); //相同的
                     }
                 }
             }
@@ -167,7 +209,7 @@
                 logger.info(res);
             } else {
                 logger.info(`第一次LAST_MCI插入成功`);
-                pageUtility.getUnitByLSBI();//查询所有稳定 block 信息
+                pageUtility.getUnitByLSBI(); //查询所有稳定 block 信息
             }
         },
         async updateMci(status) {
@@ -193,7 +235,7 @@
                 logger.info(res);
             } else {
                 logger.info(`MCI更新成功`);
-                pageUtility.getUnitByLSBI();//查询所有稳定 block 信息
+                pageUtility.getUnitByLSBI(); //查询所有稳定 block 信息
             }
 
         },
@@ -229,7 +271,6 @@
                     //该index没有值
                     logger.info(`mciBlocks : data.blocks => false`);
                     logger.info(data);
-                    // pageUtility.readyGetData();
                 }
             }).catch((err) => {
                 logger.info(`mciBlocks-Error : ${err}`);
@@ -266,7 +307,7 @@
                     }
                 }
                 //账户余额 只有是成功的交易才操作账户余额
-                let isFail = pageUtility.isFail(blockInfo);//交易失败了
+                let isFail = pageUtility.isFail(blockInfo); //交易失败了
                 if (!isFail) {
                     //处理收款方余额
                     if (accountsTotal.hasOwnProperty(blockInfo.to)) {
@@ -323,10 +364,10 @@
                 });
             });
             /*
-            * 处理账户
-            * 处理Parent
-            * 处理Block
-            * */
+             * 处理账户
+             * 处理Parent
+             * 处理Block
+             * */
 
             logger.info(`数据分装 结束`);
             pageUtility.searchAccountBaseDb();
@@ -420,7 +461,7 @@
             })
         },
         async searchBlockBaseDb() {
-            logger.info(`Parents需处理:${Object.keys(parentsTotalAry).length}`);//parentsTotalAry 是目标数据 
+            logger.info(`Parents需处理:${Object.keys(parentsTotalAry).length}`); //parentsTotalAry 是目标数据 
             pageUtility.spreadParent(parentsTotalAry, pageUtility.stableInsertControl);
         },
         stableInsertControl() {
@@ -438,15 +479,15 @@
 
                 await client.query('BEGIN')
                 /*
-                * 批量插入 账户       accountsInsertAry
-                * 批量插入 时间       timestampInsertAry
-                * 批量插入 时间       timestamp10InsertAry
-                * 批量插入 Parent、   parentsTotalAry:Ary
-                * 批量插入 普通交易    normalTransInsertAry
-                * 批量插入 见证交易    witnessTransInsertAry
-                * 批量插入 创世交易    genesisTransInsertAry
-                * 批量插入 交易类型    allTransTypeAry
-                * */
+                 * 批量插入 账户       accountsInsertAry
+                 * 批量插入 时间       timestampInsertAry
+                 * 批量插入 时间       timestamp10InsertAry
+                 * 批量插入 Parent、   parentsTotalAry:Ary
+                 * 批量插入 普通交易    normalTransInsertAry
+                 * 批量插入 见证交易    witnessTransInsertAry
+                 * 批量插入 创世交易    genesisTransInsertAry
+                 * 批量插入 交易类型    allTransTypeAry
+                 * */
                 if (accountsInsertAry.length) {
                     pageUtility.batchInsertAccount(accountsInsertAry);
                 }
@@ -886,14 +927,14 @@
             //falg : 1=>稳定 2=>不稳定
             // flag  1
             logger.info(`展开Parent Start`)
-            let tempAry = [];//辅助展开parents作用
+            let tempAry = []; //辅助展开parents作用
             sources_ary.forEach(item => {
                 //展开parents
                 if (item.parent.length) {
                     item.parent.forEach(childrenItem => {
                         tempAry.push({
                             item: item.item,
-                            parent: childrenItem,//单个parents
+                            parent: childrenItem, //单个parents
                         });
                     })
                 }

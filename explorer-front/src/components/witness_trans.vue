@@ -15,7 +15,7 @@
                                 <template slot-scope="scope">
                                     <span
                                         class="table-long-item"
-                                    >{{scope.row.mc_timestamp | toDate}}</span>
+                                    >{{scope.row.exec_timestamp | toDate}}</span>
                                 </template>
                             </el-table-column>
                             <el-table-column label="交易号" width="200">

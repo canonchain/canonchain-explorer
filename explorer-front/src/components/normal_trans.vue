@@ -15,7 +15,7 @@
                                 <template slot-scope="scope">
                                     <span
                                         class="table-long-item"
-                                    >{{scope.row.exec_timestamp | toDate}}</span>
+                                    >{{scope.row.mc_timestamp | toDate}}</span>
                                 </template>
                             </el-table-column>
                             <el-table-column label="交易号" width="200">
@@ -124,7 +124,7 @@ import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let errorInfo = {
-    exec_timestamp: "1555895648",
+    mc_timestamp: "1555895648",
     level: "-",
     hash: "-",
     from: "-",
@@ -158,7 +158,7 @@ export default {
             },
             database: [
                 // {
-                //     exec_timestamp: "-",
+                //     mc_timestamp: "-",
                 //     hash: "0",
                 //     from: 0,
                 //     to: 0,

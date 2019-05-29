@@ -53,124 +53,193 @@
                                     label="2"
                                     @change="handlerChange"
                                 >接收记录</el-radio>
+                                <template v-if="IS_WITNESS">
+                                    <el-radio
+                                        v-model="url_parm.source"
+                                        label="3"
+                                        @change="handlerChange"
+                                    >见证交易</el-radio>
+                                </template>
                             </template>
                         </el-col>
                     </el-row>
                     <div class="accounts-list-wrap" v-loading="loadingSwitch">
                         <template v-if="IS_GET_INFO">
-                            <el-table :data="database" style="width: 100%">
-                                <el-table-column label="时间" width="180">
-                                    <template slot-scope="scope">
-                                        <span
-                                            class="table-long-item"
-                                        >{{scope.row.exec_timestamp | toDate}}</span>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="交易号" width="180">
-                                    <template slot-scope="scope">
-                                        <el-button @click="goBlockPath(scope.row.hash)" type="text">
-                                            <span class="table-long-item">{{scope.row.hash}}</span>
-                                        </el-button>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="发款方" width="180">
-                                    <template slot-scope="scope">
-                                        <template v-if="scope.row.is_from_this_account == false">
+                            <template v-if="url_parm.source==='3'">
+                                <el-table :data="database" style="width: 100%">
+                                    <el-table-column label="时间" width="280">
+                                        <template slot-scope="scope">
+                                            <span
+                                                class="table-long-item"
+                                            >{{scope.row.exec_timestamp | toDate}}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="交易号" width="280">
+                                        <template slot-scope="scope">
                                             <el-button
-                                                @click="goAccountPath(scope.row.from)"
+                                                @click="goBlockPath(scope.row.hash)"
                                                 type="text"
                                             >
-                                                <span class="table-long-item">{{scope.row.from}}</span>
+                                                <span class="table-long-item">{{scope.row.hash}}</span>
                                             </el-button>
                                         </template>
-                                        <template v-else>
-                                            <template v-if="Number(scope.row.level) <= 0">
-                                                <span class="table-long-item">GENESIS</span>
+                                    </el-table-column>
+                                    <el-table-column label="账户" width="280">
+                                        <template slot-scope="scope">
+                                            <span class="table-long-item">{{scope.row.from}}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="状态" min-width="80" align="center">
+                                        <template slot-scope="scope">
+                                            <template v-if="scope.row.is_stable === false">
+                                                <span class="txt-warning">等待确认</span>
                                             </template>
                                             <template v-else>
-                                                <span class="table-long-item">{{scope.row.from}}</span>
+                                                <template v-if="scope.row.status == '0'">
+                                                    <span class="txt-success">成功</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '1'">
+                                                    <span class="txt-danger">失败(1)</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '2'">
+                                                    <span class="txt-danger">失败(2)</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '3'">
+                                                    <span class="txt-danger">失败(3)</span>
+                                                </template>
+                                                <template v-else>
+                                                    <span class="txt-info">-</span>
+                                                </template>
                                             </template>
                                         </template>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column>
-                                    <template slot-scope="scope">
-                                        <span>
+                                    </el-table-column>
+                                </el-table>
+                                <!--  -->
+                            </template>
+                            <template v-else>
+                                <el-table :data="database" style="width: 100%">
+                                    <el-table-column label="时间" width="180">
+                                        <template slot-scope="scope">
+                                            <span
+                                                class="table-long-item"
+                                            >{{scope.row.mc_timestamp | toDate}}</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="交易号" width="180">
+                                        <template slot-scope="scope">
                                             <el-button
-                                                v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
-                                                type="warning"
-                                                size="mini"
-                                            >转出</el-button>
-
-                                            <el-button
-                                                v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci > 0)"
-                                                size="mini"
+                                                @click="goBlockPath(scope.row.hash)"
+                                                type="text"
                                             >
-                                                <i class="el-icon-sort trans-to-self"></i>
+                                                <span class="table-long-item">{{scope.row.hash}}</span>
                                             </el-button>
-
-                                            <el-button
-                                                v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci <= 0)"
-                                                type="success"
-                                                size="mini"
-                                            >转入</el-button>
-
-                                            <el-button v-else type="success" size="mini">转入</el-button>
-                                        </span>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="收款方" width="180">
-                                    <template slot-scope="scope">
-                                        <template v-if="scope.row.to">
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="发款方" width="180">
+                                        <template slot-scope="scope">
                                             <template
-                                                v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
+                                                v-if="scope.row.is_from_this_account == false"
                                             >
                                                 <el-button
-                                                    @click="goAccountPath(scope.row.to)"
+                                                    @click="goAccountPath(scope.row.from)"
                                                     type="text"
                                                 >
-                                                    <span class="table-long-item">{{scope.row.to}}</span>
+                                                    <span class="table-long-item">{{scope.row.from}}</span>
                                                 </el-button>
                                             </template>
                                             <template v-else>
-                                                <span class="table-long-item">{{scope.row.to}}</span>
+                                                <template v-if="Number(scope.row.level) <= 0">
+                                                    <span class="table-long-item">GENESIS</span>
+                                                </template>
+                                                <template v-else>
+                                                    <span class="table-long-item">{{scope.row.from}}</span>
+                                                </template>
                                             </template>
                                         </template>
-                                        <template v-else>
-                                            <span>-</span>
+                                    </el-table-column>
+                                    <el-table-column>
+                                        <template slot-scope="scope">
+                                            <span>
+                                                <el-button
+                                                    v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
+                                                    type="warning"
+                                                    size="mini"
+                                                >转出</el-button>
+
+                                                <el-button
+                                                    v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci > 0)"
+                                                    size="mini"
+                                                >
+                                                    <i class="el-icon-sort trans-to-self"></i>
+                                                </el-button>
+
+                                                <el-button
+                                                    v-else-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == true)&&(scope.row.mci <= 0)"
+                                                    type="success"
+                                                    size="mini"
+                                                >转入</el-button>
+
+                                                <el-button v-else type="success" size="mini">转入</el-button>
+                                            </span>
                                         </template>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="状态" min-width="80" align="center">
-                                    <template slot-scope="scope">
-                                        <template v-if="scope.row.is_stable === false">
-                                            <span class="txt-warning">等待确认</span>
-                                        </template>
-                                        <template v-else>
-                                            <template v-if="scope.row.status == '0'">
-                                                <span class="txt-success">成功</span>
-                                            </template>
-                                            <template v-else-if="scope.row.status == '1'">
-                                                <span class="txt-danger">失败(1)</span>
-                                            </template>
-                                            <template v-else-if="scope.row.status == '2'">
-                                                <span class="txt-danger">失败(2)</span>
-                                            </template>
-                                            <template v-else-if="scope.row.status == '3'">
-                                                <span class="txt-danger">失败(3)</span>
+                                    </el-table-column>
+                                    <el-table-column label="收款方" width="180">
+                                        <template slot-scope="scope">
+                                            <template v-if="scope.row.to">
+                                                <template
+                                                    v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
+                                                >
+                                                    <el-button
+                                                        @click="goAccountPath(scope.row.to)"
+                                                        type="text"
+                                                    >
+                                                        <span
+                                                            class="table-long-item"
+                                                        >{{scope.row.to}}</span>
+                                                    </el-button>
+                                                </template>
+                                                <template v-else>
+                                                    <span class="table-long-item">{{scope.row.to}}</span>
+                                                </template>
                                             </template>
                                             <template v-else>
-                                                <span class="txt-info">-</span>
+                                                <span>-</span>
                                             </template>
                                         </template>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column label="金额 / CZR" width="230" align="right">
-                                    <template slot-scope="scope">
-                                        <span>{{scope.row.amount | toCZRVal}}</span>
-                                    </template>
-                                </el-table-column>
-                            </el-table>
+                                    </el-table-column>
+                                    <el-table-column label="状态" min-width="80" align="center">
+                                        <template slot-scope="scope">
+                                            <template v-if="scope.row.is_stable === false">
+                                                <span class="txt-warning">等待确认</span>
+                                            </template>
+                                            <template v-else>
+                                                <template v-if="scope.row.status == '0'">
+                                                    <span class="txt-success">成功</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '1'">
+                                                    <span class="txt-danger">失败(1)</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '2'">
+                                                    <span class="txt-danger">失败(2)</span>
+                                                </template>
+                                                <template v-else-if="scope.row.status == '3'">
+                                                    <span class="txt-danger">失败(3)</span>
+                                                </template>
+                                                <template v-else>
+                                                    <span class="txt-info">-</span>
+                                                </template>
+                                            </template>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="金额 / CZR" width="230" align="right">
+                                        <template slot-scope="scope">
+                                            <span>{{scope.row.amount | toCZRVal}}</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </template>
+
+                            <!-- page -->
                             <template v-if="database.length">
                                 <div class="pagin-block">
                                     <el-button-group>
@@ -248,6 +317,7 @@ export default {
             database: [],
             IS_GET_INFO: false,
             IS_GET_ACC: false,
+            IS_WITNESS: false,
             pageFirstItem: {
                 exec_timestamp: 0,
                 level: 0,
@@ -264,7 +334,7 @@ export default {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 stable_index: 999999999999,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方
+                source: this.$route.query.source || "1" //1 发送方 2 接收方 3见证交易
             },
 
             accountInfo: {
@@ -298,6 +368,7 @@ export default {
                 self.accountInfo.balance =
                     accInfo.balance < 0 ? 0 : accInfo.balance;
                 self.TOTAL_VAL = Number(accInfo.transaction_count);
+                self.IS_WITNESS = accInfo.is_witness;
             } else {
                 console.error("/api/get_account Error");
             }
@@ -385,11 +456,17 @@ export default {
 
             if (response.success) {
                 self.database = response.transactions;
-                self.pageFirstItem = response.transactions[0];
-                self.pageLastItem =
-                    response.transactions[response.transactions.length - 1];
+                if (response.transactions.length) {
+                    self.pageFirstItem = response.transactions[0];
+                    self.pageLastItem =
+                        response.transactions[response.transactions.length - 1];
+                } else {
+                    self.IS_GET_INFO = true;
+                    self.loadingSwitch = false;
+                    return;
+                }
             } else {
-                self.database = [errorInfo];
+                self.database = [];
             }
             //禁止首页上一页
             if (parm.position === "1") {

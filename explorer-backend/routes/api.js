@@ -23,6 +23,10 @@ router.use(function (req, res, next) {
 //分页limit
 let LIMIT_VAL = 20;
 
+//@ts-check
+let WITNESS_LIST = [];
+
+
 let PageUtility = {
     timeLog: function (req, symbol_str) {
         /**
@@ -81,8 +85,19 @@ let PageUtility = {
             nodesTempAry.push(tempInfo);
         })
         return nodesTempAry;
+    },
+    getWitnessList: async () => {
+        let witness_list_sql = "SELECT account FROM witness_list limit 14";
+        PageUtility.timeLog(witness_list_sql, '[1] SELECT witness_list Before')
+        let witness_data = await pgPromise.query(witness_list_sql);
+        PageUtility.timeLog(witness_list_sql, '[1] SELECT witness_list After')
+        witness_data.rows.forEach(item => {
+            WITNESS_LIST.push(item.account.toUpperCase());
+        })
+        logger.info(WITNESS_LIST);
     }
 }
+PageUtility.getWitnessList();
 
 //************************** 账户列表开始
 //获取账户总数量
@@ -104,7 +119,7 @@ router.get("/get_accounts_count", async function (req, res, next) {
         res.json(responseData);
     } else {
         responseData = {
-            count: Number(count.rows[0].count),//TODO 这么写有BUG  Cannot read property 'count' of undefined
+            count: Number(count.rows[0].count || 0),//TODO 这么写有BUG  Cannot read property 'count' of undefined
             code: 200,
             success: true,
             message: "success"
@@ -287,7 +302,7 @@ router.get("/get_accounts", async function (req, res, next) {
             success: false,
             message: 'Select trans list FROM transaction Error'
         }
-        logger.info(data)
+        // logger.info(data)
     } else {
         //查询成功
         let accounts;
@@ -356,7 +371,7 @@ router.get("/get_trans_count", async function (req, res, next) {
         res.json(responseData);
     } else {
         responseData = {
-            count: Number(count.rows[0].count),//TODO 这么写有BUG  Cannot read property 'count' of undefined
+            count: Number(count.rows[0].count || 0),//TODO 这么写有BUG  Cannot read property 'count' of undefined
             code: 200,
             success: true,
             message: "success"
@@ -450,10 +465,10 @@ router.get("/get_trans", async function (req, res, next) {
     let tableName, columnName;
     if (queryVal.type === '2') {
         tableName = 'trans_normal';
-        columnName = '"exec_timestamp", "level", "hash", "from", "to", "is_stable", "status", "amount", "stable_index"'
+        columnName = '"mc_timestamp", "level", "hash", "from", "to", "is_stable", "status", "amount", "stable_index"'
     } else {
         tableName = 'trans_witness';
-        columnName = '"mc_timestamp", "stable_timestamp", "hash", "from", "is_stable", "status", "stable_index"'
+        columnName = '"exec_timestamp", "stable_timestamp", "hash", "from", "is_stable", "status", "stable_index"'
     }
 
     let opt;
@@ -531,7 +546,7 @@ router.get("/get_trans", async function (req, res, next) {
             success: false,
             message: `Select trans list FROM ${tableName} Error`
         }
-        logger.info(data)
+        // logger.info(data)
     } else {
         let formatInfo;
         if ((queryVal.position === "4") || (queryVal.position === "2")) {
@@ -554,6 +569,9 @@ router.get("/get_trans", async function (req, res, next) {
 //************************** 账号详情 开始
 //获取账号信息
 router.get("/get_account", async function (req, res, next) {
+    if (!WITNESS_LIST.length) {
+        PageUtility.getWitnessList();
+    }
     PageUtility.timeLog(req, 'start')
     var queryAccount = req.query.account;// ?account=2
 
@@ -562,7 +580,7 @@ router.get("/get_account", async function (req, res, next) {
             Select 
                 "account","balance","transaction_count"
             FROM 
-                "accounts"  
+                "accounts"
             WHERE 
                 "account" = $1
         `,
@@ -592,6 +610,7 @@ router.get("/get_account", async function (req, res, next) {
                 account: {
                     "account": queryAccount,
                     "balance": 0,
+                    "is_witness": false,
                     "transaction_count": 0
                 },
                 code: 200,
@@ -600,6 +619,7 @@ router.get("/get_account", async function (req, res, next) {
             }
         }
     }
+    responseData.account.is_witness = (WITNESS_LIST.indexOf(queryAccount.toUpperCase()) > -1) ? true : false;
     res.json(responseData);
 })
 //获取交易表中最近(LIMIT+1)项
@@ -611,12 +631,15 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
     var queryInfo = req.query;
     var queryAccount = queryInfo.account;// ?account=2
     var querySour = "";
+    var TABLE_NAME = "trans_normal";
+
     if (queryInfo.source === '1') {
         querySour = "from";
     } else if (queryInfo.source === '2') {
         querySour = "to";
-    } else {
+    } else if (queryInfo.source === '3') {
         querySour = "from";
+        TABLE_NAME = "trans_witness";
     }
 
     let errorInfo = {
@@ -630,10 +653,10 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
             Select 
                 "stable_index"
             FROM 
-                trans_normal 
+                ${TABLE_NAME}
             WHERE
                 ("${querySour}" = $1)
-            order by 
+            order by
                 "stable_index" desc
             LIMIT
                 1
@@ -663,7 +686,7 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
             Select 
                 "stable_index"
             FROM 
-                trans_normal 
+                ${TABLE_NAME} 
             WHERE
                 ("${querySour}" = $1)
             order by 
@@ -710,48 +733,89 @@ router.get("/get_account_transactions", async function (req, res, next) {
     let queryVal = req.query;
     var queryAccount = queryVal.account;// ?account=2
     var querySour = "";
+    var IS_WITNESS = false;
+
     if (queryVal.source === '1') {
         querySour = "from";
     } else if (queryVal.source === '2') {
         querySour = "to";
-    } else {
-        querySour = "from";
+    } else if (queryVal.source === '3') {
+        //见证交易
+        IS_WITNESS = true;
     }
 
     if (queryVal.position === "1") {
-        opt = {
-            text: `
-                Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                FROM
-                    trans_normal
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "stable_index" desc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryAccount]
+        if (IS_WITNESS) {
+            //见证交易
+            opt = {
+                text: `
+                    Select 
+                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                    FROM
+                        trans_witness
+                    WHERE
+                        "from" = $1
+                    order by 
+                        "stable_index" desc
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [queryAccount]
+            }
+        } else {
+            //首页
+            opt = {
+                text: `
+                    Select 
+                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+                    FROM
+                        trans_normal
+                    WHERE
+                        "from" = $1
+                    order by 
+                        "stable_index" desc
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [queryAccount]
+            }
         }
     } else if (queryVal.position === "4") {
-        // 尾页
-        opt = {
-            text: `
-                Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                FROM
-                    trans_normal
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "stable_index" asc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryAccount]
+        if (IS_WITNESS) {
+            //见证交易
+            opt = {
+                text: `
+                    Select 
+                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                    FROM
+                        trans_witness
+                    WHERE
+                        "from" = $1
+                    order by 
+                        "stable_index" asc
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [queryAccount]
+            }
+        } else {
+            // 尾页
+            opt = {
+                text: `
+                    Select 
+                        "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+                    FROM
+                        trans_normal
+                    WHERE
+                        "${querySour}" = $1
+                    order by 
+                        "stable_index" asc
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [queryAccount]
+            }
         }
-
     } else {
         let direction, sortInfo;
         if (queryVal.position === "2") {
@@ -761,24 +825,49 @@ router.get("/get_account_transactions", async function (req, res, next) {
             direction = "<";
             sortInfo = "desc";
         }
-        opt = {
-            text: `
-                Select 
-                    "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                FROM 
-                    trans_normal 
-                WHERE 
-                    (stable_index ${direction} $1)
-                    and
-                    ("${querySour}" = $2)
-                order by 
-                    "stable_index" ${sortInfo}
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [Number(queryVal.stable_index), queryAccount]
+
+
+        if (IS_WITNESS) {
+            //见证交易
+            opt = {
+                text: `
+                    Select 
+                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                    FROM
+                        trans_witness
+                    WHERE
+                        (stable_index ${direction} $1)
+                        and
+                        ("from" = $2)
+                    order by 
+                        "stable_index" ${sortInfo}
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [Number(queryVal.stable_index), queryAccount]
+            }
+        } else {
+            opt = {
+                text: `
+                    Select 
+                        "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+                    FROM 
+                        trans_normal 
+                    WHERE 
+                        (stable_index ${direction} $1)
+                        and
+                        ("${querySour}" = $2)
+                    order by 
+                        "stable_index" ${sortInfo}
+                    LIMIT
+                        ${LIMIT_VAL}
+                `,
+                values: [Number(queryVal.stable_index), queryAccount]
+            }
         }
+
     }
+
     PageUtility.timeLog(req, '[1] SELECT acc trans_normal info Before')
     let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT acc trans_normal info After')
@@ -789,7 +878,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             success: false,
             message: 'Select trans list FROM acc trans_normal Error'
         }
-        logger.info(data)
+        // logger.info(data)
     } else {
         let formatInfo;
         // console.log(data.rows);
@@ -808,19 +897,21 @@ router.get("/get_account_transactions", async function (req, res, next) {
         }
     }
     //是否从此帐号发出
-    responseData.transactions.forEach(item => {
-        if (item.from == queryAccount) {
-            item.is_from_this_account = true;
-        } else {
-            item.is_from_this_account = false;
-        }
-        //是否转给自己
-        if (item.from == item.to) {
-            item.is_to_self = true;
-        } else {
-            item.is_to_self = false;
-        }
-    })
+    if (!IS_WITNESS) {
+        responseData.transactions.forEach(item => {
+            if (item.from == queryAccount) {
+                item.is_from_this_account = true;
+            } else {
+                item.is_from_this_account = false;
+            }
+            //是否转给自己
+            if (item.from == item.to) {
+                item.is_to_self = true;
+            } else {
+                item.is_to_self = false;
+            }
+        })
+    }
 
     res.json(responseData);
 })
@@ -1096,7 +1187,7 @@ router.get("/get_previous_units", async function (req, res, next) {
         };
         PageUtility.timeLog(req, '[0] SELECT center stable_index Before')
         let hashData = await pgPromise.query(sql)
-        logger.info(`hashData.rows:`)
+        // logger.info(`hashData.rows:`)
         // logger.info(hashData.rows)
         // 如果数据库不存在，则返回空
         if (hashData.rows.length === 0) {

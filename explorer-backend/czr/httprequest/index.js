@@ -5,11 +5,11 @@ var options = {
     // host: '192.168.10.232',
     // host: '192.168.10.153',
     host: "127.0.0.1",
-    port: 8765,//8765 || 6765
+    port: 8765, //8765 || 6765
 };
 
 
-var HttpRequest = function (host, timeout, apiVersion) {
+var HttpRequest = function(host, timeout, apiVersion) {
     this.hostCon = host || options;
     // this.timeout = timeout || 0;
     // this.apiVersion = apiVersion || "v1";
@@ -21,7 +21,7 @@ var client = new rpc.Client(options);
 function asyncfunc(opt) {
     return new Promise((resolve, reject) => {
         client.call(opt,
-            function (err, res) {
+            function(err, res) {
                 if (err) {
                     reject(err);
                 } else {
@@ -51,7 +51,7 @@ HttpRequest.prototype.client = client;
 @return:
     {account:""}
 */
-HttpRequest.prototype.accountCreate = async function (pwd) {
+HttpRequest.prototype.accountCreate = async function(pwd) {
     if (!pwd) {
         return 100
     }
@@ -71,7 +71,7 @@ HttpRequest.prototype.accountCreate = async function (pwd) {
 @return:
     {success:"1"}
 */
-HttpRequest.prototype.accountRemove = async function (account, pwd) {
+HttpRequest.prototype.accountRemove = async function(account, pwd) {
     if (!account) {
         return 100
     }
@@ -95,7 +95,7 @@ HttpRequest.prototype.accountRemove = async function (account, pwd) {
 @return:
     {success:"1"}   //如果success为0，account为空 account:""
 */
-HttpRequest.prototype.accountImport = async function (jsonFile) {
+HttpRequest.prototype.accountImport = async function(jsonFile) {
     if (!jsonFile) {
         return 100
     }
@@ -116,7 +116,7 @@ HttpRequest.prototype.accountImport = async function (jsonFile) {
     {json:""}
 */
 
-HttpRequest.prototype.accountExport = async function (account) {
+HttpRequest.prototype.accountExport = async function(account) {
     if (!account) {
         return 100
     }
@@ -136,7 +136,7 @@ HttpRequest.prototype.accountExport = async function (account) {
     {valid:"1"} 1->正确 0 不正确
 */
 
-HttpRequest.prototype.accountValidate = async function (accountVal) {
+HttpRequest.prototype.accountValidate = async function(accountVal) {
     if (!accountVal) {
         return 0
     }
@@ -156,7 +156,7 @@ HttpRequest.prototype.accountValidate = async function (accountVal) {
      {accounts:[]}
 */
 
-HttpRequest.prototype.accountList = async function () {
+HttpRequest.prototype.accountList = async function() {
     var opt = {
         "action": "account_list"
     };
@@ -168,9 +168,9 @@ HttpRequest.prototype.accountList = async function () {
 
 
 //获取账号余额
-HttpRequest.prototype.accountBalance = async function (account) {
+HttpRequest.prototype.accountBalance = async function(account) {
     if (!account) {
-        return 0//没有参数
+        return 0 //没有参数
     }
     var opt = {
         "action": "account_balance",
@@ -181,9 +181,9 @@ HttpRequest.prototype.accountBalance = async function (account) {
 };
 
 //批量获取账户余额
-HttpRequest.prototype.accountsBalances = async function (accountAry) {
+HttpRequest.prototype.accountsBalances = async function(accountAry) {
     if (!accountAry) {
-        return 0//没有参数
+        return 0 //没有参数
     }
     if (!accountAry) {
         return 1 //格式不正确
@@ -208,9 +208,9 @@ HttpRequest.prototype.accountsBalances = async function (accountAry) {
 @return:
      {block:""}
 */
-HttpRequest.prototype.send = async function (sendObj) {
+HttpRequest.prototype.send = async function(sendObj) {
     if (!sendObj) {
-        return 0//没有参数
+        return 0 //没有参数
     }
     var opt = {
         "action": "send",
@@ -225,9 +225,9 @@ HttpRequest.prototype.send = async function (sendObj) {
     return ret;
 };
 
-HttpRequest.prototype.getBlock = async function (blockHash) {
+HttpRequest.prototype.getBlock = async function(blockHash) {
     if (!blockHash) {
-        return 0//没有参数
+        return 0 //没有参数
     }
     var opt = {
         "action": "block",
@@ -237,13 +237,13 @@ HttpRequest.prototype.getBlock = async function (blockHash) {
     return ret;
 };
 
-HttpRequest.prototype.blockList = async function (account, limit, last_hash) {
+HttpRequest.prototype.blockList = async function(account, limit, last_hash) {
     var opt;
     if (!account) {
-        return 0//没有参数 
+        return 0 //没有参数 
     }
     if (!limit) {
-        return 1//没有参数 
+        return 1 //没有参数 
     }
     if (!last_hash) {
         opt = {
@@ -294,9 +294,9 @@ last_mci:122}
 /**
  * @deprecated
  * */
-HttpRequest.prototype.mciBlocks = async function (mci, limit, next_index) {
+HttpRequest.prototype.mciBlocks = async function(mci, limit, next_index) {
     if (!limit) {
-        return 1//没有参数 
+        return 1 //没有参数 
     }
     let opt;
     if (next_index) {
@@ -322,7 +322,7 @@ HttpRequest.prototype.mciBlocks = async function (mci, limit, next_index) {
  * @param {string} [index] - （可选）当前查询索引，来自返回结果中next_index，默认为空。
  * @returns {Promise<{code, msg, blocks, next_index}>}
  * */
-HttpRequest.prototype.stableBlocks = async function (limit, index) {
+HttpRequest.prototype.stableBlocks = async function(limit, index) {
     if (!limit || limit > 1000) {
         limit = 1000
     }
@@ -350,7 +350,7 @@ HttpRequest.prototype.stableBlocks = async function (limit, index) {
  * @param {string} [index] - （可选）当前查询索引，来自返回结果中的next_index，默认为空。
  * @returns {Promise<{code, msg, blocks, next_index}>}
  * */
-HttpRequest.prototype.unstableBlocks = async function (limit, index) {
+HttpRequest.prototype.unstableBlocks = async function(limit, index) {
     if (!limit || limit > 1000) {
         limit = 1000
     }
@@ -379,9 +379,18 @@ return
     }
 
 */
-HttpRequest.prototype.status = async function () {
+HttpRequest.prototype.status = async function() {
     var opt = {
         "action": "status"
+    };
+    let ret = await asyncfunc(opt);
+    return ret;
+};
+
+// witness_list
+HttpRequest.prototype.getWitnessList = async function() {
+    var opt = {
+        "action": "witness_list"
     };
     let ret = await asyncfunc(opt);
     return ret;

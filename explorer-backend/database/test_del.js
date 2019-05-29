@@ -21,7 +21,7 @@
 //     console.log("witness result", res)
 // });
 
-(async () => {
+(async() => {
     let pgPromise = require("./PG-promise");
 
     console.log("************* 删除数据 开始 ************* ")
@@ -129,6 +129,17 @@
         console.log(data8)
     } else {
         console.log("删除 trans_type 成功")
+    }
+
+    let opt9 = {
+        text: `truncate table witness_list`
+    };
+    let data9 = await pgPromise.query(opt9)
+    if (data9.code) {
+        console.log("删除 witness_list 失败")
+        console.log(data9)
+    } else {
+        console.log("删除 witness_list 成功")
     }
 
     console.log("************* 删除数据 结束 ************* ")
