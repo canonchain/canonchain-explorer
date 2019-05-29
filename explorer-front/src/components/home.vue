@@ -134,7 +134,10 @@ import "echarts/lib/component/title";
 
 let myChart;
 let stampNow;
-
+let get_timestamp_opt;
+let clientObj;
+let serverObj;
+let data;
 export default {
     name: "Home",
     components: {
@@ -213,53 +216,53 @@ export default {
                 console.error("/api/get_mci Error");
             }
         },
+        timeFormat(type, date) {
+            return type === "1" ? date : Math.floor(date / 10);
+        },
         //echarts
         async initEcharts(value) {
-            let data = {
+            data = {
                 timestamp: [],
                 count: []
             };
-            let opt;
+            get_timestamp_opt = {
+                type: value
+            };
 
             if (self.start_data > 0) {
-                opt = {
-                    type: value,
-                    start: self.start_data
-                };
-                stampNow = self.start_data
+                get_timestamp_opt.start = self.start_data;
+                stampNow = self.timeFormat(value, self.start_data);
             } else {
-                opt = {
-                    type: value
-                };
-                stampNow = value === "1"? Date.parse(new Date()) / 1000: Math.floor(Date.parse(new Date()) / 10000);
+                stampNow = self.timeFormat(
+                    value,
+                    Date.parse(new Date()) / 1000
+                );
             }
-                
-            // let stampNow =    155841466
+
             // let stampNow = value === '1' ? 1558414662 :155841466
-            let cltObj = {};
-            let srvObj = {};
+            clientObj = {};
+            serverObj = {};
 
             for (let i = 0; i < 300; i++) {
-                cltObj[(stampNow - i).toString()] = 0;
+                clientObj[stampNow - i] = 0;
             }
 
-            let response = await self.$api.get("/api/get_timestamp", opt);
+            let response = await self.$api.get(
+                "/api/get_timestamp",
+                get_timestamp_opt
+            );
             if (response.success) {
                 response.timestamp.forEach((item, index) => {
-                    srvObj[item] = response.count[index];
+                    serverObj[item] = response.count[index];
                 });
 
-                Object.keys(cltObj).forEach(item => {
-                    cltObj[item] = srvObj[item] || 0;
-                    // console.log(item);
-                    // console.log(cltObj[item]);
+                Object.keys(clientObj).forEach(item => {
+                    clientObj[item] = serverObj[item] || 0;
                 });
 
-                Object.keys(cltObj).forEach((items, index) => {
+                Object.keys(clientObj).forEach((items, index) => {
                     data.timestamp[index] = items;
-                    data.count[index] = cltObj[items];
-                    // console.log(items);
-                    // console.log(cltObj[items]);
+                    data.count[index] = clientObj[items];
                 });
 
                 data.timestamp.forEach((item, index) => {
