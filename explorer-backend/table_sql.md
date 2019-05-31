@@ -19,6 +19,12 @@ CREATE TABLE public.accounts
     type smallint,
     balance numeric,
     transaction_count numeric,
+
+    -- 合约相关的
+    is_token_account boolean,
+    is_has_token_trans boolean,
+    is_has_intel_trans boolean,
+
     CONSTRAINT account_pkey PRIMARY KEY (account)
 )
 WITH (
@@ -92,7 +98,7 @@ CREATE TABLE public.trans_normal
     "gas_used" numeric,
     "gas_price" numeric,
     "contract_address" text,
-    "log" text,
+    "log" boolean,
     "log_bloom" text,
 
     -- 普通交易和创始交易私有的
@@ -100,6 +106,12 @@ CREATE TABLE public.trans_normal
     "amount" numeric,
     "data" text,
     "data_hash" text,
+
+    -- 合约相关的
+    is_event_log boolean,
+    is_token_trans boolean,
+    is_intel_trans boolean,
+
     CONSTRAINT pkid_pkey PRIMARY KEY (pkid)
 )
 WITH (
@@ -368,6 +380,144 @@ CREATE TABLE public.witness_list
     witness_id bigserial,
     account text NOT NULL,
     CONSTRAINT witness_account_pkid PRIMARY KEY (account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+
+*************************************************************
+
+## 合约相关表
+
+### token_asset | Token资产表
+
+```postgresql
+CREATE TABLE public.token_asset
+(
+    account text,
+    contract_account text,
+    symbol text,
+    balance numeric,
+    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### contract | 合约表
+
+```postgresql
+CREATE TABLE public.contract
+(
+    contract_account text,
+    own_account text,
+    born_unit text,
+    token_name text,
+    token_symbol text,
+    CONSTRAINT contract_account_pkey PRIMARY KEY (contract_account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### contract_code | 合约代码表
+
+```postgresql
+CREATE TABLE public.contract_code
+(
+    contract_account text,
+    code text,
+    CONSTRAINT contract_code_account_pkey PRIMARY KEY (contract_account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### token | token表
+
+```postgresql
+CREATE TABLE public.token
+(
+    contract_account text,
+    token_name text,
+    token_symbol text,
+    token_precision smallint,
+    token_total numeric,
+    transaction_count numeric,
+    account_count numeric,
+
+    CONSTRAINT token_account_pkey PRIMARY KEY (contract_account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### trans_token | Token交易表
+
+```postgresql
+CREATE TABLE public.trans_token
+(
+    "hash" text,
+    "mc_timestamp" bigint,
+    
+    "from" text,
+    "to" text,
+    contract_account text,
+    token_symbol text,
+    "amount" numeric,
+
+    CONSTRAINT trans_token_hash_pkey PRIMARY KEY (hash)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### trans_internal | 内部交易表
+
+```postgresql
+CREATE TABLE public.trans_internal
+(
+    "hash" text,
+    "mc_timestamp" bigint,
+    "from" text,
+    "to" text,
+    "amount" numeric,
+    "gas_limit" bigint,
+
+    CONSTRAINT trans_internal_hash_pkey PRIMARY KEY (hash)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+```
+
+### event_log | 事件日志表
+
+```postgresql
+CREATE TABLE public.event_log
+(
+    "hash" text,
+    "mc_timestamp" bigint,
+    contract_account text,
+    "amount" numeric,
+    "method" text,
+    "topics" text,
+
+    CONSTRAINT event_log_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
     OIDS = FALSE
