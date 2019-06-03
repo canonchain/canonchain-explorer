@@ -44,6 +44,21 @@
                                     <el-radio v-model="radio" label="10" @change="initEcharts">10秒</el-radio>
                                 </div>
                             </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="30" @change="initEcharts">30秒</el-radio>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="60" @change="initEcharts">1分钟</el-radio>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="300" @change="initEcharts">5分钟</el-radio>
+                                </div>
+                            </el-col>
                         </el-row>
                     </div>
                 </div>
@@ -166,13 +181,18 @@ export default {
                 count : []
             };
         }
+        // console.log(self.data[0].timestamp.length)
         self.getTransactions();
         self.getMci();
         let reg = /^#\/+\?+\w+=(\d{14})$/;
         let restlt = reg.exec(window.location.hash);
         if (!!restlt) {
             this.start_data = this.toTimestamp(restlt[1]);
+            console.log(this.start_data);
         }
+
+
+        // this.start_data = 1558414662;
     },
     mounted() {
         // 基于准备好的dom，初始化echarts实例
@@ -228,44 +248,7 @@ export default {
         },
         //echarts
         async initEcharts(value) {
-            
-            get_timestamp_opt = {
-                type: value
-            };
-
-            if (self.start_data > 0) {
-                get_timestamp_opt.start = self.start_data;
-                var stampStart = self.timeFormat(value, self.start_data);
-            } else {
-                var stampStart = self.timeFormat(
-                    value,
-                    Date.parse(new Date()) / 1000
-                );
-            }
-            // var maxTimes =
-            clientObj = {};
-            serverObj = {};
-            var interval = Number(value)/10;
-            var maxTimes = 300*interval; 
-            for (let i = 0; i < maxTimes; i+= interval) {
-                clientObj[stampStart - interval] = 0;
-            }
-
-            let response = await self.$api.get(
-                "/api/get_timestamp",
-                get_timestamp_opt
-            );
-            if (response.success) {
-                response.timestamp.forEach((item, index) => {
-                    serverObj[item] = response.count[index];
-                });
-
-                Object.keys(clientObj).forEach(item => {
-                    for(let i;i<interval;i++){
-                        clientObj[item] += (serverObj[item-i] || 0);
-                    }
-                });
-                if(value == '300'){
+            if(value == '300'){
                     var index_f = 4; 
                 }else if(value == '60'){
                     var index_f = 3; 
@@ -276,27 +259,8 @@ export default {
                 }else{
                     var index_f = 0; 
                 }
-                Object.keys(clientObj).forEach((items, index) => {
-                    self.data[index_f].timestamp[index] = items;
-                    self.data[index_f].count[index] = clientObj[items];
-                });
-
-                self.data[index_f].timestamp.forEach((item, index) => {
-                    self.data[index_f].timestamp[index] = self.toTime(item);
-                });
-                // 绘制图表
-                // var data;
-                // if(type == '300'){
-                //     data = window.data[4];
-                // }else if(type == '60'){
-                //     data = window.data[3];
-                // }else if(type == '30'){
-                //     data = window.data[2];
-                // }else if(type == '10'){
-                //     data = window.data[1];
-                // }else{
-                //     data = window.data[0];
-                // }
+            if(self.data[index_f].timestamp.length!=0){
+                // drawChart(index_f);
                 myChart.setOption({
                     title: {
                         text: "CZR TPS"
@@ -314,10 +278,97 @@ export default {
                         }
                     ]
                 });
+                return ;
+            }
+            get_timestamp_opt = {
+                type: value
+            };
+
+            if (self.start_data > 0) {
+                get_timestamp_opt.start = self.start_data;
+                var stampStart = self.timeFormat(value, self.start_data);
+            } else {
+                var stampStart = self.timeFormat(
+                    value,
+                    Date.parse(new Date()) / 1000
+                );
+            }
+            clientObj = {};
+            serverObj = {};
+            var interval = value==='1'? 1:Number(value)/10;
+            var maxTimes = 300*interval; 
+            for (let i = 0; i < maxTimes; i+= interval) {
+                clientObj[stampStart - i] = 0;
+            }
+
+            let response = await self.$api.get(
+                "/api/get_timestamp",
+                get_timestamp_opt
+            );
+            if (response.success) {
+                response.timestamp.forEach((item, index) => {
+                    serverObj[item] = response.count[index];
+                });
+
+                Object.keys(clientObj).forEach((item) => {
+                    for(let i=0;i<interval;i++){
+                        clientObj[item] += (serverObj[(item-i).toString()] || 0);
+                    }
+                });
+                Object.keys(clientObj).forEach((items, index) => {
+                    self.data[index_f].timestamp[index] = items;
+                    self.data[index_f].count[index] = clientObj[items];
+                });
+
+                self.data[index_f].timestamp.forEach((item, index) => {
+                    self.data[index_f].timestamp[index] = self.toTime(item);
+                });
+                // 绘制图表
+
+                // drawChart(index_f);
+                myChart.setOption({
+                    title: {
+                        text: "CZR TPS"
+                    },
+                    tooltip: {},
+                    xAxis: {
+                        data: this.data[index_f].timestamp
+                    },
+                    yAxis: {},
+                    series: [
+                        {
+                            name: "TPS",
+                            type: "bar",
+                            data: this.data[index_f].count
+                        }
+                    ]
+                });
+                console.log(`hhh ${index_f}`);
             } else {
                 console.error("/api/get_timestamp Error");
             }
         },
+        // drawChart(index_f) {
+        //     // 绘制图表
+
+        //     myChart.setOption({
+        //         title: {
+        //             text: "CZR TPS"
+        //         },
+        //         tooltip: {},
+        //         xAxis: {
+        //             data: this.data[index_f].timestamp
+        //         },
+        //         yAxis: {},
+        //         series: [
+        //             {
+        //                 name: "TPS",
+        //                 type: "bar",
+        //                 data: this.data[index_f].count
+        //             }
+        //         ]
+        //     });
+        // },
         toTime(timestamp) {
             // 简单的一句代码
             // 154330965
