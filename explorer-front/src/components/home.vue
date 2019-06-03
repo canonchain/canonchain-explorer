@@ -188,10 +188,7 @@ export default {
         let restlt = reg.exec(window.location.hash);
         if (!!restlt) {
             this.start_data = this.toTimestamp(restlt[1]);
-            console.log(this.start_data);
         }
-
-
         // this.start_data = 1558414662;
     },
     mounted() {
@@ -286,43 +283,20 @@ export default {
 
             if (self.start_data > 0) {
                 get_timestamp_opt.start = self.start_data;
-                var stampStart = self.timeFormat(value, self.start_data);
-            } else {
-                var stampStart = self.timeFormat(
-                    value,
-                    Date.parse(new Date()) / 1000
-                );
             }
-            clientObj = {};
-            serverObj = {};
-            var interval = value==='1'? 1:Number(value)/10;
-            var maxTimes = 300*interval; 
-            for (let i = 0; i < maxTimes; i+= interval) {
-                clientObj[stampStart - i] = 0;
-            }
-
+            
             let response = await self.$api.get(
                 "/api/get_timestamp",
                 get_timestamp_opt
             );
             if (response.success) {
-                response.timestamp.forEach((item, index) => {
-                    serverObj[item] = response.count[index];
-                });
-
-                Object.keys(clientObj).forEach((item) => {
-                    for(let i=0;i<interval;i++){
-                        clientObj[item] += (serverObj[(item-i).toString()] || 0);
-                    }
-                });
-                Object.keys(clientObj).forEach((items, index) => {
-                    self.data[index_f].timestamp[index] = items;
-                    self.data[index_f].count[index] = clientObj[items];
-                });
+                this.data[index_f].timestamp = response.timestamp;
+                this.data[index_f].count = response.count;
 
                 self.data[index_f].timestamp.forEach((item, index) => {
                     self.data[index_f].timestamp[index] = self.toTime(item);
                 });
+                
                 // 绘制图表
 
                 // drawChart(index_f);
@@ -343,7 +317,6 @@ export default {
                         }
                     ]
                 });
-                console.log(`hhh ${index_f}`);
             } else {
                 console.error("/api/get_timestamp Error");
             }
