@@ -159,6 +159,13 @@ export default {
     },
     created() {
         self = this;
+        self.data = [5];
+        for(let i=0;i<5;i++){
+            self.data[i] = {
+                timestamp : [],
+                count : []
+            };
+        }
         self.getTransactions();
         self.getMci();
         let reg = /^#\/+\?+\w+=(\d{14})$/;
@@ -221,30 +228,27 @@ export default {
         },
         //echarts
         async initEcharts(value) {
-            data = {
-                timestamp: [],
-                count: []
-            };
+            
             get_timestamp_opt = {
                 type: value
             };
 
             if (self.start_data > 0) {
                 get_timestamp_opt.start = self.start_data;
-                stampNow = self.timeFormat(value, self.start_data);
+                var stampStart = self.timeFormat(value, self.start_data);
             } else {
-                stampNow = self.timeFormat(
+                var stampStart = self.timeFormat(
                     value,
                     Date.parse(new Date()) / 1000
                 );
             }
-
-            // let stampNow = value === '1' ? 1558414662 :155841466
+            // var maxTimes =
             clientObj = {};
             serverObj = {};
-
-            for (let i = 0; i < 300; i++) {
-                clientObj[stampNow - i] = 0;
+            var interval = Number(value)/10;
+            var maxTimes = 300*interval; 
+            for (let i = 0; i < maxTimes; i+= interval) {
+                clientObj[stampStart - interval] = 0;
             }
 
             let response = await self.$api.get(
@@ -257,32 +261,56 @@ export default {
                 });
 
                 Object.keys(clientObj).forEach(item => {
-                    clientObj[item] = serverObj[item] || 0;
+                    for(let i;i<interval;i++){
+                        clientObj[item] += (serverObj[item-i] || 0);
+                    }
                 });
-
+                if(value == '300'){
+                    var index_f = 4; 
+                }else if(value == '60'){
+                    var index_f = 3; 
+                }else if(value == '30'){
+                    var index_f = 2; 
+                }else if(value == '10'){
+                    var index_f = 1; 
+                }else{
+                    var index_f = 0; 
+                }
                 Object.keys(clientObj).forEach((items, index) => {
-                    data.timestamp[index] = items;
-                    data.count[index] = clientObj[items];
+                    self.data[index_f].timestamp[index] = items;
+                    self.data[index_f].count[index] = clientObj[items];
                 });
 
-                data.timestamp.forEach((item, index) => {
-                    data.timestamp[index] = self.toTime(item);
+                self.data[index_f].timestamp.forEach((item, index) => {
+                    self.data[index_f].timestamp[index] = self.toTime(item);
                 });
                 // 绘制图表
+                // var data;
+                // if(type == '300'){
+                //     data = window.data[4];
+                // }else if(type == '60'){
+                //     data = window.data[3];
+                // }else if(type == '30'){
+                //     data = window.data[2];
+                // }else if(type == '10'){
+                //     data = window.data[1];
+                // }else{
+                //     data = window.data[0];
+                // }
                 myChart.setOption({
                     title: {
                         text: "CZR TPS"
                     },
                     tooltip: {},
                     xAxis: {
-                        data: data.timestamp
+                        data: this.data[index_f].timestamp
                     },
                     yAxis: {},
                     series: [
                         {
                             name: "TPS",
                             type: "bar",
-                            data: data.count
+                            data: this.data[index_f].count
                         }
                     ]
                 });

@@ -1436,12 +1436,17 @@ router.get("/get_mci", async function (req, res, next) {
 router.get("/get_timestamp", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
-    var queryType = req.query.type;// ?type=1
+    var queryType = req.query.type || '1';// ?type=1
     var queryStart = req.query.start;//end
-
+    var multiple = queryType === '1'? 1:Number(queryType)/10;  
+    if (multiple != 3 && multiple != 6 && multiple != 30){
+        multiple = 1
+    }
+    var limit = 300 * multiple;
     let sql = {};
-    if (queryStart) {
-        var restleTimestamp = queryType === '10' ? Math.ceil(Number(queryStart) / 10) : queryStart;
+    queryType = queryType==='1' ? '1':'10';
+    if (queryStart ) {
+        var restleTimestamp = queryType === '1' ? queryStart:Math.ceil(Number(queryStart) / 10) ;
         sql.text = `
             Select 
                 timestamp,count
@@ -1453,9 +1458,9 @@ router.get("/get_timestamp", async function (req, res, next) {
             ORDER BY 
                 timestamp DESC 
             limit 
-                600
+                $3
         `;
-        sql.values = [queryType, restleTimestamp];
+        sql.values = [queryType, restleTimestamp, limit];
     } else {
         sql.text = `
             Select 
@@ -1467,9 +1472,9 @@ router.get("/get_timestamp", async function (req, res, next) {
             ORDER BY
                 timestamp DESC 
             limit
-                600
+                $2
         `;
-        sql.values = [queryType];
+        sql.values = [queryType, limit];
     }
 
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mc Before')
