@@ -44,6 +44,21 @@
                                     <el-radio v-model="radio" label="10" @change="initEcharts">10秒</el-radio>
                                 </div>
                             </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="30" @change="initEcharts">30秒</el-radio>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="60" @change="initEcharts">1分钟</el-radio>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="grid-content bg-purple">
+                                    <el-radio v-model="radio" label="300" @change="initEcharts">5分钟</el-radio>
+                                </div>
+                            </el-col>
                         </el-row>
                     </div>
                 </div>
@@ -159,6 +174,14 @@ export default {
     },
     created() {
         self = this;
+        self.data = [5];
+        for(let i=0;i<5;i++){
+            self.data[i] = {
+                timestamp : [],
+                count : []
+            };
+        }
+        // console.log(self.data[0].timestamp.length)
         self.getTransactions();
         self.getMci();
         let reg = /^#\/+\?+\w+=(\d{14})$/;
@@ -166,6 +189,7 @@ export default {
         if (!!restlt) {
             this.start_data = this.toTimestamp(restlt[1]);
         }
+        // this.start_data = 1558414662;
     },
     mounted() {
         // 基于准备好的dom，初始化echarts实例
@@ -221,68 +245,75 @@ export default {
         },
         //echarts
         async initEcharts(value) {
-            data = {
-                timestamp: [],
-                count: []
-            };
-            get_timestamp_opt = {
-                type: value
-            };
-
-            if (self.start_data > 0) {
-                get_timestamp_opt.start = self.start_data;
-                stampNow = self.timeFormat(value, self.start_data);
-            } else {
-                stampNow = self.timeFormat(
-                    value,
-                    Date.parse(new Date()) / 1000
-                );
-            }
-
-            // let stampNow = value === '1' ? 1558414662 :155841466
-            clientObj = {};
-            serverObj = {};
-
-            for (let i = 0; i < 300; i++) {
-                clientObj[stampNow - i] = 0;
-            }
-
-            let response = await self.$api.get(
-                "/api/get_timestamp",
-                get_timestamp_opt
-            );
-            if (response.success) {
-                response.timestamp.forEach((item, index) => {
-                    serverObj[item] = response.count[index];
-                });
-
-                Object.keys(clientObj).forEach(item => {
-                    clientObj[item] = serverObj[item] || 0;
-                });
-
-                Object.keys(clientObj).forEach((items, index) => {
-                    data.timestamp[index] = items;
-                    data.count[index] = clientObj[items];
-                });
-
-                data.timestamp.forEach((item, index) => {
-                    data.timestamp[index] = self.toTime(item);
-                });
-                // 绘制图表
+            if(value == '300'){
+                    var index_f = 4; 
+                }else if(value == '60'){
+                    var index_f = 3; 
+                }else if(value == '30'){
+                    var index_f = 2; 
+                }else if(value == '10'){
+                    var index_f = 1; 
+                }else{
+                    var index_f = 0; 
+                }
+            if(self.data[index_f].timestamp.length!=0){
+                // drawChart(index_f);
                 myChart.setOption({
                     title: {
                         text: "CZR TPS"
                     },
                     tooltip: {},
                     xAxis: {
-                        data: data.timestamp
+                        data: this.data[index_f].timestamp
                     },
                     yAxis: {},
                     series: [
                         {
                             name: "TPS",
                             type: "bar",
-                            data: data.count
+                            data: this.data[index_f].count
+                        }
+                    ]
+                });
+                return ;
+            }
+            get_timestamp_opt = {
+                type: value
+            };
+
+            if (self.start_data > 0) {
+                get_timestamp_opt.start = self.start_data;
+            }
+            
+            let response = await self.$api.get(
+                "/api/get_timestamp",
+                get_timestamp_opt
+            );
+            if (response.success) {
+                this.data[index_f].timestamp = response.timestamp;
+                this.data[index_f].count = response.count;
+
+                self.data[index_f].timestamp.forEach((item, index) => {
+                    self.data[index_f].timestamp[index] = self.toTime(item);
+                });
+                
+                // 绘制图表
+
+                // drawChart(index_f);
+                myChart.setOption({
+                    title: {
+                        text: "CZR TPS"
+                    },
+                    tooltip: {},
+                    xAxis: {
+                        data: this.data[index_f].timestamp
+                    },
+                    yAxis: {},
+                    series: [
+                        {
+                            name: "TPS",
+                            type: "bar",
+                            data: this.data[index_f].count
                         }
                     ]
                 });
@@ -290,6 +321,27 @@ export default {
                 console.error("/api/get_timestamp Error");
             }
         },
+        // drawChart(index_f) {
+        //     // 绘制图表
+
+        //     myChart.setOption({
+        //         title: {
+        //             text: "CZR TPS"
+        //         },
+        //         tooltip: {},
+        //         xAxis: {
+        //             data: this.data[index_f].timestamp
+        //         },
+        //         yAxis: {},
+        //         series: [
+        //             {
+        //                 name: "TPS",
+        //                 type: "bar",
+        //                 data: this.data[index_f].count
+        //             }
+        //         ]
+        //     });
+        // },
         toTime(timestamp) {
             // 简单的一句代码
             // 154330965

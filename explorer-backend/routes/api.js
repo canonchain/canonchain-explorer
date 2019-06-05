@@ -1435,13 +1435,19 @@ router.get("/get_mci", async function (req, res, next) {
 //获取TPS
 router.get("/get_timestamp", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-
-    var queryType = req.query.type;// ?type=1
+    var srvObj = {};
+    var cltObj = {};
+    var queryType = req.query.type || '1';// ?type=1
     var queryStart = req.query.start;//end
-
+    var multiple = queryType === '1'? 1:Number(queryType)/10;  
+    if (multiple != 3 && multiple != 6 && multiple != 30){
+        multiple = 1
+    }
+    var limit = 300 * multiple;
     let sql = {};
+    queryType = queryType==='1' ? '1':'10';
     if (queryStart) {
-        var restleTimestamp = queryType === '10' ? Math.ceil(Number(queryStart) / 10) : queryStart;
+        var restleTimestamp = queryType === '1' ? queryStart:Math.floor(Number(queryStart) / 10) ;
         sql.text = `
             Select 
                 timestamp,count
@@ -1449,27 +1455,28 @@ router.get("/get_timestamp", async function (req, res, next) {
                 timestamp 
             WHERE 
                 type = $1 and 
-                timestamp <= $2 
+                timestamp <= $2 and
+                timestamp >= $3
             ORDER BY 
                 timestamp DESC 
-            limit 
-                600
         `;
-        sql.values = [queryType, restleTimestamp];
-    } else {
+        sql.values = [queryType, restleTimestamp, restleTimestamp-limit];
+    } else {    
+        let nowstamp = Date.parse(new Date()) / 1000;
+        // let nowstamp = 1558414662;
+        var restleTimestamp = queryType === '1' ? nowstamp:Math.floor(nowstamp / 10) ;
         sql.text = `
             Select 
                 timestamp,count 
             FROM
                 timestamp 
             WHERE
-                type = $1 
+                type = $1 and
+                timestamp >= $2
             ORDER BY
                 timestamp DESC 
-            limit
-                600
         `;
-        sql.values = [queryType];
+        sql.values = [queryType,restleTimestamp-limit];
     }
 
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mc Before')
@@ -1488,9 +1495,25 @@ router.get("/get_timestamp", async function (req, res, next) {
         let timestamp = [];
         let count = [];
         data.rows.forEach(item => {
-            timestamp.unshift(item.timestamp)
-            count.unshift(Math.ceil(item.count / Number(queryType)));
-        })
+            srvObj[item.timestamp] = Math.ceil(item.count / Number(queryType));
+        });
+        
+        for(let i=0;i<300*multiple;i+= multiple){
+            cltObj[restleTimestamp-i] = 0;
+        }
+        timestamp.forEach((item,index) => {
+            srvObj[item] = count[index];
+
+        });
+        Object.keys(cltObj).forEach((item) => {
+            for(let i=0;i<multiple;i++){
+                cltObj[item] += (srvObj[(item-i).toString()] || 0);
+            }
+        });
+        Object.keys(cltObj).forEach((items, index) => {
+            timestamp[index] = items;
+            count[index] = cltObj[items];
+        });
         responseData = {
             timestamp: timestamp,
             count: count,
