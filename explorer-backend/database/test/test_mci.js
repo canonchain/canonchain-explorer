@@ -1,4 +1,4 @@
-let Czr = require("../../czr/index");
+let Czr = require("czr");
 let czr = new Czr();
 let log4js = require('../log_config');
 let logger = log4js.getLogger('TEST');//此处使用category的值
@@ -18,8 +18,8 @@ let pageUtility={
         czr.request.status().then(function (status) {
             console.log(`获取网络中最新稳定的MCI-Success : `);
             console.log(status)
-            statusMci = Number(status.status.last_stable_mci); 
-            pageUtility.getMci();
+            statusMci = Number(status.last_stable_mci); 
+            // pageUtility.getMci();
         }).catch((err)=>{
             console.log(`获取网络中最新稳定的MCI-Error : ${err}`);
         })
@@ -45,4 +45,4 @@ let pageUtility={
         });
     }
 }
-pageUtility.getMci();
+pageUtility.getStatus();

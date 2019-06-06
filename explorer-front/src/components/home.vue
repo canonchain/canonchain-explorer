@@ -34,27 +34,27 @@
                     </div>
                     <div class="dashboard-select">
                         <el-row>
-                            <el-col :span="12">
+                            <el-col :span="5">
                                 <div class="grid-content bg-purple">
                                     <el-radio v-model="radio" label="1" @change="initEcharts">秒</el-radio>
                                 </div>
                             </el-col>
-                            <el-col :span="12">
+                            <el-col :span="5">
                                 <div class="grid-content bg-purple">
                                     <el-radio v-model="radio" label="10" @change="initEcharts">10秒</el-radio>
                                 </div>
                             </el-col>
-                            <el-col :span="12">
+                            <el-col :span="5">
                                 <div class="grid-content bg-purple">
                                     <el-radio v-model="radio" label="30" @change="initEcharts">30秒</el-radio>
                                 </div>
                             </el-col>
-                            <el-col :span="12">
+                            <el-col :span="5">
                                 <div class="grid-content bg-purple">
                                     <el-radio v-model="radio" label="60" @change="initEcharts">1分钟</el-radio>
                                 </div>
                             </el-col>
-                            <el-col :span="12">
+                            <el-col :span="4">
                                 <div class="grid-content bg-purple">
                                     <el-radio v-model="radio" label="300" @change="initEcharts">5分钟</el-radio>
                                 </div>

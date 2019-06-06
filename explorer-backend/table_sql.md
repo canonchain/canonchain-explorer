@@ -8,10 +8,7 @@
 ### 账户表创建
 
 ```postgresql
--- Table: public.accounts
- 
--- DROP TABLE public.accounts;
- 
+
 CREATE TABLE public.accounts
 (
     acc_id bigserial,
@@ -63,15 +60,12 @@ CREATE INDEX balance_index
 
 COMMENT ON INDEX public.balance_index
     IS 'balance_index';
+
 ```
 
 ## 普通交易表
 
 ```postgresql
-
--- Table: public.trans_normal
- 
--- DROP TABLE public.trans_normal;
  
 CREATE TABLE public.trans_normal
 (
@@ -141,15 +135,13 @@ CREATE INDEX mormal_stable_index
     ON public.trans_normal USING btree
     (stable_index)
     TABLESPACE pg_default;
+
 ```
 
 ## 见证交易表(存创始hash的简要信息)
 
 ```postgresql
--- Table: public.trans_witness
- 
--- DROP TABLE public.trans_witness;
- 
+
 CREATE TABLE public.trans_witness
 (
     wtransid bigserial,
@@ -202,14 +194,13 @@ CREATE INDEX witness_stable_index
     ON public.trans_witness USING btree
     (stable_index)
     TABLESPACE pg_default;
+
 ```
 
 ## 创世表
 
 ```postgresql
--- Table: public.trans_genesis
--- DROP TABLE public.trans_genesis;
- 
+
 CREATE TABLE public.trans_genesis
 (
     creatid bigserial,
@@ -252,14 +243,12 @@ CREATE INDEX genesis_stable_index
     ON public.trans_genesis USING btree
     (stable_index)
     TABLESPACE pg_default;
+
 ```
 
 ## 交易类型表
 
 ```postgresql
--- Table: public.trans_type
- 
--- DROP TABLE public.trans_type;
  
 CREATE TABLE public.trans_type
 (
@@ -279,14 +268,12 @@ CREATE UNIQUE INDEX type_hash_index
     ON public.trans_type USING btree
     (hash)
     TABLESPACE pg_default;
+
 ```
 
 ## parent表创建
 
 ```postgresql
--- Table: public.parents
- 
--- DROP TABLE public.parents;
  
 CREATE TABLE public.parents
 (
@@ -319,9 +306,6 @@ CREATE INDEX parent_item_index
 ## timestap表的创建
 
 ```
---Table: public.timestamp
-
-    --DROP TABLE public.timestamp;
 
 CREATE TABLE public.timestamp(
     timestamp numeric,
@@ -349,14 +333,12 @@ CREATE INDEX time_timestamp_index
     ON public."timestamp" USING btree
     (timestamp)
     TABLESPACE pg_default;
+
 ```
 
 ## global
 
 ```
---Table: public.global
-
-    --DROP TABLE public.global;
 
 CREATE TABLE public.global(
     global_id bigserial,
@@ -368,13 +350,14 @@ WITH(
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
+
 ```
 
 ### witness_list
 
 ```postgresql
--- Table: public.witness_list
--- DROP TABLE public.witness_list;
+
 CREATE TABLE public.witness_list
 (
     witness_id bigserial,
@@ -385,33 +368,20 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
 
+---
 
-*************************************************************
 
 ## 合约相关表
 
-### token_asset | Token资产表
-
-```postgresql
-CREATE TABLE public.token_asset
-(
-    account text,
-    contract_account text,
-    symbol text,
-    balance numeric,
-    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
-)
-WITH (
-    OIDS = FALSE
-)
-TABLESPACE pg_default;
-```
+******************************************************************************
 
 ### contract | 合约表
 
 ```postgresql
+
 CREATE TABLE public.contract
 (
     contract_account text,
@@ -425,11 +395,13 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
 
 ### contract_code | 合约代码表
 
 ```postgresql
+
 CREATE TABLE public.contract_code
 (
     contract_account text,
@@ -440,11 +412,13 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
 
 ### token | token表
 
 ```postgresql
+
 CREATE TABLE public.token
 (
     contract_account text,
@@ -461,11 +435,32 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
+```
+
+### token_asset | Token资产表
+
+```postgresql
+
+CREATE TABLE public.token_asset
+(
+    account text,
+    contract_account text,
+    symbol text,
+    balance numeric,
+    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
 ```
 
 ### trans_token | Token交易表
 
 ```postgresql
+
 CREATE TABLE public.trans_token
 (
     "hash" text,
@@ -483,11 +478,13 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
 
 ### trans_internal | 内部交易表
 
 ```postgresql
+
 CREATE TABLE public.trans_internal
 (
     "hash" text,
@@ -503,11 +500,13 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
 
 ### event_log | 事件日志表
 
 ```postgresql
+
 CREATE TABLE public.event_log
 (
     "hash" text,
@@ -523,4 +522,5 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
 ```
