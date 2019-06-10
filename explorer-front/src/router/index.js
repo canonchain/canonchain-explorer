@@ -4,7 +4,12 @@ import Router from 'vue-router'
 import Home from '@/components/home'
 import Block from '@/components/block'
 import Dag from '@/components/dag'
+
+// account
 import Account from '@/components/account'
+import contractCode from '@/components/Account/contract_code'
+import AccountTransaction from '@/components/Account/transaction'
+
 import Accounts from '@/components/accounts'
 import Normal_Trans from '@/components/normal_trans'
 import WitnessTrans from '@/components/witness_trans'
@@ -55,12 +60,17 @@ export default new Router({
       component: Block
     },
     {
-      path: '/account/:id',
-      name: 'Account',
-      component: Account
+      path: '/account/:id/code',
+      name: 'contractCode',
+      component: contractCode
     },
-    { 
-      path: '*', 
+    {
+      path: '/account/:id',
+      name: 'AccountTransaction',
+      component: AccountTransaction
+    },
+    {
+      path: '*',
       component: NotFound
     }
   ]

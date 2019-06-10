@@ -21,6 +21,7 @@ CREATE TABLE public.accounts
     is_token_account boolean,
     is_has_token_trans boolean,
     is_has_intel_trans boolean,
+    is_has_event_logs boolean,
 
     CONSTRAINT account_pkey PRIMARY KEY (account)
 )
@@ -471,7 +472,6 @@ CREATE TABLE public.trans_token
     contract_account text,
     token_symbol text,
     "amount" numeric,
-
     CONSTRAINT trans_token_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
@@ -493,7 +493,6 @@ CREATE TABLE public.trans_internal
     "to" text,
     "amount" numeric,
     "gas_limit" bigint,
-
     CONSTRAINT trans_internal_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
@@ -514,6 +513,7 @@ CREATE TABLE public.event_log
     contract_account text,
     "amount" numeric,
     "method" text,
+    "method_function" text,
     "topics" text,
 
     CONSTRAINT event_log_hash_pkey PRIMARY KEY (hash)
