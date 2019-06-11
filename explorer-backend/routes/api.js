@@ -578,7 +578,9 @@ router.get("/get_account", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "account","balance","transaction_count"
+                "account","type","balance","transaction_count",
+                "is_token_account","is_has_token_trans",
+                "is_has_intel_trans","is_has_event_logs"
             FROM 
                 "accounts"
             WHERE 
@@ -622,6 +624,60 @@ router.get("/get_account", async function (req, res, next) {
     responseData.account.is_witness = (WITNESS_LIST.indexOf(queryAccount.toUpperCase()) > -1) ? true : false;
     res.json(responseData);
 })
+//获取合约账户表
+router.get("/get_contract", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryAccount = req.query.account;// ?account=2
+    let opt = {
+        text: `
+            Select 
+                "contract_account","own_account","born_unit",
+                "token_name","token_symbol"
+            FROM 
+                "contract"
+            WHERE 
+                "contract_account" = $1
+        `,
+        values: [queryAccount]
+    };
+    PageUtility.timeLog(req, 'Account Info Befor')
+    let data = await pgPromise.query(opt);
+    PageUtility.timeLog(req, 'Account Info After')
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: {},
+            code: 500,
+            success: false,
+            message: "Select contract Error"
+        }
+    } else {
+        if (data.rows.length) {
+            responseData = {
+                data: data.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    "contract_account": queryAccount,
+                    "own_account": "",
+                    "born_unit": "",
+                    "token_name": "",
+                    "token_symbol": ""
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+
+
 //获取交易表中最近(LIMIT+1)项
 //参数： 
 //account
@@ -771,7 +827,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
                     FROM
                         trans_normal
                     WHERE
-                        "from" = $1
+                        "${querySour}" = $1
                     order by 
                         "stable_index" desc
                     LIMIT
@@ -913,6 +969,342 @@ router.get("/get_account_transactions", async function (req, res, next) {
         })
     }
 
+    res.json(responseData);
+})
+
+//获取Token转账
+router.get("/get_trans_token", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account | source | trans_token_id
+    var querySour = "";
+
+    if (queryVal.source === '1') {
+        querySour = "from";
+    } else if (queryVal.source === '2') {
+        querySour = "to";
+    }
+    let opt;
+
+    //根据position查询
+    if (queryVal.position === "1") {
+        //首页
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "trans_token_id" desc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else if (queryVal.position === "4") {
+        //尾页
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "trans_token_id" asc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE 
+                    (trans_token_id ${direction} $2)
+                    and
+                    ("${querySour}" = $1)
+                order by 
+                    "trans_token_id" ${sortInfo}
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account, queryVal.trans_token_id]
+        };
+    }
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_token Error"
+        }
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+
+        formatInfo.forEach(item => {
+            if (item.from == queryVal.account) {
+                item.is_from_this_account = true;
+            } else {
+                item.is_from_this_account = false;
+            }
+            //是否转给自己
+            if (item.from == item.to) {
+                item.is_to_self = true;
+            } else {
+                item.is_to_self = false;
+            }
+        })
+
+        if (data.rows.length) {
+            responseData = {
+                data: formatInfo,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: [],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//TODO 获取交易内转账 [未完成]
+router.get("/trans_internal", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account | source | trans_token_id
+    var querySour = "";
+
+    if (queryVal.source === '1') {
+        querySour = "from";
+    } else if (queryVal.source === '2') {
+        querySour = "to";
+    }
+    let opt;
+
+    //根据position查询
+    if (queryVal.position === "1") {
+        //首页
+        opt = {
+            text: `
+                Select 
+                    *
+                FROM 
+                    "trans_internal"
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "trans_token_id" desc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else if (queryVal.position === "4") {
+        //尾页
+        opt = {
+            text: `
+                Select 
+                    *
+                FROM 
+                    "trans_internal"
+                WHERE
+                    "${querySour}" = $1
+                order by 
+                    "trans_token_id" asc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    *
+                FROM 
+                    "trans_token"
+                WHERE 
+                    (trans_token_id ${direction} $2)
+                    and
+                    ("${querySour}" = $1)
+                order by 
+                    "trans_token_id" ${sortInfo}
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account, queryVal.trans_token_id]
+        };
+    }
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_token Error"
+        }
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+
+        if (data.rows.length) {
+            responseData = {
+                data: formatInfo,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: [],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//事件日志
+router.get("/get_event_log", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account
+
+    let opt = {
+        text: `
+            Select 
+                "hash","mc_timestamp","contract_account","data","method","method_function","topics"
+            FROM 
+                "event_log"
+            WHERE 
+                "contract_account" = $1
+            LIMIT
+                10
+        `,
+        values: [queryVal.account]
+    };
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: '',
+            code: 500,
+            success: false,
+            message: "Select FROM contract_code Error"
+        }
+    } else {
+        if (data.rows.length) {
+            responseData = {
+                data: data.rows,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    "contract_account": queryVal.account,
+                    "hash": "",
+                    "mc_timestamp": "",
+                    "amount": "",
+                    "method": "",
+                    "method_function": "",
+                    "topics": ""
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//获取合约代码
+router.get("/get_contract_code", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account
+
+    let opt = {
+        text: `
+            Select 
+                "contract_account","code"
+            FROM 
+                "contract_code"
+            WHERE 
+                "contract_account" = $1
+        `,
+        values: [queryVal.account]
+    };
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: '',
+            code: 500,
+            success: false,
+            message: "Select FROM contract_code Error"
+        }
+    } else {
+        if (data.rows.length) {
+            responseData = {
+                data: data.rows[0],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: {
+                    "contract_account": queryVal.account,
+                    "code": ''
+                },
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
     res.json(responseData);
 })
 //************************** 账号详情 结束
@@ -1439,15 +1831,15 @@ router.get("/get_timestamp", async function (req, res, next) {
     var cltObj = {};
     var queryType = req.query.type || '1';// ?type=1
     var queryStart = req.query.start;//end
-    var multiple = queryType === '1'? 1:Number(queryType)/10;  
-    if (multiple != 3 && multiple != 6 && multiple != 30){
+    var multiple = queryType === '1' ? 1 : Number(queryType) / 10;
+    if (multiple != 3 && multiple != 6 && multiple != 30) {
         multiple = 1
     }
     var limit = 300 * multiple;
     let sql = {};
-    queryType = queryType==='1' ? '1':'10';
+    queryType = queryType === '1' ? '1' : '10';
     if (queryStart) {
-        var restleTimestamp = queryType === '1' ? queryStart:Math.floor(Number(queryStart) / 10) ;
+        var restleTimestamp = queryType === '1' ? queryStart : Math.floor(Number(queryStart) / 10);
         sql.text = `
             Select 
                 timestamp,count
@@ -1460,11 +1852,11 @@ router.get("/get_timestamp", async function (req, res, next) {
             ORDER BY 
                 timestamp DESC 
         `;
-        sql.values = [queryType, restleTimestamp, restleTimestamp-limit];
-    } else {    
+        sql.values = [queryType, restleTimestamp, restleTimestamp - limit];
+    } else {
         let nowstamp = Date.parse(new Date()) / 1000;
         // let nowstamp = 1558414662;
-        var restleTimestamp = queryType === '1' ? nowstamp:Math.floor(nowstamp / 10) ;
+        var restleTimestamp = queryType === '1' ? nowstamp : Math.floor(nowstamp / 10);
         sql.text = `
             Select 
                 timestamp,count 
@@ -1476,7 +1868,7 @@ router.get("/get_timestamp", async function (req, res, next) {
             ORDER BY
                 timestamp DESC 
         `;
-        sql.values = [queryType,restleTimestamp-limit];
+        sql.values = [queryType, restleTimestamp - limit];
     }
 
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mc Before')
@@ -1497,17 +1889,17 @@ router.get("/get_timestamp", async function (req, res, next) {
         data.rows.forEach(item => {
             srvObj[item.timestamp] = Math.ceil(item.count / Number(queryType));
         });
-        
-        for(let i=0;i<300*multiple;i+= multiple){
-            cltObj[restleTimestamp-i] = 0;
+
+        for (let i = 0; i < 300 * multiple; i += multiple) {
+            cltObj[restleTimestamp - i] = 0;
         }
-        timestamp.forEach((item,index) => {
+        timestamp.forEach((item, index) => {
             srvObj[item] = count[index];
 
         });
         Object.keys(cltObj).forEach((item) => {
-            for(let i=0;i<multiple;i++){
-                cltObj[item] += (srvObj[(item-i).toString()] || 0);
+            for (let i = 0; i < multiple; i++) {
+                cltObj[item] += (srvObj[(item - i).toString()] || 0);
             }
         });
         Object.keys(cltObj).forEach((items, index) => {

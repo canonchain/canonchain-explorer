@@ -385,6 +385,8 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.contract
 (
+    contract_id bigserial,
+
     contract_account text,
     own_account text,
     born_unit text,
@@ -422,6 +424,7 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.token
 (
+    token_id bigserial,
     contract_account text,
     token_name text,
     token_symbol text,
@@ -464,6 +467,8 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.trans_token
 (
+    trans_token_id bigserial,
+
     "hash" text,
     "mc_timestamp" bigint,
     
@@ -487,6 +492,8 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.trans_internal
 (
+    trans_internal_id bigserial,
+
     "hash" text,
     "mc_timestamp" bigint,
     "from" text,
@@ -508,10 +515,11 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.event_log
 (
+    event_log_id bigserial,
     "hash" text,
     "mc_timestamp" bigint,
     contract_account text,
-    "amount" numeric,
+    "data" numeric,
     "method" text,
     "method_function" text,
     "topics" text,

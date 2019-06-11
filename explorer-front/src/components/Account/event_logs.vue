@@ -30,23 +30,63 @@
                                 <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
                             </template>
                             <template v-if="accountInfo.is_has_event_logs">
-                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.type === 2">
-                                <el-tab-pane label="合约创建代码" name="contract_code">
-                                    <div class="account-content" v-loading="loadingSwitch">
-                                        <template v-if="IS_GET_INFO">
-                                            <el-row>
-                                                <el-col :span="24">
-                                                    <h2 class="transfer-tit">合约创建的代码</h2>
-                                                </el-col>
-                                            </el-row>
-                                            <div class="accounts-list-wrap">
-                                                <pre class="contract-code">{{contract_code}}</pre>
-                                            </div>
-                                        </template>
+                                <el-tab-pane label="事件日志" name="event_logs">
+                                    <div class="account-content">
+                                        <el-row>
+                                            <el-col :span="6">
+                                                <h2 class="transfer-tit">事件日志（最新10条）</h2>
+                                            </el-col>
+                                        </el-row>
+                                        <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                                            <template v-if="IS_GET_INFO">
+                                                <el-table :data="event_logs" style="width: 100%">
+                                                    <el-table-column label="时间" width="180">
+                                                        <template slot-scope="scope">
+                                                            <span
+                                                                class="table-long-item"
+                                                            >{{scope.row.mc_timestamp | toDate}}</span>
+                                                        </template>
+                                                    </el-table-column>
+                                                    <!-- <el-table-column label="交易号" width="180">
+                                                    <template slot-scope="scope"></template>
+                                                    </el-table-column>-->
+                                                    <el-table-column label="交易号/模式" width="200">
+                                                        <template slot-scope="scope">
+                                                            <el-button
+                                                                @click="goBlockPath(scope.row.hash)"
+                                                                type="text"
+                                                            >
+                                                                <span
+                                                                    class="table-long-item"
+                                                                >{{scope.row.hash}}</span>
+                                                            </el-button>
+                                                            <br>
+                                                            <strong>{{scope.row.method}}</strong>
+                                                            <p>{{scope.row.method_function}}</p>
+                                                        </template>
+                                                    </el-table-column>
+                                                    <el-table-column label="事件日志">
+                                                        <template slot-scope="scope">
+                                                            <template
+                                                                v-for="(item,index) in scope.row.topics"
+                                                            >
+                                                                <p
+                                                                    v-bind:key="item"
+                                                                >[topic{{index}}] {{ item }}</p>
+                                                            </template>
+                                                            <p>
+                                                                <span>Data {{scope.row.data}}</span>
+                                                            </p>
+                                                        </template>
+                                                    </el-table-column>
+                                                </el-table>
+                                            </template>
+                                        </div>
                                     </div>
                                 </el-tab-pane>
+                            </template>
+                            <template v-if="accountInfo.type === 2">
+                                <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>
                         </el-tabs>
                     </template>
@@ -95,15 +135,15 @@ export default {
             },
 
             // change
-            activeName: "contract_code",
+            activeName: "event_logs",
             // 合约代码
-            contract_code: ""
+            event_logs: []
         };
     },
     created() {
         self = this;
         self.initDatabase();
-        self.getContractCode();
+        self.getEventLog();
     },
     methods: {
         async initDatabase() {
@@ -175,24 +215,29 @@ export default {
                     );
                     break;
                 case "event_logs":
-                    this.$router.push(
-                        `/account/${self.accountInfo.address}/event_logs`
-                    );
-                    break;
-                case "contract_code":
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;
                     break;
+                case "contract_code":
+                    this.$router.push(
+                        `/account/${self.accountInfo.address}/contract_code`
+                    );
+                    break;
             }
         },
-        async getContractCode() {
+        async getEventLog() {
             let opt = {
                 account: self.accountInfo.address
             };
-            let response = await self.$api.get("/api/get_contract_code", opt);
+            let response = await self.$api.get("/api/get_event_log", opt);
+            let tempTopics;
 
             if (response.success) {
-                self.contract_code = response.data.code;
+                response.data.forEach(element => {
+                    tempTopics = element.topics.split(",");
+                    element.topics = tempTopics;
+                });
+                self.event_logs = response.data;
             } else {
                 console.error("/api/get_account Error");
             }

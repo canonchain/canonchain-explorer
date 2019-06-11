@@ -21,107 +21,32 @@
                 <div class="account-main">
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
-                            <el-tab-pane label="交易记录" name="transaction">
-                                <div class="account-content">
-                                    <el-row>
-                                        <el-col :span="6">
-                                            <h2 class="transfer-tit">交易记录</h2>
-                                        </el-col>
-                                        <el-col :span="18" style="text-align: right;">
-                                            <template>
-                                                <el-radio
-                                                    v-model="url_parm.source"
-                                                    label="1"
-                                                    @change="handlerChange"
-                                                >发送记录</el-radio>
-                                                <el-radio
-                                                    v-model="url_parm.source"
-                                                    label="2"
-                                                    @change="handlerChange"
-                                                >接收记录</el-radio>
-                                                <template v-if="IS_WITNESS">
+                            <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
+                            <template v-if="accountInfo.is_has_token_trans">
+                                <el-tab-pane label="Token转账" name="trans_token">
+                                    <div class="account-content">
+                                        <el-row>
+                                            <el-col :span="6">
+                                                <h2 class="transfer-tit">Token转账</h2>
+                                            </el-col>
+                                            <el-col :span="18" style="text-align: right;">
+                                                <template>
                                                     <el-radio
                                                         v-model="url_parm.source"
-                                                        label="3"
+                                                        label="1"
                                                         @change="handlerChange"
-                                                    >见证交易</el-radio>
+                                                    >发送</el-radio>
+                                                    <el-radio
+                                                        v-model="url_parm.source"
+                                                        label="2"
+                                                        @change="handlerChange"
+                                                    >接收</el-radio>
                                                 </template>
-                                            </template>
-                                        </el-col>
-                                    </el-row>
-                                    <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                                        <template v-if="IS_GET_INFO">
-                                            <template v-if="url_parm.source==='3'">
-                                                <el-table :data="database" style="width: 100%">
-                                                    <el-table-column label="时间" width="280">
-                                                        <template slot-scope="scope">
-                                                            <span
-                                                                class="table-long-item"
-                                                            >{{scope.row.exec_timestamp | toDate}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="交易号" width="280">
-                                                        <template slot-scope="scope">
-                                                            <el-button
-                                                                @click="goBlockPath(scope.row.hash)"
-                                                                type="text"
-                                                            >
-                                                                <span
-                                                                    class="table-long-item"
-                                                                >{{scope.row.hash}}</span>
-                                                            </el-button>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="账户" width="280">
-                                                        <template slot-scope="scope">
-                                                            <span
-                                                                class="table-long-item"
-                                                            >{{scope.row.from}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column
-                                                        label="状态"
-                                                        min-width="80"
-                                                        align="center"
-                                                    >
-                                                        <template slot-scope="scope">
-                                                            <template
-                                                                v-if="scope.row.is_stable === false"
-                                                            >
-                                                                <span class="txt-warning">等待确认</span>
-                                                            </template>
-                                                            <template v-else>
-                                                                <template
-                                                                    v-if="scope.row.status == '0'"
-                                                                >
-                                                                    <span class="txt-success">成功</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '1'"
-                                                                >
-                                                                    <span class="txt-danger">失败(1)</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '2'"
-                                                                >
-                                                                    <span class="txt-danger">失败(2)</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '3'"
-                                                                >
-                                                                    <span class="txt-danger">失败(3)</span>
-                                                                </template>
-                                                                <template v-else>
-                                                                    <span class="txt-info">-</span>
-                                                                </template>
-                                                            </template>
-                                                        </template>
-                                                    </el-table-column>
-                                                </el-table>
-                                                <!--  -->
-                                            </template>
-                                            <template v-else>
-                                                <el-table :data="database" style="width: 100%">
+                                            </el-col>
+                                        </el-row>
+                                        <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                                            <template v-if="IS_GET_INFO">
+                                                <el-table :data="trans_token" style="width: 100%">
                                                     <el-table-column label="时间" width="180">
                                                         <template slot-scope="scope">
                                                             <span
@@ -156,18 +81,9 @@
                                                                 </el-button>
                                                             </template>
                                                             <template v-else>
-                                                                <template
-                                                                    v-if="Number(scope.row.level) <= 0"
-                                                                >
-                                                                    <span
-                                                                        class="table-long-item"
-                                                                    >GENESIS</span>
-                                                                </template>
-                                                                <template v-else>
-                                                                    <span
-                                                                        class="table-long-item"
-                                                                    >{{scope.row.from}}</span>
-                                                                </template>
+                                                                <span
+                                                                    class="table-long-item"
+                                                                >{{scope.row.from}}</span>
                                                             </template>
                                                         </template>
                                                     </el-table-column>
@@ -230,96 +146,63 @@
                                                         </template>
                                                     </el-table-column>
                                                     <el-table-column
-                                                        label="状态"
-                                                        min-width="80"
-                                                        align="center"
-                                                    >
-                                                        <template slot-scope="scope">
-                                                            <template
-                                                                v-if="scope.row.is_stable === false"
-                                                            >
-                                                                <span class="txt-warning">等待确认</span>
-                                                            </template>
-                                                            <template v-else>
-                                                                <template
-                                                                    v-if="scope.row.status == '0'"
-                                                                >
-                                                                    <span class="txt-success">成功</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '1'"
-                                                                >
-                                                                    <span class="txt-danger">失败(1)</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '2'"
-                                                                >
-                                                                    <span class="txt-danger">失败(2)</span>
-                                                                </template>
-                                                                <template
-                                                                    v-else-if="scope.row.status == '3'"
-                                                                >
-                                                                    <span class="txt-danger">失败(3)</span>
-                                                                </template>
-                                                                <template v-else>
-                                                                    <span class="txt-info">-</span>
-                                                                </template>
-                                                            </template>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column
-                                                        label="金额 / CZR"
+                                                        label="代币"
                                                         width="230"
                                                         align="right"
                                                     >
                                                         <template slot-scope="scope">
-                                                            <span>{{scope.row.amount | toCZRVal}}</span>
+                                                            <span>{{scope.row.amount | toCZRVal}} {{scope.row.token_symbol}}</span>
                                                         </template>
                                                     </el-table-column>
                                                 </el-table>
-                                            </template>
 
-                                            <!-- page -->
-                                            <template v-if="database.length">
-                                                <div class="pagin-block">
-                                                    <el-button-group>
-                                                        <el-button
-                                                            size="mini"
-                                                            :disabled="btnSwitch.header"
-                                                            @click="getPaginationFlag('header')"
-                                                        >首页</el-button>
-                                                        <el-button
-                                                            size="mini"
-                                                            icon="el-icon-arrow-left"
-                                                            :disabled="btnSwitch.left"
-                                                            @click="getPaginationFlag('left')"
-                                                        >上一页</el-button>
-                                                        <el-button
-                                                            size="mini"
-                                                            :disabled="btnSwitch.right"
-                                                            @click="getPaginationFlag('right')"
-                                                        >
-                                                            下一页
-                                                            <i
-                                                                class="el-icon-arrow-right el-icon--right"
-                                                            ></i>
-                                                        </el-button>
-                                                        <el-button
-                                                            size="mini"
-                                                            :disabled="btnSwitch.footer"
-                                                            @click="getPaginationFlag('footer')"
-                                                        >尾页</el-button>
-                                                    </el-button-group>
-                                                </div>
+                                                <!-- page -->
+                                                <template v-if="trans_token.length">
+                                                    <div class="pagin-block">
+                                                        <el-button-group>
+                                                            <el-button
+                                                                size="mini"
+                                                                :disabled="btnSwitch.header"
+                                                                @click="getPaginationFlag('header')"
+                                                            >首页</el-button>
+                                                            <el-button
+                                                                size="mini"
+                                                                icon="el-icon-arrow-left"
+                                                                :disabled="btnSwitch.left"
+                                                                @click="getPaginationFlag('left')"
+                                                            >上一页</el-button>
+                                                            <el-button
+                                                                size="mini"
+                                                                :disabled="btnSwitch.right"
+                                                                @click="getPaginationFlag('right')"
+                                                            >
+                                                                下一页
+                                                                <i
+                                                                    class="el-icon-arrow-right el-icon--right"
+                                                                ></i>
+                                                            </el-button>
+                                                            <el-button
+                                                                size="mini"
+                                                                :disabled="btnSwitch.footer"
+                                                                @click="getPaginationFlag('footer')"
+                                                            >尾页</el-button>
+                                                        </el-button-group>
+                                                    </div>
+                                                </template>
                                             </template>
-                                        </template>
+                                        </div>
                                     </div>
-                                </div>
-                            </el-tab-pane>
-                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
-                            <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
-                            <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
+                                </el-tab-pane>
+                            </template>
+                            <template v-if="accountInfo.is_has_intel_trans">
+                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                            </template>
+                            <template v-if="accountInfo.is_has_event_logs">
+                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
+                            </template>
+                            <template v-if="accountInfo.type === 2">
+                                <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
+                            </template>
                         </el-tabs>
                     </template>
                 </div>
@@ -337,6 +220,8 @@ import AccountInfo from "@/components/Account/components/account-info";
 let self = null;
 let isDefaultPage = false;
 
+//TODO 交易列表改为 发送 和 接收 两个List ,解决sql搜索慢的问题
+
 export default {
     name: "Block",
     components: {
@@ -347,8 +232,6 @@ export default {
     },
     data() {
         return {
-            TOTAL_VAL: 0,
-            LIMIT_VAL: 20,
             loadingSwitch: true,
             btnSwitch: {
                 header: false,
@@ -356,26 +239,20 @@ export default {
                 right: false,
                 footer: false
             },
-            database: [],
             IS_GET_INFO: false,
             IS_GET_ACC: false,
-            IS_WITNESS: false,
             pageFirstItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                trans_token_id: 0
             },
             pageLastItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                trans_token_id: 0
             },
-            first_stable_index: "",
-            end_stable_index: "",
+            first_trans_token_id: "",
+            end_trans_token_id: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                stable_index: 999999999999,
+                trans_token_id: 999999999999,
                 source: this.$route.query.source || "1" //1 发送方 2 接收方 3见证交易
             },
             accountInfo: {
@@ -393,17 +270,10 @@ export default {
                 born_unit: "",
                 symbol: ""
             },
-            currentPage: 1,
             // change
-            activeName: "transaction",
+            activeName: "trans_token",
             // Token转账
-            trans_token: [],
-            // 合约内交易
-            trans_internal: [],
-            // 事件日志
-            event_logs: [],
-            // 合约代码
-            contract_code: ""
+            trans_token: []
         };
     },
     created() {
@@ -411,14 +281,13 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.stable_index = queryInfo.stable_index;
+            self.url_parm.trans_token_id = queryInfo.trans_token_id;
             self.url_parm.source = queryInfo.source;
         }
         self.initDatabase();
         self.getFlagTransactions(self.url_parm);
     },
     methods: {
-        //TODO 这块功能改为子模块，信息由子模块传给父模块
         async initDatabase() {
             let opt = {
                 account: self.accountInfo.address
@@ -466,7 +335,9 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/account/${self.url_parm.account}?stable_index=0&source=${
+                    `/account/${
+                        self.url_parm.account
+                    }/trans_token?trans_token_id=0&source=${
                         self.url_parm.source
                     }&position=4`
                 );
@@ -475,7 +346,7 @@ export default {
             // 想取第一页
             if (val === "header") {
                 self.$router.push(
-                    `/account/${self.url_parm.account}?source=${
+                    `/account/${self.url_parm.account}/trans_token?source=${
                         self.url_parm.source
                     }`
                 );
@@ -485,8 +356,10 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/account/${self.url_parm.account}?stable_index=${
-                        self.pageFirstItem.stable_index
+                    `/account/${
+                        self.url_parm.account
+                    }/trans_token?trans_token_id=${
+                        self.pageFirstItem.trans_token_id
                     }&source=${self.url_parm.source}&position=2`
                 );
                 return;
@@ -495,8 +368,10 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/account/${self.url_parm.account}?stable_index=${
-                        self.pageLastItem.stable_index
+                    `/account/${
+                        self.url_parm.account
+                    }/trans_token?trans_token_id=${
+                        self.pageLastItem.trans_token_id
                     }&source=${self.url_parm.source}&position=3`
                 );
                 return;
@@ -504,9 +379,10 @@ export default {
         },
         handlerChange(val) {
             self.$router.push(
-                `/account/${self.url_parm.account}?source=${val}`
+                `/account/${self.url_parm.account}/trans_token?source=${val}`
             );
         },
+
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
@@ -517,10 +393,10 @@ export default {
                 "/api/get_account_trans_flag",
                 opt
             );
-            console.log("getFlagTransactions", response);
+
             if (response.success) {
-                self.first_stable_index = response.near_item.stable_index;
-                self.end_stable_index = response.end_item.stable_index;
+                self.first_trans_token_id = response.near_item.trans_token_id;
+                self.end_trans_token_id = response.end_item.trans_token_id;
                 self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
@@ -533,26 +409,23 @@ export default {
                 position: parm.position,
                 source: parm.source,
                 account: parm.account,
-                stable_index: parm.stable_index
+                trans_token_id: parm.trans_token_id
             };
-            let response = await self.$api.get(
-                "/api/get_account_transactions",
-                opt
-            );
+            let response = await self.$api.get("/api/get_trans_token", opt);
 
             if (response.success) {
-                self.database = response.transactions;
-                if (response.transactions.length) {
-                    self.pageFirstItem = response.transactions[0];
+                self.trans_token = response.data;
+                if (response.data.length) {
+                    self.pageFirstItem = response.data[0];
                     self.pageLastItem =
-                        response.transactions[response.transactions.length - 1];
+                        response.data[response.data.length - 1];
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;
                     return;
                 }
             } else {
-                self.database = [];
+                self.trans_token = [];
             }
             //禁止首页上一页
             if (parm.position === "1") {
@@ -562,15 +435,18 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            if (self.database.length > 0) {
+            if (self.trans_token.length > 0) {
                 if (
-                    self.first_stable_index === self.pageFirstItem.stable_index
+                    self.first_trans_token_id ===
+                    self.pageFirstItem.trans_token_id
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
-                if (self.end_stable_index === self.pageLastItem.stable_index) {
+                if (
+                    self.end_trans_token_id === self.pageLastItem.trans_token_id
+                ) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }
@@ -597,13 +473,11 @@ export default {
             self.loadingSwitch = true;
             switch (tab.name) {
                 case "transaction":
-                    self.IS_GET_INFO = true;
-                    self.loadingSwitch = false;
+                    this.$router.push(`/account/${self.accountInfo.address}`);
                     break;
                 case "trans_token":
-                    this.$router.push(
-                        `/account/${self.accountInfo.address}/trans_token`
-                    );
+                    self.IS_GET_INFO = true;
+                    self.loadingSwitch = false;
                     break;
                 case "trans_internal":
                     this.$router.push(
@@ -621,7 +495,6 @@ export default {
                     );
                     break;
             }
-            // this.$router.push(`/account/${self.accountInfo.address}/code`);
         }
     }
 };
@@ -667,9 +540,6 @@ export default {
 .block-item-des {
     padding: 10px 0;
     border-bottom: 1px dashed #f6f6f6;
-}
-.account-panel {
-    min-height: 150px;
 }
 @media (max-width: 1199px) {
     .bui-dlist {

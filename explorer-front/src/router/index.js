@@ -7,8 +7,11 @@ import Dag from '@/components/dag'
 
 // account
 import Account from '@/components/account'
-import contractCode from '@/components/Account/contract_code'
 import AccountTransaction from '@/components/Account/transaction'
+import AccountTransToken from '@/components/Account/trans_token'
+import AccountTransInternal from '@/components/Account/trans_internal'
+import AccountEventLogs from '@/components/Account/event_logs'
+import contractCode from '@/components/Account/contract_code'
 
 import Accounts from '@/components/accounts'
 import Normal_Trans from '@/components/normal_trans'
@@ -59,16 +62,33 @@ export default new Router({
       name: 'Block',
       component: Block
     },
-    {
-      path: '/account/:id/code',
-      name: 'contractCode',
-      component: contractCode
-    },
+    // account相关
     {
       path: '/account/:id',
       name: 'AccountTransaction',
       component: AccountTransaction
     },
+    {
+      path: '/account/:id/trans_token',
+      name: 'AccountTransToken',
+      component: AccountTransToken
+    },
+    {
+      path: '/account/:id/trans_internal',
+      name: 'AccountTransInternal',
+      component: AccountTransInternal
+    },
+    {
+      path: '/account/:id/event_logs',
+      name: 'AccountEventLogs',
+      component: AccountEventLogs
+    },
+    {
+      path: '/account/:id/contract_code',
+      name: 'contractCode',
+      component: contractCode
+    },
+    // 404
     {
       path: '*',
       component: NotFound
