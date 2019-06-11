@@ -93,7 +93,7 @@ CREATE TABLE public.trans_normal
     "gas_used" numeric,
     "gas_price" numeric,
     "contract_address" text,
-    "log" boolean,
+    "log" text,
     "log_bloom" text,
 
     -- 普通交易和创始交易私有的

@@ -5,7 +5,7 @@
     let pgPromise = require("./PG-promise"); //引入
     let client = await pgPromise.pool.connect(); //获取连接
 
-    let Czr = require("../czr/index");
+    let Czr = require("czr");
     let czr = new Czr();
 
     //写日志
@@ -30,6 +30,7 @@
     let witnessTransInsertAry = []; //储存数据库不存在的unit,插入[Db]
     let genesisTransInsertAry = []; //插入[Db]
     let normalTransInsertAry = []; //插入[Db]
+    let hashGroupAry = [];
 
     let accountsInsertAry = []; //不存在的账户,插入[Db]
     let accountsUpdateAry = []; //存在的账户,更新[Db]
@@ -127,7 +128,7 @@
             }
         },
         async insertWitnessLiss() {
-            czr.request.getWitnessList().then(function (wit_list) {
+            czr.request.witnessList().then(function (wit_list) {
                 logger.info(`获取网络中witness_list -Success `);
                 logger.info(wit_list);
                 return wit_list;
@@ -242,9 +243,82 @@
         //插入稳定的Unit ------------------------------------------------ Start
         getUnitByLSBI() {
             logger.info(`开始通过 ${MCI_LIMIT} ${db_LSBI} 向节点获取blocks ---------------------`);
-            czr.request.stableBlocks(MCI_LIMIT, db_LSBI).then(function (data) {
+            czr.request.stableBlocks(MCI_LIMIT, db_LSBI).then(async function (data) {
+                //block信息一次拿不完，需要拿2次；
                 BLOCKS_LENGTH = data.blocks.length;
                 if (BLOCKS_LENGTH) {
+                    //拿hash对应状态
+                    data.blocks.forEach((item) => {
+                        hashGroupAry.push(item.hash);
+                    });
+                    let hashStatesGroup = await czr.request.getBlockStates(hashGroupAry);
+                    let blockStatesAry = hashStatesGroup.block_states;
+                    // logger.info(blockStatesAry);
+                    db_LSBI = blockStatesAry[blockStatesAry.length - 1].stable_content.stable_index;
+                    logger.info(`拿到了结果, 最新LSBI: ${db_LSBI}`);
+                    //写一级数据（TODO：目前继续使用以前一级数据模式，后期需要做调整）
+                    data.blocks.forEach((item, index) => {
+                        if (item.type === 0) {
+                            //创世交易
+                            data.blocks[index].to = item.content.to;
+                            data.blocks[index].amount = item.content.amount;
+                            data.blocks[index].data_hash = item.content.data_hash;//++新增属性
+                            data.blocks[index].data = item.content.data;
+                            data.blocks[index].parents = [];
+                            //status
+                            data.blocks[index].witnessed_level = blockStatesAry[index].content.witnessed_level;
+                            data.blocks[index].is_free = blockStatesAry[index].stable_content.is_free;
+                            data.blocks[index].is_on_mc = blockStatesAry[index].stable_content.is_on_mc;
+
+                        }
+                        if (item.type === 1) {
+                            //见证交易
+                            data.blocks[index].previous = item.content.previous;
+                            data.blocks[index].parents = item.content.parents || [];
+                            data.blocks[index].links = item.content.links || [];//++新增属性
+                            data.blocks[index].last_stable_block = item.content.last_stable_block;
+                            data.blocks[index].last_summary_block = item.content.last_summary_block;
+                            data.blocks[index].last_summary = item.content.last_summary;
+                            //status
+                            data.blocks[index].witnessed_level = blockStatesAry[index].content.witnessed_level;
+                            data.blocks[index].best_parent = blockStatesAry[index].content.best_parent;
+                            data.blocks[index].is_free = blockStatesAry[index].stable_content.is_free;
+                            data.blocks[index].is_on_mc = blockStatesAry[index].stable_content.is_on_mc;
+
+                        }
+                        if (item.type === 2) {
+                            data.blocks[index].to = item.content.to;
+                            data.blocks[index].amount = item.content.amount;
+                            data.blocks[index].data_hash = item.content.data_hash;//++新增属性
+                            data.blocks[index].data = item.content.data;
+                            //普通交易特有
+                            data.blocks[index].previous = item.content.previous;
+                            data.blocks[index].gas = item.content.gas;
+                            data.blocks[index].gas_price = item.content.gas_price;
+                            //status
+                        }
+
+                        //写状态数据
+                        //共有状态
+                        data.blocks[index].level = blockStatesAry[index].content.level;
+                        data.blocks[index].is_stable = blockStatesAry[index].is_stable;
+                        data.blocks[index].status = blockStatesAry[index].stable_content.status;
+                        data.blocks[index].stable_index = blockStatesAry[index].stable_content.stable_index;
+                        data.blocks[index].mc_timestamp = blockStatesAry[index].stable_content.mc_timestamp;
+                        data.blocks[index].stable_timestamp = blockStatesAry[index].stable_content.stable_timestamp;
+                        data.blocks[index].mci = blockStatesAry[index].stable_content.mci;
+
+                        if ((item.type === 2) || (item.type === 0)) {
+                            data.blocks[index].from_state = blockStatesAry[index].stable_content.from_state;
+                            data.blocks[index].to_states = blockStatesAry[index].stable_content.to_states;
+                            data.blocks[index].gas_used = blockStatesAry[index].stable_content.gas_used;
+                            data.blocks[index].log = blockStatesAry[index].stable_content.log;
+                            data.blocks[index].log_bloom = blockStatesAry[index].stable_content.log_bloom;
+                            data.blocks[index].contract_address = blockStatesAry[index].stable_content.contract_address;
+                        }
+                    });
+                    hashGroupAry = [];
+
                     data.blocks.forEach((item) => {
                         //储存所有hash对应的type
                         allTransTypeAry.push({
@@ -264,8 +338,6 @@
                             }
                         }
                     });
-                    db_LSBI = data.blocks[BLOCKS_LENGTH - 1].stable_index;
-                    logger.info(`拿到了结果, 最新LSBI: ${db_LSBI}`);
                     pageUtility.filterData();
                 } else {
                     //该index没有值
