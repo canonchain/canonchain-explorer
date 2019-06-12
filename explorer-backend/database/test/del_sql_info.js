@@ -106,6 +106,7 @@
                         ('normal_count',0),
                         ('done_stable_index',-1),
                         ('last_mci',0),
+                        ('token_count',0),
                         ('last_stable_mci',0),
                         ('last_stable_block_index',0 )
                     ) 

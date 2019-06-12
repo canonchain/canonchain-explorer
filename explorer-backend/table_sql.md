@@ -448,6 +448,7 @@ TABLESPACE pg_default;
 
 CREATE TABLE public.token_asset
 (
+    token_asset_id bigserial,
     account text,
     contract_account text,
     symbol text,

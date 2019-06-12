@@ -1,12 +1,16 @@
 <template>
     <div id="header">
-        <div class="container ">
-            <nav class="navbar navbar-expand-md navbar-dark  justify-content-between">
-
+        <div class="container">
+            <nav class="navbar navbar-expand-md navbar-dark justify-content-between">
                 <router-link class="navbar-brand" to="/">
                     <img src="@/assets/logo.png" alt="Logo" class="czr-logo" height="50px;">
                 </router-link>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-toggle="collapse"
+                    data-target="#collapsibleNavbar"
+                >
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -15,7 +19,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
-        </button> -->
+                </button>-->
 
                 <!-- 这个 div 加上 justify-content-end -->
                 <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
@@ -32,17 +36,17 @@
                         <li class="nav-item">
                             <router-link class="nav-link" to="/witness_trans">见证交易</router-link>
                         </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" to="/tokens">代币</router-link>
+                        </li>
                         <li class="nav-item" v-if="is_mobile == false">
                             <router-link class="nav-link" to="/dag">DAG</router-link>
                         </li>
                     </ul>
                 </div>
-
             </nav>
         </div>
-
     </div>
-
 </template>
 
 <script>
@@ -50,7 +54,7 @@ export default {
     data() {
         return {
             dialogVisible: false,
-            is_mobile:true,
+            is_mobile: true,
             tableData: []
         };
     },
@@ -110,7 +114,7 @@ export default {
     -o-transform: rotate(90deg);
     transform: rotate(90deg);
 }
-.navbar{
+.navbar {
     padding: 0;
 }
 

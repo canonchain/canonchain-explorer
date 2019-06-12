@@ -17,6 +17,10 @@ import Accounts from '@/components/accounts'
 import Normal_Trans from '@/components/normal_trans'
 import WitnessTrans from '@/components/witness_trans'
 import NotFound from '@/components/NotFound/NotFound'
+//Tokens
+import Tokens from '@/components/tokens'
+import Token from '@/components/Token/token'
+import TokenHolder from '@/components/Token/holder'
 
 Vue.use(Router)
 
@@ -87,6 +91,22 @@ export default new Router({
       path: '/account/:id/contract_code',
       name: 'contractCode',
       component: contractCode
+    },
+    //Tokens
+    {
+      path: '/tokens',
+      name: 'Tokens',
+      component: Tokens
+    },
+    {
+      path: '/token/:id',
+      name: 'Token',
+      component: Token
+    },
+    {
+      path: '/token/:id/holder',
+      name: 'Token',
+      component: TokenHolder
     },
     // 404
     {

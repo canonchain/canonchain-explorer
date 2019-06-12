@@ -41,10 +41,10 @@
         trans_normal: async () => {
             console.log("accounts 开始")
             let tempAry = [
-                "('HASHAAAA',1,'CZR_aaaaa','previous','1560246068','work','signature',99,1,101,0,18,'1560246068','1560246068',1000,889,1300,'contract_aaa','log','log_bloom','CZR_bbbbb','123123','data','data_hash',true,true,true)",
-                "('HASHBBBB',1,'CZR_aaaaa','previous','1560246068','work','signature',99,1,101,0,19,'1570246068','1570246068',1000,889,1300,'contract_aaa','log','log_bloom','CZR_bbbbb','123123','data','data_hash',true,true,true)",
-                "('HASHCCCC',1,'CZR_bbbbb','previous','1560246068','work','signature',99,1,101,0,20,'1580246068','1580246068',1000,889,1300,'contract_aaa','log','log_bloom','CZR_aaaaa','123123','data','data_hash',true,true,true)",
-                "('HASHDDDD',1,'CZR_aaaaa','previous','1560246068','work','signature',99,1,101,0,21,'1590246068','1590246068',1000,889,1300,'contract_aaa','log','log_bloom','CZR_bbbbb','123123','data','data_hash',true,true,true)"
+                "('HASHAAAA',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,18,'1560246068','1560246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)",
+                "('HASHBBBB',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,19,'1570246068','1570246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)",
+                "('HASHCCCC',1,'czr_bbbbb','previous','1560246068','work','signature',99,1,101,0,20,'1580246068','1580246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_aaaaa','123123','data','data_hash',true,true,true)",
+                "('HASHDDDD',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,21,'1590246068','1590246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)"
             ];
             let insertSql = {
                 text: `INSERT INTO trans_normal 
@@ -97,11 +97,11 @@
         token: async () => {
             console.log("token 开始")
             let tempAry = [
-                "('czr_aaaaa','CanonChain1','CZR1',18,'14000000000000',128,68)",
-                "('czr_bbbbb','CanonChain2','CZR2',18,'15000000000000',138,38)",
-                "('ACAAAAAAAAAAAA','CanonChain3','CZR3',18,'16000000000000',148,12)",
-                "('ADAAAAAAAAAAAA','CanonChain4','CZR4',18,'17000000000000',158,28)",
-                "('AEAAAAAAAAAAAA','CanonChain5','CZR5',18,'18000000000000',168,18)"
+                "('czr_aaaaa','CanonChain1','5A',18,'14000000000000000000000000000000',128,68)",
+                "('czr_bbbbb','CanonChain2','5B',18,'15000000000000000000000000000000',138,38)",
+                "('czr_ccccc','CanonChain3','5C',18,'16000000000000000000000000000000',148,12)",
+                "('czr_ddddd','CanonChain4','5D',18,'17000000000000000000000000000000',158,28)",
+                "('czr_eeeee','CanonChain5','5E',18,'18000000000000000000000000000000',168,18)"
             ];
             let insertSql = {
                 text: `INSERT INTO token 
@@ -114,15 +114,15 @@
         token_asset: async () => {
             console.log("token_asset 开始")
             let tempAry = [
-                "('czr_aaaaa','AAAAAAAAAAAAAA','CZR1','15678532000001')",
-                "('czr_aaaaa','ABAAAAAAAAAAAA','CZR2','25678532000001')",
-                "('czr_bbbbb','ACAAAAAAAAAAAA','CZR3','35678532000001')",
-                "('czr_aaaaa','ADAAAAAAAAAAAA','CZR4','45678532000001')",
-                "('czr_bbbbb','AEAAAAAAAAAAAA','CZR5','55678532000001')"
+                "('czr_aaaaa','czr_aaaaa','CZR1','15678532000001')",
+                "('czr_aaaaa','czr_bbbbb','CZR2','25678532000001')",
+                "('czr_bbbbb','czr_bbbbb','CZR3','35678532000001')",
+                "('czr_aaaaa','czr_bbbbb','CZR4','45678532000001')",
+                "('czr_bbbbb','czr_bbbbb','CZR5','55678532000001')"
             ];
             let insertSql = {
-                text: `INSERT INTO token_asset 
-                ("account","contract_account","symbol","balance") 
+                text: `INSERT INTO token_asset
+                ("account","contract_account","symbol","balance")
                 VALUES ${tempAry.toString()}`
             };
             await pgPromise.query(insertSql);
@@ -131,11 +131,11 @@
         trans_token: async () => {
             console.log("trans_token 开始")
             let tempAry = [
-                "('AAAAAAAAAAAAAA',1560245068,'czr_aaaaa','czr_bbbbb','czr_contr1','CZR','15678532000001')",
-                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb','czr_aaaaa','czr_contr2','CCC','25678532000001')",
-                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb','czr_aaaaa','czr_contr2','CCC','35678532000001')",
-                "('ADAAAAAAAAAAAA',1560248068,'czr_aaaaa','czr_bbbbb','czr_contr1','CZR','45678532000001')",
-                "('AEAAAAAAAAAAAA',1560249068,'czr_aaaaa','czr_bbbbb','czr_contr1','CZR','55678532000001')"
+                "('AAAAAAAAAAAAAA',1560245068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','15678532000001')",
+                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','25678532000001')",
+                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','35678532000001')",
+                "('ADAAAAAAAAAAAA',1560248068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','45678532000001')",
+                "('AEAAAAAAAAAAAA',1560249068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','55678532000001')"
             ];
             let insertSql = {
                 text: `INSERT INTO trans_token 
@@ -165,11 +165,11 @@
         event_log: async () => {
             console.log("event_log 开始")
             let tempAry = [
-                "('AAAAAAAAAAAAAA',1560245068,'czr_bbbbb',1231230000,'CZR','method_function','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb',1231230000,'CCC','method_function','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb',1231230000,'CCC','method_function','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ADAAAAAAAAAAAA',1560248068,'czr_bbbbb',1231230000,'CZR','method_function','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('AEAAAAAAAAAAAA',1560249068,'czr_bbbbb',1231230000,'CZR','method_function','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')"
+                "('AAAAAAAAAAAAAA',1560245068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('ADAAAAAAAAAAAA',1560248068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('AEAAAAAAAAAAAA',1560249068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')"
             ];
             let insertSql = {
                 text: `INSERT INTO event_log 
@@ -178,7 +178,17 @@
             };
             await pgPromise.query(insertSql);
             console.log("event_log 完成")
+        },
+        insertGlobal: async () => {
+            const insertVal = `
+            ('token_count',15 )
+        `;
+            let globalFirstInsert = "INSERT INTO global (key,value) VALUES " + insertVal;
+            let res = await pgPromise.query(globalFirstInsert);
         }
     }
     pageUtility.init();
+
+
+
 })()

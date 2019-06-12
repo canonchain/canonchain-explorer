@@ -350,6 +350,619 @@ router.get("/get_accounts", async function (req, res, next) {
 
 //************************** 账户列表结束
 
+//************************** Token列表开始
+//获取Token交易总数量
+router.get("/get_token_count", async function (req, res, next) {
+
+    PageUtility.timeLog(req, 'start')
+    let sql = `SELECT value AS count FROM global WHERE key = 'token_count'`;
+    PageUtility.timeLog(req, `[1] SELECT token_count Before`)
+    let count = await pgPromise.query(sql)
+    PageUtility.timeLog(req, `[1] SELECT token_count After`)
+
+    if (count.code) {
+        responseData = {
+            count: 0,
+            code: 500,
+            success: false,
+            message: "count token_count Error"
+        }
+        res.json(responseData);
+    } else {
+        responseData = {
+            count: Number(count.rows[0].count || 0),
+            code: 200,
+            success: true,
+            message: "success"
+        }
+        res.json(responseData);
+    }
+})
+//获取交易中最新Flag
+router.get("/get_token_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let errorInfo = {
+        "token_id": "0"
+    }
+    let start_sql = {
+        text: `
+            Select 
+                "token_id"
+            FROM 
+                token
+            order by
+                "token_id" desc
+            LIMIT
+                1
+        `
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "token_id"
+            FROM
+                token
+            order by
+                "token_id" asc
+            LIMIT
+                1
+        `
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0],
+            end_item: transEndInfo.rows[0],
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取Token列表
+router.get("/get_tokens", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;
+    let columnName = '"token_id","contract_account","token_name","token_symbol","token_total","transaction_count","account_count"',
+        tableName = "token";
+
+    let opt;
+
+    // 首页：
+    /** 
+     * 首页：倒序 limit 20
+     * 尾页：顺序 limit 20
+    */
+
+    if (queryVal.position === "1") {
+        opt = {
+            text: `
+                Select 
+                    ${columnName}
+                FROM
+                    ${tableName}
+                order by 
+                    "token_id" desc
+                LIMIT
+                    $1
+            `,
+            values: [LIMIT_VAL]
+        }
+
+    } else if (queryVal.position === "4") {
+        // 尾页
+        opt = {
+            text: `
+                Select 
+                    ${columnName}
+                FROM
+                    ${tableName}
+                order by 
+                    "token_id" asc
+                LIMIT
+                    $1
+            `,
+            values: [LIMIT_VAL]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    ${columnName}
+                FROM 
+                    ${tableName} 
+                WHERE 
+                    "token_id" ${direction} $1
+                order by 
+                    "token_id" ${sortInfo}
+                LIMIT
+                    $2
+            `,
+            values: [Number(queryVal.token_id), LIMIT_VAL]
+        }
+    }
+
+
+    PageUtility.timeLog(req, '[1] SELECT ${tableName} info Before')
+    let data = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[1] SELECT ${tableName} info After')
+    if (data.code) {
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: `Select trans list FROM ${tableName} Error`
+        }
+        // logger.info(data)
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+        responseData = {
+            data: formatInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//************************** Token列表结束
+
+//************************** Token详情开始
+//获取Token信息
+router.get("/get_token_info", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;
+
+    let opt = {
+        text: `
+        SELECT 
+            "contract_account","token_name","token_symbol","token_precision",
+            "token_total","transaction_count","account_count" 
+        FROM 
+            token
+        WHERE
+            contract_account = $1
+            `,
+        values: [queryVal.account]
+    }
+    PageUtility.timeLog(req, `[1] SELECT get_token_info Before`)
+    let tokenInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, `[1] SELECT get_token_info After`)
+
+    let errorInfo = {
+        "contract_account": queryVal.account,
+        "token_name": "",
+        "token_symbol": "",
+        "token_total": "",
+        "transaction_count": "",
+        "account_count": ""
+    }
+    if (tokenInfo.code) {
+        responseData = {
+            data: {},
+            code: 500,
+            success: false,
+            message: "count token_count Error"
+        }
+        res.json(responseData);
+    } else {
+        responseData = {
+            data: tokenInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+        res.json(responseData);
+    }
+})
+
+//获取Token交易Flag
+router.get("/get_token_trans_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    let errorInfo = {
+        "trans_token_id": "0"
+    }
+
+    let start_sql = {
+        text: `
+            Select 
+                "trans_token_id"
+            FROM 
+                "trans_token"
+            WHERE
+                "contract_account" = $1
+            order by
+                "trans_token_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    // console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "trans_token_id"
+            FROM 
+                "trans_token"
+            WHERE
+                "contract_account" = $1
+            order by 
+                "trans_token_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取Token交易
+router.get("/get_token_trans", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account | source | trans_token_id
+
+    let opt;
+
+    //根据position查询
+    if (queryVal.position === "1") {
+        //首页
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE
+                    "contract_account" = $1
+                order by 
+                    "trans_token_id" desc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else if (queryVal.position === "4") {
+        //尾页
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE
+                    "contract_account" = $1
+                order by 
+                    "trans_token_id" asc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                FROM 
+                    "trans_token"
+                WHERE 
+                    (trans_token_id ${direction} $2)
+                    and
+                    ("contract_account" = $1)
+                order by 
+                    "trans_token_id" ${sortInfo}
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account, queryVal.trans_token_id]
+        };
+    }
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_token Error"
+        }
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+        if (data.rows.length) {
+            responseData = {
+                data: formatInfo,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: [],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+
+//获取Token持有账户Flag
+router.get("/get_token_holder_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    let errorInfo = {}
+
+    let start_sql = {
+        text: `
+            Select 
+                "token_asset_id"
+            FROM 
+                "token_asset"
+            WHERE
+                "contract_account" = $1
+            order by
+                "token_asset_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+
+
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    // console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "token_asset_id"
+            FROM 
+                "token_asset"
+            WHERE
+                "contract_account" = $1
+            order by 
+                "token_asset_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取Token持有人
+router.get("/get_token_holder", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account | source | token_asset_id
+    let opt;
+
+    //根据position查询
+    if (queryVal.position === "1") {
+        //首页
+        opt = {
+            text: `
+                Select 
+                    "token_asset_id","account","contract_account","symbol","balance"
+                FROM 
+                    "token_asset"
+                WHERE
+                    "contract_account" = $1
+                order by 
+                    "token_asset_id" desc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else if (queryVal.position === "4") {
+        //尾页
+        opt = {
+            text: `
+                Select 
+                    "token_asset_id","account","contract_account","symbol","balance"
+                FROM
+                    "token_asset"
+                WHERE
+                    "contract_account" = $1
+                order by 
+                    "token_asset_id" asc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account]
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    "token_asset_id","account","contract_account","symbol","balance"
+                FROM 
+                    "token_asset"
+                WHERE 
+                    (token_asset_id ${direction} $2)
+                    and
+                    ("contract_account" = $1)
+                order by
+                    "token_asset_id" ${sortInfo}
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.account, queryVal.token_asset_id]
+        };
+    }
+
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM token_asset Error"
+        }
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+        if (data.rows.length) {
+            responseData = {
+                data: formatInfo,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: [],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//************************** Token详情结束
+
+
 //************************** 交易列表开始
 //获取交易总数量
 router.get("/get_trans_count", async function (req, res, next) {
@@ -380,7 +993,7 @@ router.get("/get_trans_count", async function (req, res, next) {
     }
 })
 
-//获取交易表中最近(LIMIT+1)项
+//获取交易表中最近
 router.get("/get_trans_flag", async function (req, res, next) {
     let tableName = (req.query.type === '2') ? "trans_normal" : "trans_witness"
     PageUtility.timeLog(req, 'start')
@@ -972,6 +1585,95 @@ router.get("/get_account_transactions", async function (req, res, next) {
     res.json(responseData);
 })
 
+// 获取Token转账的flag
+//参数： 
+//account
+//source 1:from     2:to
+router.get("/get_trans_token_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    var querySour = "from";
+
+    if (queryInfo.source === '1') {
+        querySour = "from";
+    } else if (queryInfo.source === '2') {
+        querySour = "to";
+    }
+    let errorInfo = {
+        "trans_token_id": "0"
+    }
+
+    let start_sql = {
+        text: `
+            Select 
+                "trans_token_id"
+            FROM 
+                "trans_token"
+            WHERE
+                ("${querySour}" = $1)
+            order by
+                "trans_token_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+
+    // console.log(querySour);
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    // console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "trans_token_id"
+            FROM 
+                "trans_token"
+            WHERE
+                ("${querySour}" = $1)
+            order by 
+                "trans_token_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
 //获取Token转账
 router.get("/get_trans_token", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
@@ -1096,10 +1798,97 @@ router.get("/get_trans_token", async function (req, res, next) {
     }
     res.json(responseData);
 })
-//TODO 获取交易内转账 [未完成]
-router.get("/trans_internal", async function (req, res, next) {
+
+//TODO 获取内部交易的Flag
+router.get("/get_trans_internal_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account | source | trans_token_id
+    var queryInfo = req.query;
+    var querySour = "from";
+
+    if (queryInfo.source === '1') {
+        querySour = "from";
+    } else if (queryInfo.source === '2') {
+        querySour = "to";
+    }
+    let errorInfo = {
+        "trans_internal_id": "0"
+    }
+
+    let start_sql = {
+        text: `
+            Select 
+                "trans_internal_id"
+            FROM 
+                "trans_internal"
+            WHERE
+                ("${querySour}" = $1)
+            order by
+                "trans_internal_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+
+    // console.log(querySour);
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    // console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "trans_internal_id"
+            FROM 
+                "trans_internal"
+            WHERE
+                ("${querySour}" = $1)
+            order by 
+                "trans_internal_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//TODO 获取内部交易[未完成]
+router.get("/get_trans_internal", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//account | source | trans_internal_id
     var querySour = "";
 
     if (queryVal.source === '1') {
@@ -1121,7 +1910,7 @@ router.get("/trans_internal", async function (req, res, next) {
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "trans_token_id" desc
+                    "trans_internal_id" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1138,7 +1927,7 @@ router.get("/trans_internal", async function (req, res, next) {
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "trans_token_id" asc
+                    "trans_internal_id" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1160,15 +1949,15 @@ router.get("/trans_internal", async function (req, res, next) {
                 FROM 
                     "trans_token"
                 WHERE 
-                    (trans_token_id ${direction} $2)
+                    (trans_internal_id ${direction} $2)
                     and
                     ("${querySour}" = $1)
                 order by 
-                    "trans_token_id" ${sortInfo}
+                    "trans_internal_id" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
-            values: [queryVal.account, queryVal.trans_token_id]
+            values: [queryVal.account, queryVal.trans_internal_id]
         };
     }
     let data = await pgPromise.query(opt);
@@ -1178,7 +1967,7 @@ router.get("/trans_internal", async function (req, res, next) {
             data: [],
             code: 500,
             success: false,
-            message: "Select FROM trans_token Error"
+            message: "Select FROM trans_internal Error"
         }
     } else {
         let formatInfo;
@@ -1352,13 +2141,34 @@ router.get("/get_transaction_short", async function (req, res, next) {
 
     if (typeValue === '0') {
         tableName = 'trans_genesis';
-        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","to","amount","data","data_hash"';
+        tableCol = `
+        "hash","type","from","exec_timestamp","work","signature",
+        "to","amount","data_hash","data",
+
+        "is_stable",
+        "level","witnessed_level",
+        "is_free","is_on_mc","from_state","to_states","gas_used","log","log_bloom"
+        `;
     } else if (typeValue === '1') {
         tableName = 'trans_witness';
-        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","last_stable_block","last_summary_block","last_summary","is_free","witnessed_level","best_parent","is_on_mc"';
+        tableCol = `
+        "hash","type","from","exec_timestamp","work","signature",
+        "previous","links","last_stable_block","last_summary_block","last_summary",
+
+        "is_stable",
+        "level","witnessed_level","best_parent",
+        "is_free","is_on_mc",
+        `;
     } else {
         tableName = 'trans_normal'
-        tableCol = '"hash","type","from","previous","exec_timestamp","work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp","to","amount","data","data_hash","gas","gas_used","gas_price","contract_address","log","log_bloom"';
+        tableCol = `
+        "hash","type","from","exec_timestamp","work","signature",
+        "to","amount","previous","gas","gas_price","data_hash","data",
+
+        "is_stable",
+        "level",
+        "from_state","to_states","gas_used","log","log_bloom","contract_address"
+        `;
     }
 
     //TODO 少选点信息

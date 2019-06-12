@@ -390,7 +390,7 @@ export default {
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
-                "/api/get_account_trans_flag",
+                "/api/get_trans_token_flag",
                 opt
             );
 
