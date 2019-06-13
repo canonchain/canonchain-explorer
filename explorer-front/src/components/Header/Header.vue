@@ -39,6 +39,9 @@
                         <li class="nav-item">
                             <router-link class="nav-link" to="/tokens">代币</router-link>
                         </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" to="/internals">内部交易</router-link>
+                        </li>
                         <li class="nav-item" v-if="is_mobile == false">
                             <router-link class="nav-link" to="/dag">DAG</router-link>
                         </li>

@@ -316,6 +316,49 @@
                             </div>
                         </div>
                     </template>
+                    <div class="block-table">
+                        <template>
+                            <el-tabs v-model="activeName" @tab-click="change_table">
+                                <template v-if="blockInfo.is_token_trans">
+                                    <el-tab-pane label="代币转账" name="token_trans">
+                                        <div class="block-content" v-loading="loadingSwitch">
+                                            <template v-if="IS_GET_INFO">
+                                                <el-table :data="trans_token" style="width: 100%">
+                                                    <el-table-column label="发款方" width="180">
+                                                        <template slot-scope="scope">
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.from}"
+                                                            >{{scope.row.from}}</router-link>
+                                                        </template>
+                                                    </el-table-column>
+                                                    <el-table-column label="收款方" width="180">
+                                                        <template slot-scope="scope">
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.to}"
+                                                            >{{scope.row.to}}</router-link>
+                                                        </template>
+                                                    </el-table-column>
+                                                    <el-table-column label="代币" align="right">
+                                                        <template slot-scope="scope">
+                                                            <span>{{scope.row.amount | toCZRVal}} {{scope.row.token_symbol}}</span>
+                                                        </template>
+                                                    </el-table-column>
+                                                </el-table>
+                                            </template>
+                                        </div>
+                                    </el-tab-pane>
+                                </template>
+                                <template v-if="blockInfo.is_intel_trans">
+                                    <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                                </template>
+                                <template v-if="blockInfo.is_event_log">
+                                    <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                                </template>
+                            </el-tabs>
+                        </template>
+                    </div>
                 </template>
             </div>
         </div>
@@ -377,13 +420,20 @@ export default {
                 witnessed_level: "",
                 best_parent: "",
                 is_free: "",
-                is_on_mc: ""
-            }
+                is_on_mc: "",
+                is_event_log: "",
+                is_token_trans: "",
+                is_intel_trans: ""
+            },
+            // change
+            activeName: "token_trans",
+            trans_token: []
         };
     },
     created() {
         self = this;
         this.initDatabase();
+        this.getTransactions();
     },
     methods: {
         async initDatabase() {
@@ -406,6 +456,39 @@ export default {
             }
             self.IS_GET_INFO = true;
             self.loadingSwitch = false;
+        },
+
+        async getTransactions() {
+            //TODO 没有搜见证交易
+            self.loadingSwitch = true;
+            let opt = {
+                hash: self.blockHash
+            };
+            let response = await self.$api.get(
+                "/api/get_transaction_trans_token",
+                opt
+            );
+
+            if (response.success) {
+                self.trans_token = response.data;
+            } else {
+                self.trans_token = [];
+            }
+
+            // self.IS_GET_INFO = true;
+            // self.loadingSwitch = false;
+        },
+        change_table(tab, event) {
+            switch (tab.name) {
+                case "token_trans":
+                    break;
+                case "intel_trans":
+                    this.$router.push(`/block/${self.blockHash}/intel_trans`);
+                    break;
+                case "event_log":
+                    this.$router.push(`/block/${self.blockHash}/event_log`);
+                    break;
+            }
         }
     }
 };
@@ -517,5 +600,9 @@ export default {
     table-layout: fixed;
     word-break: break-all;
     overflow: hidden;
+}
+
+.block-table {
+    padding: 30px 0;
 }
 </style>

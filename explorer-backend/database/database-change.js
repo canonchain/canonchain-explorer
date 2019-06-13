@@ -5,8 +5,8 @@
     let pgPromise = require("./PG-promise"); //引入
     let client = await pgPromise.pool.connect(); //获取连接
 
-    let Czr = require("../czr/index");
-    // let Czr = require("czr");
+    // let Czr = require("../czr/index");
+    let Czr = require("czr");
     let czr = new Czr();
 
     //写日志

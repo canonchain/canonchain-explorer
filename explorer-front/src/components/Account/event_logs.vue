@@ -230,13 +230,8 @@ export default {
                 account: self.accountInfo.address
             };
             let response = await self.$api.get("/api/get_event_log", opt);
-            let tempTopics;
 
             if (response.success) {
-                response.data.forEach(element => {
-                    tempTopics = element.topics.split(",");
-                    element.topics = tempTopics;
-                });
                 self.event_logs = response.data;
             } else {
                 console.error("/api/get_account Error");

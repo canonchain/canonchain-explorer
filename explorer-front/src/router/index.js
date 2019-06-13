@@ -2,8 +2,15 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 import Home from '@/components/home'
-import Block from '@/components/block'
 import Dag from '@/components/dag'
+
+// Block
+import Block from '@/components/block'
+import BlockEventLog from '@/components/Block/event_log'
+import BlockIntelTrans from '@/components/Block/intel_trans'
+
+//internal
+import Internals from '@/components/internals'
 
 // account
 import Account from '@/components/account'
@@ -61,10 +68,26 @@ export default new Router({
       name: 'Dag',
       component: Dag
     },
+    // Block
     {
       path: '/block/:id',
       name: 'Block',
       component: Block
+    },
+    {
+      path: '/block/:id',
+      name: 'Block',
+      component: Block
+    },
+    {
+      path: '/block/:id/intel_trans',
+      name: 'BlockIntelTrans',
+      component: BlockIntelTrans
+    },
+    {
+      path: '/block/:id/event_log',
+      name: 'BlockEventLog',
+      component: BlockEventLog
     },
     // account相关
     {
@@ -107,6 +130,13 @@ export default new Router({
       path: '/token/:id/holder',
       name: 'Token',
       component: TokenHolder
+    },
+
+    //Internals
+    {
+      path: '/internals',
+      name: 'Internals',
+      component: Internals
     },
     // 404
     {

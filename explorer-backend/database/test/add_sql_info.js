@@ -19,9 +19,15 @@
             pageUtility.trans_token();
             pageUtility.trans_internal();
             pageUtility.event_log();
+
+            //trans_type    trans_genesis    trans_witness  trans_normal
+            pageUtility.trans_type();
+            // pageUtility.trans_genesis();
+            // pageUtility.trans_witness();
+            // pageUtility.trans_normal();
+
         },
         accounts: async () => {
-            console.log("accounts 开始")
             let tempAry = [
                 "('czr_aaaaa',1,'1800000000','12',false,false,false,false)",
                 "('czr_bbbbb',2,'1800000000','23',true,true,true,true)"
@@ -39,12 +45,11 @@
             console.log("accounts 完成")
         },
         trans_normal: async () => {
-            console.log("accounts 开始")
             let tempAry = [
-                "('HASHAAAA',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,18,'1560246068','1560246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)",
-                "('HASHBBBB',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,19,'1570246068','1570246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)",
-                "('HASHCCCC',1,'czr_bbbbb','previous','1560246068','work','signature',99,1,101,0,20,'1580246068','1580246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_aaaaa','123123','data','data_hash',true,true,true)",
-                "('HASHDDDD',1,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,21,'1590246068','1590246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true)"
+                "('hash_aaaaa',2,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,18,'1560246068','1560246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true,'from_state','to_states')",
+                "('hash_bbbbb',2,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,19,'1570246068','1570246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true,'from_state','to_states')",
+                "('hash_ccccc',2,'czr_bbbbb','previous','1560246068','work','signature',99,1,101,0,20,'1580246068','1580246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_aaaaa','123123','data','data_hash',true,true,true,'from_state','to_states')",
+                "('hash_ddddd',2,'czr_aaaaa','previous','1560246068','work','signature',99,1,101,0,21,'1590246068','1590246068',1000,889,1300,'contract_aaa','log','log_bloom','czr_bbbbb','123123','data','data_hash',true,true,true,'from_state','to_states')"
             ];
             let insertSql = {
                 text: `INSERT INTO trans_normal 
@@ -56,7 +61,8 @@
                     
                     "to","amount","data","data_hash",
 
-                    "is_event_log","is_token_trans","is_intel_trans"
+                    "is_event_log","is_token_trans","is_intel_trans",
+                    "from_state","to_states"
                 )
                 VALUES ${tempAry.toString()}`
             };
@@ -64,7 +70,6 @@
             console.log("accounts 完成")
         },
         contract: async () => {
-            console.log("contract 开始")
             let tempAry = [
                 "('czr_aaaaa','czr_aaaaa','AAAAA','CanonChain','CZR')",
                 "('czr_bbbbb','czr_aaaaa','WWWWW','CanonChain','CNC')"
@@ -78,13 +83,12 @@
             console.log("contract 完成")
         },
         contract_code: async () => {
-            console.log("contract_code 开始")
             let tempAry = [
                 "('czr_aaaaa','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
                 "('czr_bbbbb','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
-                "('ACAAAAAAAAAAAA','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
-                "('ADAAAAAAAAAAAA','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
-                "('AEAAAAAAAAAAAA','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')"
+                "('hash_ccccc','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
+                "('hash_ddddd','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')",
+                "('hash_eeeee','ASDDDDDDDDDASDASDSADASDASDASDASDASDSADASDASDSDASDAS')"
             ];
             let insertSql = {
                 text: `INSERT INTO contract_code 
@@ -95,7 +99,6 @@
             console.log("contract_code 完成")
         },
         token: async () => {
-            console.log("token 开始")
             let tempAry = [
                 "('czr_aaaaa','CanonChain1','5A',18,'14000000000000000000000000000000',128,68)",
                 "('czr_bbbbb','CanonChain2','5B',18,'15000000000000000000000000000000',138,38)",
@@ -112,7 +115,6 @@
             console.log("token 完成")
         },
         token_asset: async () => {
-            console.log("token_asset 开始")
             let tempAry = [
                 "('czr_aaaaa','czr_aaaaa','CZR1','15678532000001')",
                 "('czr_aaaaa','czr_bbbbb','CZR2','25678532000001')",
@@ -129,13 +131,12 @@
             console.log("token_asset 完成")
         },
         trans_token: async () => {
-            console.log("trans_token 开始")
             let tempAry = [
-                "('AAAAAAAAAAAAAA',1560245068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','15678532000001')",
-                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','25678532000001')",
-                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','35678532000001')",
-                "('ADAAAAAAAAAAAA',1560248068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','45678532000001')",
-                "('AEAAAAAAAAAAAA',1560249068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','55678532000001')"
+                "('hash_aaaaa',1560245068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','15678532000001')",
+                "('hash_bbbbb',1560246068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','25678532000001')",
+                "('hash_ccccc',1560247068,'czr_bbbbb','czr_aaaaa','czr_aaaaa','CCC','35678532000001')",
+                "('hash_ddddd',1560248068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','45678532000001')",
+                "('hash_eeeee',1560249068,'czr_aaaaa','czr_bbbbb','czr_bbbbb','CZR','55678532000001')"
             ];
             let insertSql = {
                 text: `INSERT INTO trans_token 
@@ -146,30 +147,28 @@
             console.log("trans_token 完成")
         },
         trans_internal: async () => {
-            console.log("trans_internal 开始")
             let tempAry = [
-                "('AAAAAAAAAAAAAA',1560245068,'czr_aaaaa','czr_bbbbb',156788001,1111)",
-                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb','czr_aaaaa',256785321,2222)",
-                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb','czr_aaaaa',35678891,3333)",
-                "('ADAAAAAAAAAAAA',1560248068,'czr_aaaaa','czr_bbbbb',456785301,4444)",
-                "('AEAAAAAAAAAAAA',1560249068,'czr_aaaaa','czr_bbbbb',556785301,5555)"
+                "('hash_aaaaa',1560245068,'czr_aaaaa','czr_bbbbb',156788001,1111,'create','0_0')",
+                "('hash_bbbbb',1560246068,'czr_bbbbb','czr_aaaaa',256785321,2222,'create','0_0')",
+                "('hash_ccccc',1560247068,'czr_bbbbb','czr_aaaaa',35678891,3333,'call','0_0')",
+                "('hash_ddddd',1560248068,'czr_aaaaa','czr_bbbbb',456785301,4444,'create','0_0')",
+                "('hash_eeeee',1560249068,'czr_aaaaa','czr_bbbbb',556785301,5555,'call','0_0')"
             ];
             let insertSql = {
                 text: `INSERT INTO trans_internal 
-                ("hash","mc_timestamp","from","to","amount","gas_limit")
+                ("hash","mc_timestamp","from","to","amount","gas_limit","trace_type","trace_flag")
                  VALUES ${tempAry.toString()}`
             };
             await pgPromise.query(insertSql);
             console.log("trans_internal 完成")
         },
         event_log: async () => {
-            console.log("event_log 开始")
             let tempAry = [
-                "('AAAAAAAAAAAAAA',1560245068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ABAAAAAAAAAAAA',1560246068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ACAAAAAAAAAAAA',1560247068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('ADAAAAAAAAAAAA',1560248068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
-                "('AEAAAAAAAAAAAA',1560249068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')"
+                "('hash_aaaaa',1560245068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('hash_bbbbb',1560246068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('hash_ccccc',1560247068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('hash_ddddd',1560248068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')",
+                "('hash_eeeee',1560249068,'czr_bbbbb',1231230000,'0xa9059cbb','transfer(address,uint256)','0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000004beff723725187eedf76256bee1d4144a67249a2,0x00000000000000000000000099fe5d6383289cdd56e54fc0baf7f67c957a8888')"
             ];
             let insertSql = {
                 text: `INSERT INTO event_log 
@@ -179,9 +178,94 @@
             await pgPromise.query(insertSql);
             console.log("event_log 完成")
         },
+        trans_type: async () => {
+            let tempAry = [
+                "('hash_aaaaa',0)",
+                "('hash_bbbbb',1)",
+                "('hash_ccccc',2)"
+            ];
+            let insertSql = {
+                text: `INSERT INTO trans_type
+                ("hash","type")
+                VALUES ${tempAry.toString()}`
+            };
+            await pgPromise.query(insertSql);
+            console.log("trans_type 完成")
+        },
+        trans_genesis: async () => {
+            let tempAry = [
+                `(
+                    'hash_aaaaa',0,'czr_aaaaa','previous',123123123123,
+                    'work','signature',99,0,0,0,0,12312312312312,123123123123123,
+                    'czr_bbbbb','456465456','data','data_hash')`,
+            ];
+            let insertSql = {
+                text: `INSERT INTO trans_genesis
+                (
+                    "hash","type","from","previous","exec_timestamp",
+                    "work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp"
+
+                    ,"to","amount","data","data_hash"
+                )
+                VALUES ${tempAry.toString()}`
+            };
+            await pgPromise.query(insertSql);
+            console.log("trans_genesis 完成")
+        },
+        trans_witness: async () => {
+            let tempAry = [
+                `(
+                    'hash_bbbbb',1,'czr_aaaaa','previous',123123123123,
+                    'work','signature',99,0,0,0,0,12312312312312,123123123123123,
+                    'last_stable_block','last_summary_block','last_summary',1,12,
+                    'best_parent',2
+                )`,
+            ];
+            let insertSql = {
+                text: `INSERT INTO trans_witness
+                (
+                    "hash","type","from","previous","exec_timestamp",
+                    "work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp"
+
+                    ,"last_stable_block","last_summary_block","last_summary","is_free","witnessed_level",
+                    "best_parent","is_on_mc"
+                )
+                VALUES ${tempAry.toString()}`
+            };
+            await pgPromise.query(insertSql);
+            console.log("trans_witness 完成")
+        },
+        // trans_normal: async () => {
+        //     let tempAry = [
+        //         `(
+        //             'hash_ccccc',1,'czr_aaaaa','previous',123123123123,
+        //             'work','signature',99,0,0,0,0,12312312312312,123123123123123,
+
+        //             900,821,123123,'czr_aaaaa','log','log_bloom',
+        //             'czr_bbbbb','456465456','data','data_hash',
+        //             true,true,true,true
+        //         )`,
+        //     ];
+        //     let insertSql = {
+        //         text: `INSERT INTO trans_normal
+        //         (
+        //             "hash","type","from","previous","exec_timestamp",
+        //             "work","signature","level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp",
+
+        //             "gas","gas_used","gas_price","contract_address","log","log_bloom",
+        //             "to","amount","data","data_hash",
+        //             "is_event_log","is_token_trans","is_intel_trans"
+        //         )
+        //         VALUES ${tempAry.toString()}`
+        //     };
+        //     await pgPromise.query(insertSql);
+        //     console.log("trans_normal 完成")
+
+        // },
+
         insertGlobal: async () => {
             const insertVal = `
-            ('token_count',15 )
+            ('internal_count',15 )
         `;
             let globalFirstInsert = "INSERT INTO global (key,value) VALUES " + insertVal;
             let res = await pgPromise.query(globalFirstInsert);

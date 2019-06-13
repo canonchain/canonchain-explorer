@@ -72,6 +72,12 @@
                                                             </el-button>
                                                         </template>
                                                     </el-table-column>
+
+                                                    <el-table-column label="Type" width="80">
+                                                        <template
+                                                            slot-scope="scope"
+                                                        >{{scope.row.trace_type}}</template>
+                                                    </el-table-column>
                                                     <el-table-column label="发送方" width="180">
                                                         <template slot-scope="scope">
                                                             <template
@@ -92,9 +98,6 @@
                                                                 >{{scope.row.from}}</span>
                                                             </template>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column>
-                                                        <el-button type="success" size="mini">→</el-button>
                                                     </el-table-column>
                                                     <el-table-column label="接收方" width="180">
                                                         <template slot-scope="scope">
@@ -122,11 +125,7 @@
                                                             </template>
                                                         </template>
                                                     </el-table-column>
-                                                    <el-table-column
-                                                        label="数额"
-                                                        width="230"
-                                                        align="right"
-                                                    >
+                                                    <el-table-column label="数额" align="right">
                                                         <template slot-scope="scope">
                                                             <span>{{scope.row.amount | toCZRVal}}</span>
                                                         </template>

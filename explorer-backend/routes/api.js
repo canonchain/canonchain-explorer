@@ -962,6 +962,211 @@ router.get("/get_token_holder", async function (req, res, next) {
 })
 //************************** Token详情结束
 
+//**************************内部交易列表 开始
+//获取内部交易交易总数量
+router.get("/get_internal_count", async function (req, res, next) {
+
+    PageUtility.timeLog(req, 'start')
+    let sql = `SELECT value AS count FROM global WHERE key = 'internal_count'`;
+    PageUtility.timeLog(req, `[1] SELECT internal_count Before`)
+    let count = await pgPromise.query(sql)
+    PageUtility.timeLog(req, `[1] SELECT internal_count After`)
+
+    if (count.code) {
+        responseData = {
+            count: 0,
+            code: 500,
+            success: false,
+            message: "count internal_count Error"
+        }
+        res.json(responseData);
+    } else {
+        responseData = {
+            count: Number(count.rows[0].count || 0),
+            code: 200,
+            success: true,
+            message: "success"
+        }
+        res.json(responseData);
+    }
+})
+//获取内部交易的Flag
+router.get("/get_internal_flag", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+    let errorInfo = {
+        "trans_internal_id": "0"
+    }
+
+    let start_sql = {
+        text: `
+            Select 
+                "trans_internal_id"
+            FROM 
+                "trans_internal"
+            order by
+                "trans_internal_id" desc
+            LIMIT
+                1
+        `,
+        values: []
+    }
+
+    // console.log(querySour);
+    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
+    let transStartInfo = await pgPromise.query(start_sql)
+    PageUtility.timeLog(req, '[1] SELECT start_sql After')
+
+    // console.log(transStartInfo.rows);
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "trans_internal_id"
+            FROM 
+                "trans_internal"
+            order by 
+                "trans_internal_id" asc
+            LIMIT
+                1
+        `,
+        values: []
+    }
+    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
+    let transEndInfo = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[2] SELECT end_sql After')
+
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: errorInfo,
+            end_item: errorInfo,
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows[0] || errorInfo,
+            end_item: transEndInfo.rows[0] || errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取内部交易
+router.get("/get_internals", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//trans_internal_id
+    let opt;
+
+    //根据position查询
+    if (queryVal.position === "1") {
+        //首页
+        opt = {
+            text: `
+                Select 
+                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                FROM 
+                    "trans_internal"
+                order by 
+                    "trans_internal_id" desc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: []
+        }
+    } else if (queryVal.position === "4") {
+        //尾页
+        opt = {
+            text: `
+                Select 
+                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                FROM 
+                    "trans_internal"
+                order by 
+                    "trans_internal_id" asc
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: []
+        }
+    } else {
+        let direction, sortInfo;
+        if (queryVal.position === "2") {
+            direction = ">";
+            sortInfo = "asc";
+        } else {
+            direction = "<";
+            sortInfo = "desc";
+        }
+        opt = {
+            text: `
+                Select 
+                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                FROM 
+                    "trans_token"
+                WHERE 
+                    (trans_internal_id ${direction} $1)
+                order by 
+                    "trans_internal_id" ${sortInfo}
+                LIMIT
+                    ${LIMIT_VAL}
+            `,
+            values: [queryVal.trans_internal_id]
+        };
+    }
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_internal Error"
+        }
+    } else {
+        let formatInfo;
+        if ((queryVal.position === "4") || (queryVal.position === "2")) {
+            formatInfo = data.rows.reverse()
+        } else {
+            formatInfo = data.rows;
+        }
+
+        // data.rows.forEach(item => {
+        //     item.trace_type = item.trace_type + "_" + item.trace_flag;
+        // })
+
+        if (data.rows.length) {
+            responseData = {
+                data: formatInfo,
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        } else {
+            responseData = {
+                data: [],
+                code: 200,
+                success: true,
+                message: "success"
+            }
+        }
+    }
+    res.json(responseData);
+})
+//**************************内部交易列表 结束
 
 //************************** 交易列表开始
 //获取交易总数量
@@ -1904,7 +2109,7 @@ router.get("/get_trans_internal", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    *
+                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type","trace_flag"
                 FROM 
                     "trans_internal"
                 WHERE
@@ -1921,7 +2126,7 @@ router.get("/get_trans_internal", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    *
+                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type","trace_flag"
                 FROM 
                     "trans_internal"
                 WHERE
@@ -2023,28 +2228,17 @@ router.get("/get_event_log", async function (req, res, next) {
             message: "Select FROM contract_code Error"
         }
     } else {
-        if (data.rows.length) {
-            responseData = {
-                data: data.rows,
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: {
-                    "contract_account": queryVal.account,
-                    "hash": "",
-                    "mc_timestamp": "",
-                    "amount": "",
-                    "method": "",
-                    "method_function": "",
-                    "topics": ""
-                },
-                code: 200,
-                success: true,
-                message: "success"
-            }
+        let tempTopics;
+        data.rows.forEach(element => {
+            tempTopics = element.topics.split(",");
+            element.topics = tempTopics;
+        });
+
+        responseData = {
+            data: data.rows,
+            code: 200,
+            success: true,
+            message: "success"
         }
     }
     res.json(responseData);
@@ -2106,24 +2300,24 @@ router.get("/get_transaction_short", async function (req, res, next) {
     let tableName = '';
     let tableCol = ''
     let typeValue = 0;
-    if (queryTransaction.length !== 64) {
-        responseData = {
-            transaction: {
-                "hash": queryTransaction,
-                "from": "",
-                "to": "",
-                "amount": "0",
-                "data": "",
-                "exec_timestamp": "1534146836",
-                "status": "0",
-                "is_stable": "0"
-            },
-            code: 500,
-            success: false,
-            message: "hash is not validated"
-        }
-        res.json(responseData);
-    }
+    // if (queryTransaction.length !== 64) {
+    //     responseData = {
+    //         transaction: {
+    //             "hash": queryTransaction,
+    //             "from": "",
+    //             "to": "",
+    //             "amount": "0",
+    //             "data": "",
+    //             "exec_timestamp": "1534146836",
+    //             "status": "0",
+    //             "is_stable": "0"
+    //         },
+    //         code: 500,
+    //         success: false,
+    //         message: "hash is not validated"
+    //     }
+    //     res.json(responseData);
+    // }
     //DO 选择HASH类型
     let type_sql = {
         text: `
@@ -2137,6 +2331,18 @@ router.get("/get_transaction_short", async function (req, res, next) {
         values: [queryTransaction]
     }
     let type = await pgPromise.query(type_sql);
+    if (!type.rows.length) {
+        //不存在的Hash
+        responseData = {
+            transaction: {},
+            code: 200,
+            success: true,
+            message: "hash node found"
+        }
+        res.json(responseData);
+        return;
+    }
+    console.log(type.rows);
     typeValue = type.rows[0].type;
 
     if (typeValue === '0') {
@@ -2146,7 +2352,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
         "to","amount","data_hash","data",
 
         "is_stable",
-        "level","witnessed_level",
+        "level",
         "is_free","is_on_mc","from_state","to_states","gas_used","log","log_bloom"
         `;
     } else if (typeValue === '1') {
@@ -2167,7 +2373,8 @@ router.get("/get_transaction_short", async function (req, res, next) {
 
         "is_stable",
         "level",
-        "from_state","to_states","gas_used","log","log_bloom","contract_address"
+        "from_state","to_states","gas_used","log","log_bloom","contract_address",
+        "is_event_log","is_token_trans","is_intel_trans"
         `;
     }
 
@@ -2187,27 +2394,145 @@ router.get("/get_transaction_short", async function (req, res, next) {
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt)
     PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    let transaction;
+    let errorInfo = {
+        "hash": queryTransaction,
+        "from": "",
+        "to": "",
+        "amount": "0",
+        "data": "",
+        "exec_timestamp": "1534146836",
+        "status": "0",
+        "is_stable": "0"
+    }
 
     if (data.code) {
         responseData = {
-            transaction: {
-                "hash": queryTransaction,
-                "from": "",
-                "to": "",
-                "amount": "0",
-                "data": "",
-                "exec_timestamp": "1534146836",
-                "status": "0",
-                "is_stable": "0"
-            },
+            transaction: errorInfo,
             code: 500,
             success: false,
             message: "select items from transaction error"
         }
     } else {
-        transaction = data.rows[0];
+        transaction = data.rows.length ? data.rows[0] : errorInfo;
         responseData = {
             transaction: transaction,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+// 获取Token转账
+router.get("/get_transaction_trans_token", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//hash
+
+    let opt = {
+        text: `
+            Select 
+                "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+            FROM 
+                "trans_token"
+            WHERE
+                "hash" = $1
+        `,
+        values: [queryVal.hash]
+    }
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_token Error"
+        }
+    } else {
+        responseData = {
+            data: data.rows,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+// 内部交易
+router.get("/get_transaction_trans_internal", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//hash
+    let opt = {
+        text: `
+            Select 
+                "hash","from","to","amount","gas_limit","trace_type","trace_flag"
+            FROM 
+                "trans_internal"
+            WHERE
+                "hash" = $1
+        `,
+        values: [queryVal.hash]
+    }
+
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM trans_internal Error"
+        }
+    } else {
+        data.rows.forEach(item => {
+            item.trace_type = item.trace_type + "_" + item.trace_flag;
+        })
+        responseData = {
+            data: data.rows,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+// 事件日志
+router.get("/get_transaction_event_log", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//hash
+
+    let opt = {
+        text: `
+            Select 
+                "hash","mc_timestamp","contract_account","data","method","method_function","topics"
+            FROM 
+                "event_log"
+            WHERE
+                "hash" = $1
+        `,
+        values: [queryVal.hash]
+    };
+    let data = await pgPromise.query(opt);
+    if (data.code) {
+        // 查询出错
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "Select FROM contract_code Error"
+        }
+    } else {
+        let tempTopics;
+        data.rows.forEach(element => {
+            tempTopics = element.topics.split(",");
+            element.topics = tempTopics;
+        });
+        responseData = {
+            data: data.rows,
             code: 200,
             success: true,
             message: "success"

@@ -107,6 +107,10 @@ CREATE TABLE public.trans_normal
     is_token_trans boolean,
     is_intel_trans boolean,
 
+    --增加的
+    from_state text,
+    to_states text,
+
     CONSTRAINT pkid_pkey PRIMARY KEY (pkid)
 )
 WITH (
@@ -501,6 +505,8 @@ CREATE TABLE public.trans_internal
     "to" text,
     "amount" numeric,
     "gas_limit" bigint,
+    "trace_type" text,
+    "trace_flag" text,
     CONSTRAINT trans_internal_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
