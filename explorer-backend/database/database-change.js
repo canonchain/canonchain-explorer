@@ -24,7 +24,7 @@
 
     // 操作稳定Unit相关变量 Start
     let unitIsFail;
-    let MCI_LIMIT = 500;
+    let MCI_LIMIT = 5;
     let stableCount = 0; //异步控制
 
     let BLOCKS_LENGTH = 0;
@@ -56,25 +56,25 @@
     // 账户表 accountsInsertAry accountsUpdateAry
     // 普通交易表 normalTransInsertAry
 
-    let contractInsertAry = [];//插入[Db]     /done
-    let contractUpdateAry = [];//更新[Db]       /done
+    let contractInsertAry = [];//插入合约表 [Db]        /done
+    let contractUpdateAry = [];//更新合约表 [Db]        /done
 
-    let contractCodeInsertAry = [];//插入[Db]       /done
+    let contractCodeInsertAry = []; //插入 合约code表[Db]       /done
 
-    let tokenInsertAry = [];//插入[Db]      /done
-    let tokenUpdateAry = [];//更新[Db]         /done
+    let tokenInsertAry = [];        //插入 token表   [Db]       /done
+    let tokenUpdateAry = [];        //更新 token表   [Db]       /done
+    let tokenUpdateObj = {}
 
+    let transTokenInsertAry = [];   //插入 token交易表   [Db]       /done
+    let transInternalInsertAry = [];//插入 内部交易表    [Db]       /done
+    let eventLogInsertAry = [];     //插入 事件日志表    [Db]       /done
+
+    let tokenAssetInsertAry = [];//插入[Db]   /-
+    let tokenAssetUpdateAry = [];//更新[Db]    /-
     let tokenAccountsTotal = {};
-    let tokenAssetInsertAry = [];//插入[Db]   /done
-    let tokenAssetUpdateAry = [];//更新[Db]    /done
-
-    let transTokenInsertAry = [];//插入[Db]       /done
-    let transInternalInsertAry = [];//插入[Db]
-    let eventLogInsertAry = [];//插入[Db]     /done
 
     let pageUtility = {
         async init() {
-            console.log("init begin");
             self = this;
             //标记由 MCI 改为 last_stable_block_index
             let SearchOptions = {
@@ -104,7 +104,8 @@
             getCount('accountsCount', 'witness_count');
             getCount('normalCount', 'normal_count');
             getCount('accountsCount', 'accounts_count');
-            console.log("init done");
+            getCount('accountsCount', 'token_count');
+            getCount('accountsCount', 'internal_count');
         },
         async createGlobalMci() {
             let insertMciToGlobal = "INSERT INTO global (key,value) VALUES ('done_stable_index', 0)";
@@ -130,7 +131,6 @@
 
         //写入 witness_list
         async getWitness_list() {
-            console.log('witness_list begin')
             /**
              * 搜索 witness_list 表是否有数据
              *      有数据，忽略 
@@ -145,7 +145,6 @@
                 `
             };
             let witData = await client.query(SearchWitnessOptions);
-            console.log(witData.rows[0].count)
             if (witData.rows[0].count === "0") {
                 //需要插入
                 pageUtility.insertWitnessLiss();
@@ -170,14 +169,12 @@
             })
         },
         readyGetData() {
-            console.log('readyGetData begin')
             getRpcTimer = setTimeout(function () {
                 pageUtility.getRPC()
             }, 5000);
             //TODO 时间抽出,定时器主要是为了unstable时候，避免无效读取 但 stable时候需要加快读取
         },
         getRPC() {
-            console.log('getRPC begin')
             //获取网络中最新稳定的MCI
             logger.info(`获取网络中最新稳定的 LSBI-Start`);
             czr.request.status().then(function (status) {
@@ -185,13 +182,10 @@
                 logger.info(status);
                 return status
             }).catch((err) => {
-                console.log(err)
                 logger.info(`获取网络中最新稳定的 LSBI-Error : ${err}`);
             })
                 .then(function (status) {
-                    console.log('db_LSBI:'+db_LSBI)
                     rpc_LSBI = Number(status.last_stable_block_index);
-                    console.log("rpc_LSBI:"+rpc_LSBI)
                     if ((db_LSBI <= rpc_LSBI) || (db_LSBI === 0)) {
                         pageUtility.searchMci(status);
                     } else {
@@ -206,7 +200,6 @@
 
         //插入Mci信息
         async searchMci(status) {
-            console.log('searchMci begin')
             let data = await client.query("Select * FROM global WHERE key = $1", ["last_stable_block_index"]);
             if (data.code) {
                 // 出错
@@ -274,7 +267,6 @@
         },
         //插入稳定的Unit ------------------------------------------------ Start
         getUnitByLSBI() {
-            console.log("getUnitByLSBI  begin");
             logger.info(`开始通过 ${MCI_LIMIT} ${db_LSBI} 向节点获取blocks ---------------------`);
             czr.request.stableBlocks(MCI_LIMIT, db_LSBI).then(async function (data) {
                 //block信息一次拿不完，需要拿2次；
@@ -296,7 +288,7 @@
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
                             data.blocks[index].data_hash = item.content.data_hash;//++新增属性
-                            data.blocks[index].data = item.content.data;
+                            data.blocks[index].data = item.content.data || item.data;
                             data.blocks[index].parents = [];
                             //status
                             data.blocks[index].witnessed_level = blockStatesAry[index].content.witnessed_level;
@@ -323,7 +315,7 @@
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
                             data.blocks[index].data_hash = item.content.data_hash;//++新增属性
-                            data.blocks[index].data = item.content.data;
+                            data.blocks[index].data = item.content.data || item.data;
                             //普通交易特有
                             data.blocks[index].previous = item.content.previous;
                             data.blocks[index].gas = item.content.gas;
@@ -413,7 +405,8 @@
                         balance: "0",
                         is_token_account: false,
                         is_has_token_trans: false,
-                        is_has_intel_trans: false
+                        is_has_intel_trans: false,
+                        is_has_event_logs: false
                     }
                 }
                 //账户余额 只有是成功的交易才操作账户余额
@@ -439,7 +432,8 @@
                                 balance: "0",
                                 is_token_account: false,
                                 is_has_token_trans: false,
-                                is_has_intel_trans: false
+                                is_has_intel_trans: false,
+                                is_has_event_logs: false
                             }
                         }
                     }
@@ -476,7 +470,7 @@
                 //********************************** 合约相关数据组装 开始 */
                 //DO 创建合约交易[OK]
                 if (!blockInfo.to && blockInfo.contract_address) {
-                    console.log("创建了合约", blockInfo.contract_address)
+                    logger.info("创建了合约", blockInfo.contract_address)
                     //合约表
                     contractInsertAry.push({
                         contract_account: blockInfo.contract_address,
@@ -496,49 +490,66 @@
                 //DO 解析log
                 //事件日志表，部署合约时跳过，Token转账之类会有
                 if (blockInfo.log.length) {
-                    console.log('get log');
+                    logger.info('解析log信息');
+                    logger.info(blockInfo);
                     blockInfo.is_event_log = true;
-                    blockInfo.log.forEach(async (log_item) => {
+                    let tempTransTokenInsertInfo;
+                    blockInfo.log.forEach(async (log_item, index) => {
+                        let contractAccount = czr.utils.encode_account(log_item.address);
+
                         eventLogInsertAry.push(
                             {
                                 hash: blockInfo.hash,
                                 mc_timestamp: blockInfo.mc_timestamp,
-                                contract_account: log_item.address,
+                                contract_account: contractAccount,
                                 amount: parseInt(log_item.data, 16),
-                                method: blockInfo.data,//ABI解析 封装方法解析
+                                method: blockInfo.data.toString().substring(0, 8),//A9059CBB
+                                method_function: blockInfo.data,//TODO ABI解析 封装方法解析
                                 topics: log_item.topics.join(",")
                             }
                         );
                         //是否Token转账
-                        if (log_item.topics.length && true) {
+                        if (log_item.topics.length === 3 && (log_item.topics[0].toLowerCase() === "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")) {
                             blockInfo.is_token_trans = true;
                             //解析出对应的Token信息
+                            logger.info('有Token转账', contractAccount);
+                            let TokenInfo = {
+                                token_name: await pageUtility.call(contractAccount, "name"),
+                                token_symbol: await pageUtility.call(contractAccount, "symbol"),
+                                token_precision: await pageUtility.call(contractAccount, "decimals"),
+                                token_total: await pageUtility.call(contractAccount, "totalSupply"),
+                            };
+
 
                             //查询合约有没有存在于Token表
-                            let contractAccount = czr.utils.encode_account(log_item.address);
                             let contract_account_sql = {
                                 text: "select contract_account from token where contract_account = $1",
                                 values: [contractAccount]
                             };
-                            let hasAccount = await client.query(contract_account_sql); 
+                            let hasAccount = await client.query(contract_account_sql);
 
                             if (!hasAccount.rows.length) {
-                                //DO 更改合约表中的Token
-                                //第一次发起Token转账,；检测是Token转账，并且Token表没有数据
+                                //DO 更改合约表中的Token，第一次发起Token转账,并且Token表没有数据
+
+                                //插入Token表 信息
+                                tokenInsertAry.push(
+                                    {
+                                        contract_account: contractAccount,
+                                        token_name: TokenInfo.token_name,//Cannot read property 'value' of undefined
+                                        token_symbol: TokenInfo.token_symbol,
+                                        token_precision: TokenInfo.token_precision,
+                                        token_total: TokenInfo.token_total,
+                                        transaction_count: 0,
+                                        account_count: 0
+                                    }
+                                );
+
+                                //更新 合约表 相关的Token信息 使用
                                 let search_contract_sql = {
                                     text: "select contract_account from contract where contract_account = $1",
                                     values: [contractAccount]
                                 };
                                 let hasTokenSymbol = await client.query(search_contract_sql);
-
-                                //插入Token信息
-                                let TokenInfo = {
-                                    token_name: pageUtility.call(contractAccount, "name"),
-                                    token_symbol: pageUtility.call(contractAccount, "symbol"),
-                                    token_precision: pageUtility.call(contractAccount, "decimals"),
-                                    token_total: pageUtility.call(contractAccount, "totalSupply"),
-                                };
-
                                 if (hasTokenSymbol.rows.length && (!hasTokenSymbol.rows[0].token_symbol)) {
                                     contractUpdateAry.push({
                                         contract_account: contractAccount,
@@ -546,57 +557,60 @@
                                         token_symbol: TokenInfo.token_symbol
                                     });
                                 }
-
-                                tokenInsertAry.push(
-                                    {
-                                        contract_account: contractAccount,
-                                        token_name: TokenInfo.token_name[0].value,
-                                        token_symbol: TokenInfo.token_symbol[0].value,
-                                        token_precision: TokenInfo.token_precision[0].value,
-                                        token_total: TokenInfo.token_total[0].value,
-                                        transaction_count: 1,
-                                        account_count: 1
-                                    }
-                                );
-                            } else {   //token表里已经有了改token的记录
+                            } else {
+                                //token表里已经有了该token的记录
                                 //更新Token表的交易数量和账户数量
                                 // let new_account_count = 0;
                                 // if( !tokenAccountsTotal.hasOwnProperty(log_item.topics[1]) ) new_account_count++;
                                 // if( !tokenAccountsTotal.hasOwnProperty(log_item.topics[2]) ) new_account_count++;
-                                tokenUpdateAry.push(
-                                    {
-                                        contract_account: log_item.address,
-                                        transaction_count: 1,
-                                        // account_count: new_account_count //cjd  账户数量需要判断
-                                    }
-                                );
+
 
                             }
 
+                            //处理 token表 当前合约的 transaction_count
+                            //后续给 tokenUpdateAry
+                            if (!tokenUpdateObj.hasOwnProperty(contractAccount)) {
+                                tokenUpdateObj[contractAccount] = {
+                                    transaction_count: 1,
+                                    haveAddress: [],//这里所有的account都需要 把 对应账户表的 is_has_token_trans 为 true **************
+                                    // account_count: new_account_count, //账户数量需要判断
+                                }
+                            } else {
+                                tokenUpdateObj[contractAccount].transaction_count++
+                            }
 
-                            let thisSimbol = pageUtility.call(contractAccount, "symbol");
+                            //处理合约拥有的地址列表,再数据库里查询后，移除掉
+                            let contractFromAcc = czr.utils.encode_account(log_item.topics[1]);
+                            let contractToAcc = czr.utils.encode_account(log_item.topics[2]);
+                            if (tokenUpdateObj[contractAccount].haveAddress.indexOf(contractFromAcc) === -1) {
+                                tokenUpdateObj[contractAccount].haveAddress.push(contractFromAcc);
+                            }
+                            if (tokenUpdateObj[contractAccount].haveAddress.indexOf(contractToAcc) === -1) {
+                                tokenUpdateObj[contractAccount].haveAddress.push(contractToAcc);
+                            }
 
                             //Token交易表
-                            transTokenInsertAry.push(
-                                {
-                                    hash: blockInfo.hash,
-                                    mc_timestamp: blockInfo.mc_timestamp,
-                                    from: blockInfo.from,
-                                    to: czr.utils.encode_account(log_item.topics[1]),
-                                    contract_account: blockInfo.to,
-                                    token_symbol: thisSimbol,
-                                    amount: parseInt(log_item.data, 16) //cjd 需要思考token amount
-                                }
-                            );
+                            tempTransTokenInsertInfo = {
+                                hash: blockInfo.hash,
+                                mc_timestamp: blockInfo.mc_timestamp,
+                                from: contractFromAcc,
+                                to: contractToAcc,
+                                contract_account: contractAccount,
+                                token_symbol: TokenInfo.token_symbol,
+                                amount: parseInt(log_item.data, 16) //cjd 需要思考token amount
+                            }
+                            transTokenInsertAry.push(tempTransTokenInsertInfo);
+
+                            logger.info(`Token交易表:`)
+                            logger.info(tempTransTokenInsertInfo)
 
                             //更新Token资产表
                             //DO 处理账户，发款方不在当前 tokenAccountsTotal 时 （以前已经储存在数据库了）
-
-                            if (!tokenAccountsTotal.hasOwnProperty(blockInfo.from)) {
-                                tokenAccountsTotal[blockInfo.from] = {
-                                    account: blockInfo.from,
-                                    contract_account: blockInfo.to,
-                                    symbol: thisSimbol,
+                            if (!tokenAccountsTotal.hasOwnProperty(contractFromAcc)) {
+                                tokenAccountsTotal[contractFromAcc] = {
+                                    account: contractFromAcc,
+                                    contract_account: contractAccount,
+                                    symbol: TokenInfo.token_symbol,
                                     balance: 0
                                 }
                             }
@@ -604,24 +618,22 @@
                             unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                             if (!unitIsFail) {
                                 //处理收款方余额
-                                if (tokenAccountsTotal.hasOwnProperty(blockInfo.to)) {
+                                if (tokenAccountsTotal.hasOwnProperty(contractToAcc)) {
                                     //有：更新数据
-                                    tokenAccountsTotal[blockInfo.to].balance = BigNumber(tokenAccountsTotal[blockInfo.to].balance).plus(parseInt(log_item.data, 16).toString()).toString(10);
+                                    tokenAccountsTotal[contractToAcc].balance = BigNumber(tokenAccountsTotal[contractToAcc].balance).plus(parseInt(log_item.data, 16).toString()).toString(10);
                                 } else {
                                     //无：写入数据
-                                    if (blockInfo.to) {
-                                        tokenAccountsTotal[blockInfo.to] = {
-                                            account: blockInfo.to,
-                                            contract_account: log_item.address,
-                                            symbol: thisSimbol,
+                                    if (contractToAcc) {
+                                        tokenAccountsTotal[contractToAcc] = {
+                                            account: contractToAcc,
+                                            contract_account: contractAccount,
+                                            symbol: TokenInfo.token_symbol,
                                             balance: 0
                                         }
                                     }
                                 }
                                 //处理发款方余额
-                                tokenAccountsTotal[blockInfo.from].balance = BigNumber(tokenAccountsTotal[blockInfo.from].balance).minus(parseInt(log_item.data, 16).toString()).toString(10);//改
-
-                                //需要更改这些tokenAccountsTotal 对应账户表的 is_has_token_trans 为 true
+                                tokenAccountsTotal[contractFromAcc].balance = BigNumber(tokenAccountsTotal[contractFromAcc].balance).minus(parseInt(log_item.data, 16).toString()).toString(10);//改
                             }
                         } else {
                             blockInfo.is_token_trans = false;//无Token转账
@@ -642,7 +654,9 @@
                             from: "",
                             to: "",
                             amount: "",
-                            gas_limit: ""
+                            gas_limit: "",
+                            trace_type: "",
+                            trace_flag: ""
                         }
                     );
                 } else {
@@ -808,32 +822,7 @@
                 if (allTransTypeAry.length) {
                     pageUtility.batchInsertTransType(allTransTypeAry);
                 }
-                if (transTokenInsertAry.length) {
-                    pageUtility.batchInertTrans_token(transTokenInsertAry);
-                }
-                if (contractInsertAry.length) {
-                    pageUtility.batchInsterContract(contractInsertAry);
-                }
-                if (contractCodeInsertAry.length) {
-                    pageUtility.batchInsertContract_code(contractCodeInsertAry);
-                }
-                if (tokenInsertAry.length) {
-                    pageUtility.batchInsertToken(tokenInsertAry);
-                }
-                if (tokenInsertAry.length) {
-                    pageUtility.batchUpdataContract(tokenInsertAry);
-                }
-                if (eventLogInsertAry.length) {
-                    pageUtility.batchInsertEven_log(eventLogInsertAry);
-                }
 
-                if (Object.keys(tokenAccountsTotal).length) {
-                    let account_increase_num = insertORupdate2token_asset(tokenAccountsTotal)
-                    if (tokenInsertAry.length) {
-                        let trans_increase_num = tokenInsertAry.length
-                        pageUtility.tokenUpdateOnce(tokenInsertAry[0].contract_account, trans_increase_num, account_increase_num)
-                    }
-                }
                 /* 
                 批量更新账户、       accountsUpdateAry
                 批量更新 timestamp
@@ -850,6 +839,73 @@
 
                 //更新Mci
                 pageUtility.updateGlobalMci(db_LSBI);
+
+                // **************************** 合约相关写入 开始
+                /**
+                 * 批量插入 合约表          contractInsertAry
+                 * 批量插入 合约code表      contractCodeInsertAry
+                 * 批量插入 token表         tokenInsertAry
+                 * 
+                 * 批量插入 token交易表     transTokenInsertAry
+                 * 批量插入 内部交易表      transInternalInsertAry
+                 * 批量插入 事件日志表      eventLogInsertAry
+                 * 
+                 * 批量插入 token资产表     tokenAssetInsertAry
+                 * 
+                 */
+                if (contractInsertAry.length) {
+                    pageUtility.batchInsterContract(contractInsertAry);
+                }
+                if (contractCodeInsertAry.length) {
+                    pageUtility.batchInsertContractCode(contractCodeInsertAry);
+                }
+                if (tokenInsertAry.length) {
+                    pageUtility.batchInsertToken(tokenInsertAry);
+                }
+                if (transTokenInsertAry.length) {
+                    pageUtility.batchInertTransToken(transTokenInsertAry);
+                }
+                if (transInternalInsertAry.length) {
+                    pageUtility.batchInertTransInternal(transInternalInsertAry);
+                }
+                if (eventLogInsertAry.length) {
+                    pageUtility.batchInsertEvenLog(eventLogInsertAry);
+                }
+                if (tokenAssetInsertAry.length) {
+                    pageUtility.batchInsertTokenAsset(tokenAssetInsertAry);
+                }
+
+                // if (Object.keys(tokenAccountsTotal).length) {
+                //     let account_increase_num = insertORupdate2token_asset(tokenAccountsTotal)
+                //     if (tokenInsertAry.length) {
+                //         let trans_increase_num = tokenInsertAry.length
+                //         pageUtility.tokenUpdateOnce(tokenInsertAry[0].contract_account, trans_increase_num, account_increase_num)
+                //     }
+                // }
+
+                /**
+                 * 批量更新 合约表          contractUpdateAry
+                 * 批量更新 token表         tokenUpdateAry
+                 * 批量插入 token资产表      tokenAssetUpdateAry
+                 */
+                if (contractUpdateAry.length) {
+                    pageUtility.batchUpdataContract(contractUpdateAry);
+                }
+                if (Object.keys(tokenUpdateObj).length) {
+                    //把account_count 赋值到 tokenUpdateObj
+                    Object.keys(tokenUpdateObj).forEach(function (item) {
+                        tokenUpdateAry.push({
+                            contract_account: item,
+                            transaction_count: tokenUpdateObj[item].transaction_count,
+                            account_count: tokenUpdateObj[item].account_count,
+                        });
+                    });
+                    pageUtility.batchUpdateToken(tokenUpdateAry);
+                }
+                if (tokenAssetUpdateAry.length) {
+                    pageUtility.batchUpdateTokenAsset(tokenAssetUpdateAry);
+                }
+                // **************************** 合约相关写入 结束
 
                 await client.query('COMMIT')
                 logger.info("准备批量插入 END");
@@ -1199,198 +1255,6 @@
             await client.query(batchInsertSql);
         },
 
-        //批量插入新构建合约的code
-        async batchInsertContract_code(contract_codeAry) {
-            let tempAry = [];
-            contract_codeAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.contract_account + "'," +
-                    "'" + item.code + "')"
-                )
-            });
-
-            let batchInsertSql = {
-                text: `INSERT INTO contract_code VALUES ` + tempAry.toString()
-            };
-            await client.query(batchInsertSql);
-        },
-
-        //批量更新合约的token_name和token_simbol字段
-        async batchUpdataContract(contractUpdateAry) {
-            let tempName = [];
-            let tempSimpol = [];
-            let tempAry = [];
-            contractUpdateAry.forEach((item) => {
-                tempName.push(
-                    "WHEN'"+item.contract_account+"'THEN'"+item.token_name+"'"
-                );
-                tempSimpol.push(
-                    "WHEN'"+item.contract_account+"'THEN'"+item.token_symbol+"'"
-                );
-                tempAry.push(
-                    "'"+item.contract_account+"'"
-                );
-            });
-            let sql = `UPDATE contract SET token_name = CASE contract_account `+tempName.toString()+'END, token_symbol = CASE contract_account'+
-            tempSimpol.toString()+'END WHERE contract_account IN (' + tempAry.join(',') + ")";
-            await client.query(sql);
-        },
-
-        //将tokenAccountsTotal中的所有账户分插入tokenAssetUpdateAry列表或tokenAssetInsertAry列表，并返回插入tokenAssetInsertAry列表元素的数量
-        async splitTotalAccountInto2Ary(tokenAccountsTotal) {
-            let tempAry = [];
-            Object.keys(tokenAccountsTotal).forEach((item) => {
-                tempAry.push(
-                    "(account='" + item + "'and contract_account='"+item.contract_account + "')"
-                );
-            });
-            let sql = `select account from token_asset where ` + tempAry.join('or');
-            rlt  =  await client.query(sql);
-            rlt.rows.forEach((item) => {
-                tokenAssetUpdateAry.push(tokenAccountsTotal[item]);
-                tokenAccountsTotal[item] = null;
-            });
-            Object.keys(tokenAccountsTotal).forEach((item) => {
-                if(tokenAccountsTotal[item]){
-                    tokenAssetInsertAry.push(tokenAccountsTotal[item]);
-                }
-            });
-            return Object.keys(tokenAccountsTotal).length - rlt.rows.length;
-        },
-
-        async tokenUpdateOnce(contract_count, tran_icr, acct_icr) {
-            let sql = {
-                text: `update 
-                    token 
-                set 
-                    transaction_count = $1,
-                    account_count = $2
-                where 
-                    contract_account = $3
-                `,
-                values :[tran_icr, acct_icr, contract_count]
-            };
-            await client.query(sql);
-        },
-
-        //批量插入新构建合约
-        async batchInsterContract(contractAry) {
-            let tempAry = [];
-            contractAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.contract_account + "'," +
-                    "'" + item.own_account + "'," +
-                    "'" + item.born_unit + "'," +
-                    "'" + item.token_name + "'," +
-                    "'" + item.token_symbol + "')"
-                );
-            });
-            let batchInsertSql = {
-                text: `
-                INSERT INTO contract VALUES` + tempAry.toString()
-            };
-            await client.query(batchInsertSql);
-
-        },
-
-        //批量插入token表
-        async batchInsertToken(tokenAry) {
-            let tempAry = [];
-            tokenAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.contract_account + "'," +
-                    "'" + item.token_name + "'," +
-                    "'" + item.token_symbol + "'," +
-                    "'" + Number(item.token_precision) + "'," +
-                    "'" + Number(item.token_total) + "'," +
-                    "'" + Number(item.transaction_count) + "'," +
-                    "'" + Number(item.account_count) + "')"
-                );
-            });
-            let batchInsertSql = {
-                text: `
-                INSERT INTO token VALUES` + tempAry.toString()
-            };
-            await client.query(batchInsertSql);
-        },
-
-
-        //批量插入token交易表
-        async batchInertTrans_token(transTokenInsertAry) {
-            let tempAry = [];
-            transTokenInsertAry.forEach(item => {
-                tempAry.push(
-                    "('" +
-                    item.hash + "'," +
-                    "'" + Number(item.mc_timestamp) + "'," +
-                    "'" + item.token_symbol + "'," +
-                    "'" + item.from + "'," +
-                    "'" + item.to + "'," +
-                    "'" + item.contract_account + "'," +
-                    "'" + item.token_symbol + "'," +
-                    "'" + Number(item.account_count) + "')"
-                );
-            });
-            let batchInsertSql = {
-                text: `
-                    INSET INTO trans_token VALUES ` + tempAry.toString()
-            };
-            await client.query(batchInsertSql);
-        },
-
-        //批量插入事件日志表
-        async batchInsertEven_log(eventLogInsertAry) {
-            let tempAry = [];
-            eventLogInsertAry.forEach(item => {
-                tempAry.push(
-                    "('" + item.hash + "'," +
-                    "'" + Number(item.mc_timestamp) + "'," +
-                    "'" + item.contract_account + "'," +
-                    "'" + item.amount + "'," +
-                    "'" + item.method + "'," +
-                    "'" + item.topics + "')"
-                );
-            });
-            let batchInsertSql = {
-                text : `INSERT INTO event_log VALUES ` + tempAry.toString()
-            };
-            await client.query(batchInsertSql);
-        },
-
-        //批量插入token_asset表
-        async batchInsertToken_asset(contractInsertAry) {
-            let tempAry = [];
-            contractInsertAry.forEach((item) => {
-                tempAry.push(
-                    "('" + item.account + "'," +
-                    "'" + item.contract_account + "'," +
-                    "'" + item.symbol + "'," +
-                    "'" + item.balance + "')" 
-                );
-            });
-            let sql = {
-                text : `INSERT INTO token_asset  VALUES ` + tempAry.toString()
-            };
-            await client.query(sql);
-        },
-
-        //批量更新token_asset表
-        async batchUpdateToken_asset(tokenAssetUpdateAry) {
-            let tempAry = [];
-            tokenAssetUpdateAry.forEach((item) =>{
-                tempAry.push(
-                    "update token_asset set balance ='"+item.balance+"' where account='"+item.account+"' and contract_account='"+item.contract_account+"'"
-                );
-            });
-            let sql = {
-                text:tempAry.join(';')
-            };
-            await client.query(sql);
-        },
-
         //批量更新账户
         async batchUpdateAccount(accountAry) {
             let tempAry = [];
@@ -1490,6 +1354,416 @@
         formatTimestamp(stable_timestamp) {
             return Math.floor(stable_timestamp / 10);
         },
+        // ***************************************** 合约相关插入 开始
+        //TODO:后期做通用的 批量更新函数 和 批量插入函数等
+        //更新Global token_count
+        async updateGlobalTokenCount(length) {
+            //更新交易计数
+            let update_count = `
+                    update 
+                        "global"
+                    set 
+                        "value"= "value" + ${length}
+                    where 
+                        key = 'token_count'
+                `;
+            await client.query(update_count);
+        },
+        //更新Global internal_count
+        async updateGlobalInternalCount(length) {
+            //更新交易计数
+            let update_count = `
+                    update
+                        "global"
+                    set 
+                        "value"= "value" + ${length}
+                    where 
+                        key = 'internal_count'
+                `;
+            await client.query(update_count);
+        },
+
+        //批量插入 合约表
+        async batchInsterContract(contractInsertAry) {
+            let tempAry = [];
+            contractInsertAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.contract_account}',
+                        '${item.own_account}',
+                        '${item.born_unit}',
+                        '${item.token_name}',
+                        '${item.token_symbol}'
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        contract(
+                            "contract_account",
+                            "own_account","born_unit",
+                            "token_name","token_symbol"
+                            )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+        //批量更新 合约表 
+        //token_name和token_simbol字段
+        async batchUpdataContract(contractUpdateAry) {
+            // let tempName = [];
+            // let tempSimpol = [];
+            // let tempAry = [];
+            // contractUpdateAry.forEach((item) => {
+            //     tempName.push(
+            //         "WHEN'" + item.contract_account + "'THEN'" + item.token_name + "'"
+            //     );
+            //     tempSimpol.push(
+            //         "WHEN'" + item.contract_account + "'THEN'" + item.token_symbol + "'"
+            //     );
+            //     tempAry.push(
+            //         "'" + item.contract_account + "'"
+            //     );
+            // });
+            // // let sql = `UPDATE contract SET token_name = CASE contract_account `+tempName.toString()+'END, token_symbol = CASE contract_account'+
+            // // tempSimpol.toString()+'END WHERE contract_account IN (' + tempAry.join(',') + ")";
+
+            // let sql = `
+            //         UPDATE 
+            //             contract 
+            //         SET 
+            //             token_name = CASE contract_account 
+            //                 ${tempName.toString()} END, 
+            //             token_symbol = CASE contract_account 
+            //                 ${tempSimpol.toString()}END 
+            //         WHERE 
+            //             contract_account IN (${tempAry.join(',')})`;
+
+            let tempAry = [];
+            contractUpdateAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.contract_account}',
+                        '${item.token_name}',
+                        '${item.token_symbol}'
+                    )
+                    `
+                );
+            });
+            let sql = `
+                update 
+                    contract 
+                set 
+                    token_name= tmp.token_name,
+                    token_symbol= tmp.token_symbol
+                from 
+                    (values ${tempAry.toString()}) 
+                    as 
+                    temp(contract_account,token_name,token_symbol)
+                where 
+                    contract.contract_account = temp.contract_account
+            `
+            await client.query(sql);
+        },
+
+        //批量插入 合约code表
+        async batchInsertContractCode(contractCodeInsertAry) {
+            let tempAry = [];
+            contractCodeInsertAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.contract_account}',
+                        '${item.code}'
+                    )
+                    `
+                );
+            });
+
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        contract_code (
+                            "contract_account",
+                            "code"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+
+        //批量插入 token表
+        async batchInsertToken(tokenInsertAry) {
+            let tempAry = [];
+            tokenInsertAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.contract_account}',
+                        '${item.token_name}',
+                        '${item.token_symbol}',
+                        ${Number(item.token_precision)},
+                        ${Number(item.token_total)},
+                        ${Number(item.transaction_count)},
+                        ${Number(item.account_count)}
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        token (
+                            "contract_account",
+                            "token_name",
+                            "token_symbol",
+                            "token_precision",
+                            "token_total",
+                            "transaction_count",
+                            "account_count"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+        //批量更新 token表
+        //transaction_count 和 account_count 字段
+        async batchUpdateToken(tokenUpdateAry) {
+            let tempAry = [];
+            tokenUpdateAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.contract_account}',
+                        ${item.transaction_count},
+                        ${item.account_count}
+                    )
+                    `
+                );
+            });
+            let sql = `
+                update 
+                    token 
+                set 
+                    transaction_count = transaction_count + tmp.transaction_count,
+                    account_count = account_count + tmp.account_count
+                from 
+                    (values ${tempAry.toString()}) 
+                as
+                    temp(contract_account,transaction_count,account_count)
+                where 
+                    token.contract_account = temp.contract_account
+            `
+            await client.query(sql);
+        },
+
+        //批量插入 token交易表
+        async batchInertTransToken(transTokenInsertAry) {
+            let tempAry = [];
+            transTokenInsertAry.forEach(item => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.hash}',
+                        ${Number(item.mc_timestamp)},
+                        '${item.from}',
+                        '${item.to}',
+                        '${item.contract_account}',
+                        '${item.token_symbol}',
+                        ${item.amount},
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        trans_token (
+                            "hash",
+                            "mc_timestamp",
+                            "from",
+                            "to",
+                            "contract_account",
+                            "token_symbol",
+                            "amount"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+        //批量插入 内部交易表
+        async batchInertTransInternal(transInternalInsertAry) {
+            let tempAry = [];
+            transInternalInsertAry.forEach(item => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.hash}',
+                        ${Number(item.mc_timestamp)},
+                        '${item.from}',
+                        '${item.to}',
+                        ${item.amount},
+                        ${item.gas_limit},
+                        '${item.trace_type}',
+                        '${item.trace_flag}'
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        trans_internal (
+                            "hash",
+                            "mc_timestamp",
+                            "from",
+                            "to",
+                            "amount",
+                            "gas_limit",
+                            "trace_type",
+                            "trace_flag"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+        //批量插入 事件日志表
+        async batchInsertEvenLog(eventLogInsertAry) {
+            let tempAry = [];
+            eventLogInsertAry.forEach(item => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.hash}',
+                        ${Number(item.mc_timestamp)},
+                        '${item.contract_account}',
+                        ${item.data},
+                        '${item.method}',
+                        '${item.method_function}',
+                        '${item.topics}'
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        event_log (
+                            "hash",
+                            "mc_timestamp",
+                            "contract_account",
+                            "data",
+                            "method",
+                            "method_function",
+                            "topics"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+
+        //批量插入 token资产表
+        async batchInsertTokenAsset(tokenAssetInsertAry) {
+            let tempAry = [];
+            tokenAssetInsertAry.forEach(item => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.account}',
+                        '${item.contract_account}',
+                        '${item.symbol}',
+                        ${item.balance}
+                    )
+                    `
+                );
+            });
+            let batchInsertSql = {
+                text: `
+                    INSERT INTO 
+                        token_asset (
+                            "account",
+                            "contract_account",
+                            "symbol",
+                            "balance"
+                        )
+                    VALUES ${tempAry.toString()}`
+            };
+            await client.query(batchInsertSql);
+        },
+        //批量更新 token资产表
+        async batchUpdateTokenAsset(tokenAssetUpdateAry) {
+            let tempAry = [];
+            tokenAssetUpdateAry.forEach((item) => {
+                tempAry.push(
+                    `
+                    (
+                        '${item.account}',
+                        '${item.contract_account}',
+                        ${item.balance}
+                    )
+                    `
+                );
+            });
+            let sql = `
+                update 
+                    token_asset 
+                set 
+                    balance = balance + tmp.balance
+                from 
+                    (values ${tempAry.toString()}) 
+                as
+                    temp(account,contract_account,balance)
+                where 
+                    token_asset.account = temp.account
+                    and
+                    token_asset.contract_account = temp.contract_account
+            `
+            await client.query(sql);
+        },
+        //------------
+
+        //批量插入更新 Account 表
+        //将tokenAccountsTotal中的所有账户分插入tokenAssetUpdateAry列表或tokenAssetInsertAry列表，并返回插入tokenAssetInsertAry列表元素的数量
+        async splitTotalAccountInto2Ary(tokenAccountsTotal) {
+            let tempAry = [];
+            Object.keys(tokenAccountsTotal).forEach((item) => {
+                tempAry.push(
+                    "(account='" + item + "'and contract_account='" + item.contract_account + "')"
+                );
+            });
+            let sql = `select account from token_asset where ` + tempAry.join('or');
+            let rlt = await client.query(sql);
+            rlt.rows.forEach((item) => {
+                tokenAssetUpdateAry.push(tokenAccountsTotal[item]);
+                tokenAccountsTotal[item] = null;
+            });
+            Object.keys(tokenAccountsTotal).forEach((item) => {
+                if (tokenAccountsTotal[item]) {
+                    tokenAssetInsertAry.push(tokenAccountsTotal[item]);
+                }
+            });
+            return Object.keys(tokenAccountsTotal).length - rlt.rows.length;
+        },
+        async tokenUpdateOnce(contract_count, tran_icr, acct_icr) {
+            let sql = {
+                text: `
+                        update 
+                            token 
+                        set 
+                            transaction_count = $1,
+                            account_count = $2
+                        where 
+                            contract_account = $3
+                        `,
+                values: [tran_icr, acct_icr, contract_count]
+            };
+            await client.query(sql);
+        },
+
         async call(con_ads, con_name) {
             //name          06fdde03
             //symbol        95d89b41
@@ -1515,12 +1789,12 @@
                 "to": con_ads,
                 "data": opt
             };
-            let res = await czr.request.call(arg1);
 
-            //[ { name: '', type: 'string', value: 'canonChain' } ]
-            return czr.utils.decode[opt](res.output)
-
+            let res = await czr.request.call(arg1);//[ { name: '', type: 'string', value: 'canonChain' } ]
+            let resString = await czr.utils.decode[con_name](res.output);
+            return resString[0].value.toString(10);
         },
+        // ***************************************** 合约相关插入 结束
         isFail(obj) {
             //true 是失败的
             return (obj.is_stable === 1) && (obj.status !== 0);

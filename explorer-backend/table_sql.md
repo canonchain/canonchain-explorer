@@ -446,26 +446,6 @@ TABLESPACE pg_default;
 
 ```
 
-### token_asset | Token资产表
-
-```postgresql
-
-CREATE TABLE public.token_asset
-(
-    token_asset_id bigserial,
-    account text,
-    contract_account text,
-    symbol text,
-    balance numeric,
-    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
-)
-WITH (
-    OIDS = FALSE
-)
-TABLESPACE pg_default;
-
-```
-
 ### trans_token | Token交易表
 
 ```postgresql
@@ -523,6 +503,7 @@ TABLESPACE pg_default;
 CREATE TABLE public.event_log
 (
     event_log_id bigserial,
+    
     "hash" text,
     "mc_timestamp" bigint,
     contract_account text,
@@ -532,6 +513,28 @@ CREATE TABLE public.event_log
     "topics" text,
 
     CONSTRAINT event_log_hash_pkey PRIMARY KEY (hash)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+```
+
+### token_asset | Token资产表
+
+```postgresql
+
+CREATE TABLE public.token_asset
+(
+    token_asset_id bigserial,
+    
+    account text,
+    contract_account text,
+    symbol text,
+    balance numeric,
+
+    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
 )
 WITH (
     OIDS = FALSE
