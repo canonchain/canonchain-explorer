@@ -503,11 +503,11 @@ TABLESPACE pg_default;
 CREATE TABLE public.event_log
 (
     event_log_id bigserial,
-    
+
     "hash" text,
     "mc_timestamp" bigint,
     contract_account text,
-    "data" numeric,
+    "data" text,
     "method" text,
     "method_function" text,
     "topics" text,
@@ -531,10 +531,11 @@ CREATE TABLE public.token_asset
     
     account text,
     contract_account text,
+    account_contract_merger text,
     symbol text,
     balance numeric,
 
-    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (contract_account,symbol)
+    CONSTRAINT token_account_symbol_pkey PRIMARY KEY (account,contract_account)
 )
 WITH (
     OIDS = FALSE

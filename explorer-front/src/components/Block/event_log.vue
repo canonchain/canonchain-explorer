@@ -342,14 +342,7 @@
                                                     </el-table-column>-->
                                                     <el-table-column label="交易号/模式" width="200">
                                                         <template slot-scope="scope">
-                                                            <el-button
-                                                                @click="goBlockPath(scope.row.hash)"
-                                                                type="text"
-                                                            >
-                                                                <span
-                                                                    class="table-long-item"
-                                                                >{{scope.row.hash}}</span>
-                                                            </el-button>
+                                                            {{scope.row.hash}}
                                                             <br>
                                                             <strong>{{scope.row.method}}</strong>
                                                             <p>{{scope.row.method_function}}</p>

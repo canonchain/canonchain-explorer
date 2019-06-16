@@ -8,7 +8,8 @@ let czr = new Tools();
 export const toCZRVal = value => {
     if (value) {
         let tempVal = czr.utils.fromWei(value, "czr");
-        return parseFloat(tempVal).toFixed(4); //TODO Keep 4 decimal places
+        // return parseFloat(tempVal).toFixed(4); //TODO Keep 4 decimal places
+        return tempVal; //TODO Keep 4 decimal places
     } else {
         return 0;
     }
