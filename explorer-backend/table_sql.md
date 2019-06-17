@@ -461,7 +461,13 @@ CREATE TABLE public.trans_token
     "to" text,
     contract_account text,
     token_symbol text,
+    token_name text,
+    token_precision numeric,
     "amount" numeric,
+    "gas" numeric,
+    "gas_price" numeric,
+    "gas_used" numeric,
+    "input" text,
     CONSTRAINT trans_token_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
@@ -481,13 +487,30 @@ CREATE TABLE public.trans_internal
 
     "hash" text,
     "mc_timestamp" bigint,
+    "type" numeric,
+    "call_type" text,
     "from" text,
     "to" text,
-    "amount" numeric,
-    "gas_limit" bigint,
-    "trace_type" text,
-    "trace_flag" text,
-    CONSTRAINT trans_internal_hash_pkey PRIMARY KEY (hash)
+    "gas" numeric,
+    "input" text,
+    "value" numeric,
+
+    "init" text,
+
+    "contract_address_suicide" text,
+    "refund_adderss" text,
+    "balance" numeric,
+
+    "gas_used" numeric,
+    "output" text,
+    "contract_address_create" text,
+    "contract_address_create_code" text,
+
+    "is_error" boolean,
+    "error_msg" text,
+
+    "subtraces" numeric,
+    "trace_address" text
 )
 WITH (
     OIDS = FALSE
