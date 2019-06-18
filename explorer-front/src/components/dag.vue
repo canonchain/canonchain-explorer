@@ -7,6 +7,8 @@
                 <router-link class="dag-link" to="/accounts">账户</router-link>
                 <router-link class="dag-link" to="/normal_trans">普通交易</router-link>
                 <router-link class="dag-link" to="/witness_trans">见证交易</router-link>
+                <router-link class="dag-link" to="/tokens">代币</router-link>
+                <router-link class="dag-link" to="/internals">内部交易</router-link>
                 <router-link class="dag-link" to="/dag">DAG</router-link>
             </div>
             <div id="menuLeft">

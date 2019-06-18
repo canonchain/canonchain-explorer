@@ -23,68 +23,64 @@
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
                             <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
-                            <template v-if="accountInfo.is_has_token_trans">
-                                <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_intel_trans">
-                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_event_logs">
-                                <el-tab-pane label="事件日志" name="event_logs">
-                                    <div class="account-content">
-                                        <el-row>
-                                            <el-col :span="6">
-                                                <h2 class="transfer-tit">事件日志（最新10条）</h2>
-                                            </el-col>
-                                        </el-row>
-                                        <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                                            <template v-if="IS_GET_INFO">
-                                                <el-table :data="event_logs" style="width: 100%">
-                                                    <el-table-column label="时间" width="180">
-                                                        <template slot-scope="scope">
+                            <!-- <template v-if="accountInfo.is_has_token_trans"></template> -->
+                            <!-- <template v-if="accountInfo.is_has_intel_trans"></template> -->
+                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
+                            <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                            <el-tab-pane label="事件日志" name="event_logs">
+                                <div class="account-content">
+                                    <el-row>
+                                        <el-col :span="6">
+                                            <h2 class="transfer-tit">事件日志（最新10条）</h2>
+                                        </el-col>
+                                    </el-row>
+                                    <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                                        <template v-if="IS_GET_INFO">
+                                            <el-table :data="event_logs" style="width: 100%">
+                                                <el-table-column label="时间" width="180">
+                                                    <template slot-scope="scope">
+                                                        <span
+                                                            class="table-long-item"
+                                                        >{{scope.row.mc_timestamp | toDate}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                                <!-- <el-table-column label="交易号" width="180">
+                                                    <template slot-scope="scope"></template>
+                                                </el-table-column>-->
+                                                <el-table-column label="交易号/模式" width="200">
+                                                    <template slot-scope="scope">
+                                                        <el-button
+                                                            @click="goBlockPath(scope.row.hash)"
+                                                            type="text"
+                                                        >
                                                             <span
                                                                 class="table-long-item"
-                                                            >{{scope.row.mc_timestamp | toDate}}</span>
+                                                            >{{scope.row.hash}}</span>
+                                                        </el-button>
+                                                        <br>
+                                                        <strong>{{scope.row.method}}</strong>
+                                                        <p>{{scope.row.method_function}}</p>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="事件日志">
+                                                    <template slot-scope="scope">
+                                                        <template
+                                                            v-for="(item,index) in scope.row.topics"
+                                                        >
+                                                            <p
+                                                                v-bind:key="item"
+                                                            >[topic{{index}}] {{ item }}</p>
                                                         </template>
-                                                    </el-table-column>
-                                                    <!-- <el-table-column label="交易号" width="180">
-                                                    <template slot-scope="scope"></template>
-                                                    </el-table-column>-->
-                                                    <el-table-column label="交易号/模式" width="200">
-                                                        <template slot-scope="scope">
-                                                            <el-button
-                                                                @click="goBlockPath(scope.row.hash)"
-                                                                type="text"
-                                                            >
-                                                                <span
-                                                                    class="table-long-item"
-                                                                >{{scope.row.hash}}</span>
-                                                            </el-button>
-                                                            <br>
-                                                            <strong>{{scope.row.method}}</strong>
-                                                            <p>{{scope.row.method_function}}</p>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="事件日志">
-                                                        <template slot-scope="scope">
-                                                            <template
-                                                                v-for="(item,index) in scope.row.topics"
-                                                            >
-                                                                <p
-                                                                    v-bind:key="item"
-                                                                >[topic{{index}}] {{ item }}</p>
-                                                            </template>
-                                                            <p>
-                                                                <span>Data {{scope.row.data}}</span>
-                                                            </p>
-                                                        </template>
-                                                    </el-table-column>
-                                                </el-table>
-                                            </template>
-                                        </div>
+                                                        <p>
+                                                            <span>Data {{scope.row.data}}</span>
+                                                        </p>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
+                                        </template>
                                     </div>
-                                </el-tab-pane>
-                            </template>
+                                </div>
+                            </el-tab-pane>
                             <template v-if="accountInfo.type === 2">
                                 <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>

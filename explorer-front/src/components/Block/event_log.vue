@@ -201,7 +201,9 @@
                                         Data
                                         <span class="space-des"></span>
                                     </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
+                                    <div class="bui-dlist-det">
+                                        <pre class="contract-code">{{blockInfo.data}}</pre>
+                                    </div>
                                 </div>
                                 <div class="block-item-des">
                                     <strong class="bui-dlist-tit">
@@ -233,27 +235,33 @@
                                     </strong>
                                     <div class="bui-dlist-det">{{blockInfo.gas_price || '-'}}</div>
                                 </div>
-                                <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Contract Address
-                                        <span class="space-des"></span>
-                                    </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.contract_address || '-'}}</div>
-                                </div>
-                                <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Log
-                                        <span class="space-des"></span>
-                                    </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
-                                </div>
-                                <div class="block-item-des">
+                                <template v-if="blockInfo.contract_address">
+                                    <div class="block-item-des">
+                                        <strong class="bui-dlist-tit">
+                                            Contract Address
+                                            <span class="space-des"></span>
+                                        </strong>
+                                        <div
+                                            class="bui-dlist-det"
+                                        >{{blockInfo.contract_address || '-'}}</div>
+                                    </div>
+                                </template>
+                                <template v-if="blockInfo.log">
+                                    <div class="block-item-des">
+                                        <strong class="bui-dlist-tit">
+                                            Log
+                                            <span class="space-des"></span>
+                                        </strong>
+                                        <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
+                                    </div>
+                                </template>
+                                <!-- <div class="block-item-des">
                                     <strong class="bui-dlist-tit">
                                         Log Bloom
                                         <span class="space-des"></span>
                                     </strong>
                                     <div class="bui-dlist-det">{{blockInfo.log_bloom || '-'}}</div>
-                                </div>
+                                </div>-->
                             </template>
                             <!-- 公共的 -->
                             <div class="block-item-des">
@@ -319,54 +327,49 @@
                     <div class="block-table">
                         <template>
                             <el-tabs v-model="activeName" @tab-click="change_table">
-                                <template v-if="blockInfo.is_token_trans">
-                                    <el-tab-pane label="代币转账" name="token_trans"></el-tab-pane>
-                                </template>
-                                <template v-if="blockInfo.is_intel_trans">
-                                    <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
-                                </template>
-                                <template v-if="blockInfo.is_event_log">
-                                    <el-tab-pane label="事件日志" name="event_log">
-                                        <div class="block-content" v-loading="loadingSwitch">
-                                            <template v-if="IS_GET_INFO">
-                                                <el-table :data="event_log" style="width: 100%">
-                                                    <el-table-column label="时间" width="180">
-                                                        <template slot-scope="scope">
-                                                            <span
-                                                                class="table-long-item"
-                                                            >{{scope.row.mc_timestamp | toDate}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <!-- <el-table-column label="交易号" width="180">
+                                <!-- <template v-if="blockInfo.is_token_trans"> -->
+                                <el-tab-pane label="代币转账" name="token_trans"></el-tab-pane>
+                                <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                                <el-tab-pane label="事件日志" name="event_log">
+                                    <div class="block-content" v-loading="loadingSwitch">
+                                        <template v-if="IS_GET_INFO">
+                                            <el-table :data="event_log" style="width: 100%">
+                                                <el-table-column label="时间" width="180">
+                                                    <template slot-scope="scope">
+                                                        <span
+                                                            class="table-long-item"
+                                                        >{{scope.row.mc_timestamp | toDate}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                                <!-- <el-table-column label="交易号" width="180">
                                                     <template slot-scope="scope"></template>
-                                                    </el-table-column>-->
-                                                    <el-table-column label="交易号/模式" width="200">
-                                                        <template slot-scope="scope">
-                                                            {{scope.row.hash}}
-                                                            <br>
-                                                            <strong>{{scope.row.method}}</strong>
-                                                            <p>{{scope.row.method_function}}</p>
+                                                </el-table-column>-->
+                                                <el-table-column label="交易号/模式" width="200">
+                                                    <template slot-scope="scope">
+                                                        {{scope.row.hash}}
+                                                        <br>
+                                                        <strong>{{scope.row.method}}</strong>
+                                                        <p>{{scope.row.method_function}}</p>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="事件日志">
+                                                    <template slot-scope="scope">
+                                                        <template
+                                                            v-for="(item,index) in scope.row.topics"
+                                                        >
+                                                            <p
+                                                                v-bind:key="item"
+                                                            >[topic{{index}}] {{ item }}</p>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="事件日志">
-                                                        <template slot-scope="scope">
-                                                            <template
-                                                                v-for="(item,index) in scope.row.topics"
-                                                            >
-                                                                <p
-                                                                    v-bind:key="item"
-                                                                >[topic{{index}}] {{ item }}</p>
-                                                            </template>
-                                                            <p>
-                                                                <span>Data {{scope.row.data}}</span>
-                                                            </p>
-                                                        </template>
-                                                    </el-table-column>
-                                                </el-table>
-                                            </template>
-                                        </div>
-                                    </el-tab-pane>
-                                </template>
+                                                        <p>
+                                                            <span>Data {{scope.row.data}}</span>
+                                                        </p>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
+                                        </template>
+                                    </div>
+                                </el-tab-pane>
                             </el-tabs>
                         </template>
                     </div>

@@ -23,15 +23,9 @@
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
                             <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
-                            <template v-if="accountInfo.is_has_token_trans">
-                                <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_intel_trans">
-                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_event_logs">
-                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
-                            </template>
+                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
+                            <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                            <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
                             <template v-if="accountInfo.type === 2">
                                 <el-tab-pane label="合约创建代码" name="contract_code">
                                     <div class="account-content" v-loading="loadingSwitch">
@@ -457,17 +451,5 @@ export default {
     -o-transform: rotate(90deg); /* Opera */
     padding: 0 6px;
 }
-.contract-code {
-    display: block;
-    height: 300px;
-    max-height: 300px;
-    margin-top: 5px;
-    word-break: break-all;
-    white-space: pre-wrap;
-    white-space: -moz-pre-wrap;
-    white-space: -o-pre-wrap;
-    word-wrap: break-word;
-    border: 1px solid #e7eaf3;
-    padding: 12px;
-}
+
 </style>

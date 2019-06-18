@@ -317,15 +317,9 @@
                                 </div>
                             </el-tab-pane>
 
-                            <template v-if="accountInfo.is_has_token_trans">
-                                <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_intel_trans">
-                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_event_logs">
-                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
-                            </template>
+                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
+                            <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                            <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
                             <template v-if="accountInfo.type === 2">
                                 <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>

@@ -451,7 +451,7 @@ router.get("/get_token_flag", async function (req, res, next) {
 router.get("/get_tokens", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;
-    let columnName = '"token_id","contract_account","token_name","token_symbol","token_total","transaction_count","account_count"',
+    let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_total","transaction_count","account_count"',
         tableName = "token";
 
     let opt;
@@ -602,19 +602,19 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
     let errorInfo = {
-        "trans_token_id": "0"
+        "stable_index": "0"
     }
 
     let start_sql = {
         text: `
             Select 
-                "trans_token_id"
+                "stable_index"
             FROM 
                 "trans_token"
             WHERE
                 "contract_account" = $1
             order by
-                "trans_token_id" desc
+                "stable_index" desc
             LIMIT
                 1
         `,
@@ -641,13 +641,13 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "trans_token_id"
+                "stable_index"
             FROM 
                 "trans_token"
             WHERE
                 "contract_account" = $1
             order by 
-                "trans_token_id" asc
+                "stable_index" asc
             LIMIT
                 1
         `,
@@ -679,7 +679,7 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
 //获取Token交易
 router.get("/get_token_trans", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account | source | trans_token_id
+    let queryVal = req.query;//account | source | stable_index
 
     let opt;
 
@@ -689,13 +689,13 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "trans_token_id" desc
+                    "stable_index" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -706,13 +706,13 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "trans_token_id" asc
+                    "stable_index" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -730,19 +730,19 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE 
-                    (trans_token_id ${direction} $2)
+                    (stable_index ${direction} $2)
                     and
                     ("contract_account" = $1)
                 order by 
-                    "trans_token_id" ${sortInfo}
+                    "stable_index" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
-            values: [queryVal.account, queryVal.trans_token_id]
+            values: [queryVal.account, queryVal.stable_index]
         };
     }
     let data = await pgPromise.query(opt);
@@ -789,13 +789,13 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
     let start_sql = {
         text: `
             Select 
-                "token_asset_id"
+                "balance"
             FROM 
                 "token_asset"
             WHERE
                 "contract_account" = $1
             order by
-                "token_asset_id" desc
+                "balance" desc
             LIMIT
                 1
         `,
@@ -822,13 +822,13 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "token_asset_id"
+                "balance"
             FROM 
                 "token_asset"
             WHERE
                 "contract_account" = $1
             order by 
-                "token_asset_id" asc
+                "balance" asc
             LIMIT
                 1
         `,
@@ -869,13 +869,13 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "token_asset_id","account","contract_account","symbol","balance"
+                    "balance","account","contract_account","symbol","balance"
                 FROM 
                     "token_asset"
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "token_asset_id" desc
+                    "balance" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -886,13 +886,13 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "token_asset_id","account","contract_account","symbol","balance"
+                    "balance","account","contract_account","symbol","balance"
                 FROM
                     "token_asset"
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "token_asset_id" asc
+                    "balance" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -910,15 +910,15 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "token_asset_id","account","contract_account","symbol","balance"
+                    "balance","account","contract_account","symbol","balance"
                 FROM 
                     "token_asset"
                 WHERE 
-                    (token_asset_id ${direction} $2)
+                    (balance ${direction} $2)
                     and
                     ("contract_account" = $1)
                 order by
-                    "token_asset_id" ${sortInfo}
+                    "balance" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -995,17 +995,17 @@ router.get("/get_internal_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
     let errorInfo = {
-        "trans_internal_id": "0"
+        "stable_index": "0"
     }
 
     let start_sql = {
         text: `
             Select 
-                "trans_internal_id"
+                "stable_index"
             FROM 
                 "trans_internal"
             order by
-                "trans_internal_id" desc
+                "stable_index" desc
             LIMIT
                 1
         `,
@@ -1032,11 +1032,11 @@ router.get("/get_internal_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "trans_internal_id"
+                "stable_index"
             FROM 
                 "trans_internal"
             order by 
-                "trans_internal_id" asc
+                "stable_index" asc
             LIMIT
                 1
         `,
@@ -1068,7 +1068,7 @@ router.get("/get_internal_flag", async function (req, res, next) {
 //获取内部交易
 router.get("/get_internals", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//trans_internal_id
+    let queryVal = req.query;//stable_index
     let opt;
 
     //根据position查询
@@ -1077,11 +1077,13 @@ router.get("/get_internals", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                    "hash","mc_timestamp","stable_index","from","to",
+                    "value","type","contract_address_create","contract_address_suicide",
+                    "refund_adderss"
                 FROM 
                     "trans_internal"
                 order by 
-                    "trans_internal_id" desc
+                    "stable_index" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1092,11 +1094,11 @@ router.get("/get_internals", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                    "hash","mc_timestamp","stable_index","from","to","value","type","contract_address_create","contract_address_suicide","refund_adderss"
                 FROM 
                     "trans_internal"
                 order by 
-                    "trans_internal_id" asc
+                    "stable_index" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1114,17 +1116,17 @@ router.get("/get_internals", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type"
+                    "hash","mc_timestamp","stable_index","from","to","value","type","contract_address_create","contract_address_suicide","refund_adderss"
                 FROM 
-                    "trans_token"
+                    "trans_internal"
                 WHERE 
-                    (trans_internal_id ${direction} $1)
+                    (stable_index ${direction} $1)
                 order by 
-                    "trans_internal_id" ${sortInfo}
+                    "stable_index" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
-            values: [queryVal.trans_internal_id]
+            values: [queryVal.stable_index]
         };
     }
     let data = await pgPromise.query(opt);
@@ -1805,19 +1807,19 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
         querySour = "to";
     }
     let errorInfo = {
-        "trans_token_id": "0"
+        "stable_index": "0"
     }
 
     let start_sql = {
         text: `
             Select 
-                "trans_token_id"
+                "stable_index"
             FROM 
                 "trans_token"
             WHERE
                 ("${querySour}" = $1)
             order by
-                "trans_token_id" desc
+                "stable_index" desc
             LIMIT
                 1
         `,
@@ -1844,13 +1846,13 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "trans_token_id"
+                "stable_index"
             FROM 
                 "trans_token"
             WHERE
                 ("${querySour}" = $1)
             order by 
-                "trans_token_id" asc
+                "stable_index" asc
             LIMIT
                 1
         `,
@@ -1882,7 +1884,7 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
 //获取Token转账
 router.get("/get_trans_token", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account | source | trans_token_id
+    let queryVal = req.query;//account | source | stable_index
     var querySour = "";
 
     if (queryVal.source === '1') {
@@ -1898,13 +1900,13 @@ router.get("/get_trans_token", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "trans_token_id" desc
+                    "stable_index" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1915,13 +1917,13 @@ router.get("/get_trans_token", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE
                     "${querySour}" = $1
                 order by 
-                    "trans_token_id" asc
+                    "stable_index" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -1939,19 +1941,19 @@ router.get("/get_trans_token", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
                 FROM 
                     "trans_token"
                 WHERE 
-                    (trans_token_id ${direction} $2)
+                    (stable_index ${direction} $2)
                     and
                     ("${querySour}" = $1)
                 order by 
-                    "trans_token_id" ${sortInfo}
+                    "stable_index" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
-            values: [queryVal.account, queryVal.trans_token_id]
+            values: [queryVal.account, queryVal.stable_index]
         };
     }
     let data = await pgPromise.query(opt);
@@ -2109,7 +2111,35 @@ router.get("/get_trans_internal", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type","trace_flag"
+                    "hash",
+                    "mci",
+                    "mc_timestamp",
+                    "stable_index",
+
+                    "type",
+
+                    "call_type",
+                    "from",
+                    "to",
+                    "gas",
+                    "input",
+                    "value",
+
+                    "init",
+
+                    "contract_address_suicide",
+                    "refund_adderss",
+                    "balance",
+
+                    "gas_used",
+                    "output",
+                    "contract_address_create",
+                    "contract_address_create_code",
+
+                    "is_error",
+                    "error_msg",
+                    "subtraces",
+                    "trace_address"
                 FROM 
                     "trans_internal"
                 WHERE
@@ -2126,7 +2156,35 @@ router.get("/get_trans_internal", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","from","to","amount","gas_limit","trace_type","trace_flag"
+                    "hash",
+                    "mci",
+                    "mc_timestamp",
+                    "stable_index",
+
+                    "type",
+
+                    "call_type",
+                    "from",
+                    "to",
+                    "gas",
+                    "input",
+                    "value",
+
+                    "init",
+
+                    "contract_address_suicide",
+                    "refund_adderss",
+                    "balance",
+
+                    "gas_used",
+                    "output",
+                    "contract_address_create",
+                    "contract_address_create_code",
+
+                    "is_error",
+                    "error_msg",
+                    "subtraces",
+                    "trace_address"
                 FROM 
                     "trans_internal"
                 WHERE
@@ -2342,7 +2400,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
         res.json(responseData);
         return;
     }
-    console.log(type.rows);
+    // console.log(type.rows);
     typeValue = type.rows[0].type;
 
     if (typeValue === '0') {
@@ -2352,7 +2410,8 @@ router.get("/get_transaction_short", async function (req, res, next) {
         "to","amount","data_hash","data",
 
         "is_stable",
-        "level",
+        "level","witnessed_level"
+        "status","stable_index","mc_timestamp","stable_timestamp","mci",
         "is_free","is_on_mc","from_state","to_states","gas_used","log","log_bloom"
         `;
     } else if (typeValue === '1') {
@@ -2363,7 +2422,8 @@ router.get("/get_transaction_short", async function (req, res, next) {
 
         "is_stable",
         "level","witnessed_level","best_parent",
-        "is_free","is_on_mc",
+        "status","stable_index","mc_timestamp","stable_timestamp","mci",
+        "is_free","is_on_mc"
         `;
     } else {
         tableName = 'trans_normal'
@@ -2374,6 +2434,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
         "is_stable",
         "level",
         "from_state","to_states","gas_used","log","log_bloom","contract_address",
+        "status","stable_index","mc_timestamp","stable_timestamp","mci",
         "is_event_log","is_token_trans","is_intel_trans"
         `;
     }
@@ -2468,7 +2529,35 @@ router.get("/get_transaction_trans_internal", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "hash","from","to","amount","gas_limit","trace_type","trace_flag"
+                "hash",
+                "mci",
+                "mc_timestamp",
+                "stable_index",
+
+                "type",
+
+                "call_type",
+                "from",
+                "to",
+                "gas",
+                "input",
+                "value",
+
+                "init",
+
+                "contract_address_suicide",
+                "refund_adderss",
+                "balance",
+
+                "gas_used",
+                "output",
+                "contract_address_create",
+                "contract_address_create_code",
+
+                "is_error",
+                "error_msg",
+                "subtraces",
+                "trace_address"
             FROM 
                 "trans_internal"
             WHERE

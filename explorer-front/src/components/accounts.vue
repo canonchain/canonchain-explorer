@@ -12,7 +12,7 @@
                     <template v-if="IS_GET_INFO">
                         <el-table :data="database" style="width: 100%">
                             <!-- <el-table-column prop="rank" label="排行榜" width="70"></el-table-column> -->
-                            <el-table-column label="账户" width="580">
+                            <el-table-column label="账户" width="400">
                                 <template slot-scope="scope">
                                     <el-button
                                         @click="handleClick(scope.row.account)"
@@ -20,14 +20,14 @@
                                     >{{scope.row.account}}</el-button>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="余额(CZR)" align="right" width="180">
+                            <el-table-column label="余额(CZR)" align="right">
                                 <template slot-scope="scope">{{scope.row.balance | toCZRVal}}</template>
                             </el-table-column>
                             <el-table-column
                                 prop="proportion"
                                 label="占比"
                                 align="right"
-                                min-width="150"
+                                min-width="80"
                             ></el-table-column>
                         </el-table>
                     </template>

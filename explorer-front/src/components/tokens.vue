@@ -11,7 +11,7 @@
                 <div class="accounts-list-wrap" v-loading="loadingSwitch">
                     <template v-if="IS_GET_INFO">
                         <el-table :data="database" style="width: 100%">
-                            <el-table-column label="代币符号" width="200">
+                            <el-table-column label="代币符号" width="180">
                                 <template slot-scope="scope">
                                     <el-button
                                         @click="goAccountPath(scope.row.contract_account)"
@@ -23,17 +23,22 @@
                                     </el-button>
                                 </template>
                             </el-table-column>
+                            <el-table-column label="创建时间" min-width="180">
+                                <template slot-scope="scope">
+                                    <span>{{scope.row.mc_timestamp | toDate}}</span>
+                                </template>
+                            </el-table-column>
                             <el-table-column label="总量" align="right" min-width="230">
                                 <template slot-scope="scope">
                                     <span>{{scope.row.token_total | toCZRVal}}</span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="持有人" align="right" min-width="230">
+                            <el-table-column label="持有人" align="right" min-width="100">
                                 <template slot-scope="scope">
                                     <span>{{scope.row.account_count}}</span>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="交易次数" align="right" min-width="230">
+                            <el-table-column label="交易次数" align="right" min-width="100">
                                 <template slot-scope="scope">
                                     <span>{{scope.row.transaction_count}}</span>
                                 </template>

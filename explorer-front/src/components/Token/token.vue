@@ -202,17 +202,17 @@ export default {
                 footer: false
             },
             pageFirstItem: {
-                trans_token_id: 0
+                stable_index: 0
             },
             pageLastItem: {
-                trans_token_id: 0
+                stable_index: 0
             },
             first_trans_token_id: "",
             end_trans_token_id: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                trans_token_id: 999999999999
+                stable_index: 999999999999
             },
 
             // change
@@ -225,7 +225,7 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.trans_token_id = queryInfo.trans_token_id;
+            self.url_parm.stable_index = queryInfo.stable_index;
         }
         self.getTokenInfo();
         self.getFlagTransactions();
@@ -260,7 +260,7 @@ export default {
                 self.$router.push(
                     `/token/${
                         self.url_parm.account
-                    }?trans_token_id=0&position=4`
+                    }?stable_index=0&position=4`
                 );
                 return;
             }
@@ -273,8 +273,8 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?trans_token_id=${
-                        self.pageFirstItem.trans_token_id
+                    `/token/${self.url_parm.account}?stable_index=${
+                        self.pageFirstItem.stable_index
                     }&position=2`
                 );
                 return;
@@ -283,8 +283,8 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?trans_token_id=${
-                        self.pageLastItem.trans_token_id
+                    `/token/${self.url_parm.account}?stable_index=${
+                        self.pageLastItem.stable_index
                     }&position=3`
                 );
                 return;
@@ -302,8 +302,8 @@ export default {
             );
 
             if (response.success) {
-                self.first_trans_token_id = response.near_item.trans_token_id;
-                self.end_trans_token_id = response.end_item.trans_token_id;
+                self.first_trans_token_id = response.near_item.stable_index;
+                self.end_trans_token_id = response.end_item.stable_index;
                 self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
@@ -315,7 +315,7 @@ export default {
             let opt = {
                 position: parm.position,
                 account: parm.account,
-                trans_token_id: parm.trans_token_id
+                stable_index: parm.stable_index
             };
             let response = await self.$api.get("/api/get_token_trans", opt);
 
@@ -343,14 +343,14 @@ export default {
             if (self.trans_token.length > 0) {
                 if (
                     self.first_trans_token_id ===
-                    self.pageFirstItem.trans_token_id
+                    self.pageFirstItem.stable_index
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
                 if (
-                    self.end_trans_token_id === self.pageLastItem.trans_token_id
+                    self.end_trans_token_id === self.pageLastItem.stable_index
                 ) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;

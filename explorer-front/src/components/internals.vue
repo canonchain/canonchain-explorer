@@ -30,11 +30,21 @@
                             </el-table-column>
 
                             <el-table-column label="Type" width="80">
-                                <template slot-scope="scope">{{scope.row.trace_type}}</template>
+                                <template slot-scope="scope">
+                                    <template v-if="scope.row.type === '0'">call</template>
+                                    <template v-else-if="scope.row.type === '1'">create</template>
+                                    <template v-else-if="scope.row.type === '2'">suicide</template>
+                                </template>
                             </el-table-column>
                             <el-table-column label="发送方" width="180">
                                 <template slot-scope="scope">
-                                    <template>
+                                    <template v-if="scope.row.type === '2'">
+                                        <router-link
+                                            class="table-long-item"
+                                            :to="{path: '/account/' + scope.row.contract_address_suicide}"
+                                        >{{scope.row.contract_address_suicide}}</router-link>
+                                    </template>
+                                    <template v-else>
                                         <router-link
                                             class="table-long-item"
                                             :to="{path: '/account/' + scope.row.from}"
@@ -44,22 +54,36 @@
                             </el-table-column>
                             <el-table-column label="接收方" width="180">
                                 <template slot-scope="scope">
-                                    <template v-if="scope.row.to">
-                                        <template>
-                                            <router-link
-                                                class="table-long-item"
-                                                :to="{path: '/account/' + scope.row.to}"
-                                            >{{scope.row.to}}</router-link>
-                                        </template>
+                                    <template v-if="scope.row.type === '2'">
+                                        <router-link
+                                            class="table-long-item"
+                                            :to="{path: '/account/' + scope.row.refund_adderss}"
+                                        >{{scope.row.refund_adderss}}</router-link>
+                                    </template>
+                                    <template v-else-if="scope.row.type === '1'">
+                                        <router-link
+                                            class="table-long-item"
+                                            :to="{path: '/account/' + scope.row.contract_address_create}"
+                                        >{{scope.row.contract_address_create}}</router-link>
                                     </template>
                                     <template v-else>
-                                        <span>-</span>
+                                        <template v-if="scope.row.to">
+                                            <template>
+                                                <router-link
+                                                    class="table-long-item"
+                                                    :to="{path: '/account/' + scope.row.to}"
+                                                >{{scope.row.to}}</router-link>
+                                            </template>
+                                        </template>
+                                        <template v-else>
+                                            <span>-</span>
+                                        </template>
                                     </template>
                                 </template>
                             </el-table-column>
                             <el-table-column label="数额" align="right">
                                 <template slot-scope="scope">
-                                    <span>{{scope.row.amount | toCZRVal}}</span>
+                                    <span>{{scope.row.value | toCZRVal}}</span>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -105,7 +129,7 @@ import HeaderCps from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let errorInfo = {
-    trans_internal_id: "",
+    stable_index: "",
     contract_account: "",
     token_name: "",
     token_symbol: "",
@@ -139,14 +163,14 @@ export default {
             },
             trans_internal: [],
             pageFirstItem: {
-                trans_internal_id: 0
+                stable_index: 0
             },
             pageLastItem: {
-                trans_internal_id: 0
+                stable_index: 0
             },
             url_parm: {
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                trans_internal_id: 999999999999999999
+                stable_index: 999999999999999999
             }
         };
     },
@@ -156,7 +180,7 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.trans_internal_id = queryInfo.trans_internal_id;
+            self.url_parm.stable_index = queryInfo.stable_index;
         }
         self.getTransactions(self.url_parm);
     },
@@ -165,7 +189,7 @@ export default {
             self.loadingSwitch = true;
             // 想取最后一页
             if (val === "footer") {
-                self.$router.push(`/internals?trans_internal_id=0&position=4`);
+                self.$router.push(`/internals?stable_index=0&position=4`);
                 return;
             }
             // 想取第一页
@@ -177,8 +201,8 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/internals?trans_internal_id=${
-                        self.pageFirstItem.trans_internal_id
+                    `/internals?stable_index=${
+                        self.pageFirstItem.stable_index
                     }&position=2`
                 );
                 return;
@@ -187,8 +211,8 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/internals?trans_internal_id=${
-                        self.pageLastItem.trans_internal_id
+                    `/internals?stable_index=${
+                        self.pageLastItem.stable_index
                     }&position=3`
                 );
                 return;
@@ -200,7 +224,7 @@ export default {
             self.loadingSwitch = true;
             let opt = {
                 position: parm.position,
-                trans_internal_id: parm.trans_internal_id
+                stable_index: parm.stable_index
             };
             let response = await self.$api.get("/api/get_internals", opt);
             if (response.success) {
@@ -243,15 +267,14 @@ export default {
             //获取交易表首位值；用来禁用首页和尾页的
             let response = await self.$api.get("/api/get_internal_flag");
             if (
-                response.near_item.trans_internal_id ==
-                self.pageFirstItem.trans_internal_id
+                response.near_item.stable_index ==
+                self.pageFirstItem.stable_index
             ) {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
             }
             if (
-                response.end_item.trans_internal_id ==
-                self.pageLastItem.trans_internal_id
+                response.end_item.stable_index == self.pageLastItem.stable_index
             ) {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;

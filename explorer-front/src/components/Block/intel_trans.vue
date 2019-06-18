@@ -201,7 +201,9 @@
                                         Data
                                         <span class="space-des"></span>
                                     </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.data || '-'}}</div>
+                                    <div class="bui-dlist-det">
+                                        <pre class="contract-code">{{blockInfo.data}}</pre>
+                                    </div>
                                 </div>
                                 <div class="block-item-des">
                                     <strong class="bui-dlist-tit">
@@ -233,27 +235,35 @@
                                     </strong>
                                     <div class="bui-dlist-det">{{blockInfo.gas_price || '-'}}</div>
                                 </div>
-                                <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Contract Address
-                                        <span class="space-des"></span>
-                                    </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.contract_address || '-'}}</div>
-                                </div>
-                                <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Log
-                                        <span class="space-des"></span>
-                                    </strong>
-                                    <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
-                                </div>
-                                <div class="block-item-des">
+                                <template v-if="blockInfo.contract_address">
+                                    <div class="block-item-des">
+                                        <strong class="bui-dlist-tit">
+                                            Contract Address
+                                            <span class="space-des"></span>
+                                        </strong>
+                                        <div
+                                            class="bui-dlist-det"
+                                        >{{blockInfo.contract_address || '-'}}</div>
+                                    </div>
+                                </template>
+
+                                <template v-if="blockInfo.log">
+                                    <div class="block-item-des">
+                                        <strong class="bui-dlist-tit">
+                                            Log
+                                            <span class="space-des"></span>
+                                        </strong>
+                                        <div class="bui-dlist-det">{{blockInfo.log || '-'}}</div>
+                                    </div>
+                                </template>
+
+                                <!-- <div class="block-item-des">
                                     <strong class="bui-dlist-tit">
                                         Log Bloom
                                         <span class="space-des"></span>
                                     </strong>
                                     <div class="bui-dlist-det">{{blockInfo.log_bloom || '-'}}</div>
-                                </div>
+                                </div>-->
                             </template>
                             <!-- 公共的 -->
                             <div class="block-item-des">
@@ -319,60 +329,87 @@
                     <div class="block-table">
                         <template>
                             <el-tabs v-model="activeName" @tab-click="change_table">
-                                <template v-if="blockInfo.is_token_trans">
-                                    <el-tab-pane label="代币转账" name="token_trans"></el-tab-pane>
-                                </template>
-                                <template v-if="blockInfo.is_intel_trans">
-                                    <el-tab-pane label="内部交易" name="intel_trans">
-                                        <div class="block-content" v-loading="loadingSwitch">
-                                            <template v-if="IS_GET_INFO">
-                                                <el-table :data="intel_trans" style="width: 100%">
-                                                    <el-table-column label="追溯地址类型" width="180">
+                                <!-- <template v-if="blockInfo.is_token_trans"> -->
+                                <el-tab-pane label="代币转账" name="token_trans"></el-tab-pane>
+                                <el-tab-pane label="内部交易" name="intel_trans">
+                                    <div class="block-content" v-loading="loadingSwitch">
+                                        <template v-if="IS_GET_INFO">
+                                            <el-table :data="intel_trans" style="width: 100%">
+                                                <el-table-column label="追溯地址类型" width="220">
+                                                    <template slot-scope="scope">
                                                         <template
-                                                            slot-scope="scope"
-                                                        >{{scope.row.trace_type}}</template>
-                                                    </el-table-column>
-                                                    <el-table-column label="发送方" width="180">
-                                                        <template slot-scope="scope">
+                                                            v-if="scope.row.type === '0'"
+                                                        >{{scope.row.type_str}}</template>
+                                                        <template
+                                                            v-else-if="scope.row.type === '1'"
+                                                        >create</template>
+                                                        <template
+                                                            v-else-if="scope.row.type === '2'"
+                                                        >suicide</template>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="发送方" width="220">
+                                                    <template slot-scope="scope">
+                                                        <template v-if="scope.row.type === '2'">
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.contract_address_suicide}"
+                                                            >{{scope.row.contract_address_suicide}}</router-link>
+                                                        </template>
+                                                        <template v-else>
                                                             <router-link
                                                                 class="table-long-item"
                                                                 :to="{path: '/account/' + scope.row.from}"
                                                             >{{scope.row.from}}</router-link>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="接收方" width="180">
-                                                        <template slot-scope="scope">
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="接收方" width="220">
+                                                    <template slot-scope="scope">
+                                                        <template v-if="scope.row.type === '2'">
                                                             <router-link
                                                                 class="table-long-item"
-                                                                :to="{path: '/account/' + scope.row.to}"
-                                                            >{{scope.row.to}}</router-link>
+                                                                :to="{path: '/account/' + scope.row.refund_adderss}"
+                                                            >{{scope.row.refund_adderss}}</router-link>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column
-                                                        label="价值"
-                                                        align="right"
-                                                        width="180"
-                                                    >
-                                                        <template slot-scope="scope">
-                                                            <span>{{scope.row.amount | toCZRVal}}</span>
+                                                        <template
+                                                            v-else-if="scope.row.type === '1'"
+                                                        >
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.contract_address_create}"
+                                                            >{{scope.row.contract_address_create}}</router-link>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column
-                                                        label="Gas Limit"
-                                                        align="right"
-                                                    >
-                                                        <template slot-scope="scope">
-                                                            <span>{{scope.row.gas_limit}}</span>
+                                                        <template v-else>
+                                                            <template v-if="scope.row.to">
+                                                                <template>
+                                                                    <router-link
+                                                                        class="table-long-item"
+                                                                        :to="{path: '/account/' + scope.row.to}"
+                                                                    >{{scope.row.to}}</router-link>
+                                                                </template>
+                                                            </template>
+                                                            <template v-else>
+                                                                <span>-</span>
+                                                            </template>
                                                         </template>
-                                                    </el-table-column>
-                                                </el-table>
-                                            </template>
-                                        </div>
-                                    </el-tab-pane>
-                                </template>
-                                <template v-if="blockInfo.is_event_log">
-                                    <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
-                                </template>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="价值" width="180">
+                                                    <template slot-scope="scope">
+                                                        <span>{{scope.row.amount | toCZRVal}} CZR</span>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="Gas Limit" align="right">
+                                                    <template slot-scope="scope">
+                                                        <span>{{scope.row.gas || 0}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
+                                        </template>
+                                    </div>
+                                </el-tab-pane>
+                                <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
                             </el-tabs>
                         </template>
                     </div>
@@ -487,6 +524,34 @@ export default {
             );
 
             if (response.success) {
+                let typeStr = "";
+                let beautify = "";
+                response.data.forEach(element => {
+                    if (element.type === "0") {
+                        typeStr = "call_0";
+                        if (element.trace_address) {
+                            element.trace_address = element.trace_address.split(
+                                "_"
+                            );
+                        } else {
+                            element.trace_address = [];
+                        }
+                        beautify = self.format(element.trace_address.length);
+                        if (element.trace_address.length) {
+                            element.type_str = `${beautify.before} ${typeStr} ${
+                                beautify.after
+                            } `;
+                        } else {
+                            element.type_str = typeStr;
+                        }
+                    } else if (element.type === "1") {
+                        typeStr = "create";
+                        element.type_str = typeStr;
+                    } else if (element.type === "2") {
+                        typeStr = "suicide";
+                        element.type_str = typeStr;
+                    }
+                });
                 self.intel_trans = response.data;
             } else {
                 self.intel_trans = [];
@@ -506,6 +571,21 @@ export default {
                     this.$router.push(`/block/${self.blockHash}/event_log`);
                     break;
             }
+        },
+        format(length) {
+            let result = {
+                before: "|--",
+                after: ""
+            };
+            for (let i = 0; i < length; i++) {
+                result.after += "_1";
+            }
+            if (length > 1) {
+                for (let i = 0; i < length - 1; i++) {
+                    result.before += "--";
+                }
+            }
+            return result;
         }
     }
 };

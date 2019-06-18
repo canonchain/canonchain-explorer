@@ -24,8 +24,8 @@
 
     // 操作稳定Unit相关变量 Start
     let unitIsFail;
-    let MCI_LIMIT = 50;
-    let stableCount = 0; //异步控制
+    let MCI_LIMIT = 1;
+    // let stableCount = 0; //异步控制
 
     let BLOCKS_LENGTH = 0;
     let allTransTypeAry = [];
@@ -228,7 +228,6 @@
                         getUnstableTimer = setTimeout(function () {
                             // TODO 已经写完了，需要重新获取
                             pageUtility.readyGetData();
-                            // console.log("last_stable_block_index 已经最新，6秒后重新获取")
                         }, 1000)
                     }
                 })
@@ -317,6 +316,18 @@
                     // logger.info(blockStatesAry);
                     db_LSBI = blockStatesAry[blockStatesAry.length - 1].stable_content.stable_index;
                     logger.info(`拿到了结果, 最新LSBI: ${db_LSBI}`);
+
+                    //获取内部交易数据--- 开始
+                    let blockTraces = {};
+                    let tempBlockTraces = {};
+                    await Promise.all(hashGroupAry.map(async (hash) => {
+                        tempBlockTraces = await czr.request.blockTraces(hash);
+                        if (tempBlockTraces.code === 0) {
+                            blockTraces[hash] = tempBlockTraces.block_traces;
+                        }
+                    }));
+                    //获取内部交易数据--- 结束
+
                     //写一级数据（TODO：目前继续使用以前一级数据模式，后期需要做调整）
                     data.blocks.forEach((item, index) => {
                         if (item.type === 0) {
@@ -336,7 +347,7 @@
                             //见证交易
                             data.blocks[index].previous = item.content.previous;
                             data.blocks[index].parents = item.content.parents || [];
-                            data.blocks[index].links = item.content.links || [];//++新增属性
+                            data.blocks[index].links = item.content.links.toString();//++新增属性
                             data.blocks[index].last_stable_block = item.content.last_stable_block;
                             data.blocks[index].last_summary_block = item.content.last_summary_block;
                             data.blocks[index].last_summary = item.content.last_summary;
@@ -347,6 +358,7 @@
                             data.blocks[index].is_on_mc = blockStatesAry[index].stable_content.is_on_mc;
 
                         }
+
                         if (item.type === 2) {
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
@@ -356,7 +368,8 @@
                             data.blocks[index].previous = item.content.previous;
                             data.blocks[index].gas = item.content.gas;
                             data.blocks[index].gas_price = item.content.gas_price;
-                            //status
+                            //内部交易
+                            data.blocks[index].block_traces = blockTraces[item.hash];
                         }
 
                         //写状态数据
@@ -372,7 +385,7 @@
                         if ((item.type === 2) || (item.type === 0)) {
                             data.blocks[index].from_state = blockStatesAry[index].stable_content.from_state;
                             data.blocks[index].to_states = blockStatesAry[index].stable_content.to_states;
-                            data.blocks[index].gas_used = blockStatesAry[index].stable_content.gas_used;
+                            data.blocks[index].gas_used = blockStatesAry[index].stable_content.gas_used || 0;
                             data.blocks[index].log = blockStatesAry[index].stable_content.log;
                             data.blocks[index].log_bloom = blockStatesAry[index].stable_content.log_bloom;
                             data.blocks[index].contract_address = blockStatesAry[index].stable_content.contract_address;
@@ -418,20 +431,36 @@
             if (genesisTransInsertAry.length) {
                 genesisTransInsertAry.forEach(blockInfo => {
                     //DO 写创世块的金额
-                    accountsTotal[blockInfo.from] = {
-                        account: blockInfo.from,
-                        type: 1,
-                        balance: "0"
-                    };
-                    accountsTotal[blockInfo.to] = {
-                        account: blockInfo.to,
-                        type: 1,
-                        balance: blockInfo.amount
-                    };
+
+
+                    if (accountsTotal.hasOwnProperty(blockInfo.to)) {
+                        accountsTotal[blockInfo.to] = {
+                            account: blockInfo.to,
+                            type: 1,
+                            balance: blockInfo.amount
+                        };
+                    }
+                    if (accountsTotal.hasOwnProperty(blockInfo.from)) {
+                        accountsTotal[blockInfo.from] = {
+                            account: blockInfo.from,
+                            type: 1,
+                            balance: "0"
+                        };
+                    }
                 });
             }
+
+            //见证交易 操作表：trans_witness / parents
+            witnessTransInsertAry.forEach(blockInfo => {
+                //DO 处理 parents 数据
+                parentsTotalAry.push({
+                    item: blockInfo.hash,
+                    parent: blockInfo.parents
+                });
+            });
+
             //普通交易 操作表: account / timestamp / trans_nomaol
-            normalTransInsertAry.forEach(blockInfo => {
+            await Promise.all(normalTransInsertAry.map(async (blockInfo) => {
                 //DO 处理账户，发款方不在当前 accountsTotal 时 （以前已经储存在数据库了）
                 if (!accountsTotal.hasOwnProperty(blockInfo.from)) {
                     accountsTotal[blockInfo.from] = {
@@ -461,15 +490,18 @@
                             }
                         } else {
                             //合约账户
-                            accountsTotal[blockInfo.contract_address] = {
-                                account: blockInfo.contract_address,
-                                type: 2,
-                                balance: "0",
-                                is_token_account: false,
-                                is_has_token_trans: false,
-                                is_has_intel_trans: false,
-                                is_has_event_logs: false
+                            if (blockInfo.contract_address) {
+                                accountsTotal[blockInfo.contract_address] = {
+                                    account: blockInfo.contract_address,
+                                    type: 2,
+                                    balance: "0",
+                                    is_token_account: false,
+                                    is_has_token_trans: false,
+                                    is_has_intel_trans: false,
+                                    is_has_event_logs: false
+                                }
                             }
+
                         }
                     }
                     //处理发款方余额
@@ -505,7 +537,6 @@
                 //********************************** 合约相关数据组装 开始 */
                 //DO 创建合约交易[OK]
                 if (!blockInfo.to && blockInfo.contract_address) {
-                    console.log("创建了合约", blockInfo.contract_address)
                     logger.info("创建了合约", blockInfo.contract_address)
                     //合约表
                     contractInsertAry.push({
@@ -535,7 +566,9 @@
                         eventLogInsertAry.push(
                             {
                                 hash: blockInfo.hash,
+                                mci: blockInfo.mci,
                                 mc_timestamp: blockInfo.mc_timestamp,
+                                stable_index: blockInfo.stable_index,
                                 contract_account: contractAccount,
                                 data: log_item.data,
                                 method: blockInfo.data.toString().substring(0, 8),//A9059CBB
@@ -553,6 +586,7 @@
                                 token_symbol: await pageUtility.call(contractAccount, "symbol"),
                                 token_precision: await pageUtility.call(contractAccount, "decimals"),
                                 token_total: await pageUtility.call(contractAccount, "totalSupply"),
+                                owner: await pageUtility.call(contractAccount, "owner"),
                             };
 
                             //双方账户
@@ -570,13 +604,16 @@
                             if (!tokenInsertAryHelpObj.hasOwnProperty(contractAccount)) {
                                 tokenInsertAryHelpObj[contractAccount] = {
                                     contract_account: contractAccount,
+                                    mc_timestamp: blockInfo.mc_timestamp,
                                     token_name: TokenInfo.token_name,//Cannot read property 'value' of undefined
                                     token_symbol: TokenInfo.token_symbol,
                                     token_precision: TokenInfo.token_precision,
                                     token_total: TokenInfo.token_total,
+                                    owner: TokenInfo.owner,
                                     transaction_count: 0,
                                     account_count: 0
                                 }
+
 
                                 //更新 合约表 相关的Token信息 使用，
                                 contractUpdateAryHelpObj[contractAccount] = {
@@ -588,6 +625,17 @@
                                 //to账户为合约账户 is_token_account
                                 if (accountsTotal.hasOwnProperty(contractAccount)) {
                                     accountsTotal[contractAccount].is_token_account = true;
+                                }
+
+                                //写初始账户金额
+                                if (!tokenAccountsTotal.hasOwnProperty(TokenInfo.owner)) {
+                                    tokenAccountsTotal[TokenInfo.owner + contractAccount] = {
+                                        account: TokenInfo.owner,
+                                        contract_account: contractAccount,
+                                        account_contract_merger: TokenInfo.owner + contractAccount,
+                                        symbol: TokenInfo.token_symbol,
+                                        balance: TokenInfo.token_total
+                                    }
                                 }
                             }
 
@@ -614,11 +662,20 @@
                             tempTransTokenInsertInfo = {
                                 hash: blockInfo.hash,
                                 mc_timestamp: blockInfo.mc_timestamp,
+                                stable_index: blockInfo.stable_index,
                                 from: contractFromAcc,
                                 to: contractToAcc,
                                 contract_account: contractAccount,
                                 token_symbol: TokenInfo.token_symbol,
-                                amount: transData
+                                token_name: TokenInfo.token_name,
+                                amount: transData,
+
+                                token_precision: TokenInfo.token_precision,
+                                gas: blockInfo.gas,
+                                gas_price: blockInfo.gas_price,
+                                gas_used: blockInfo.gas_used,
+                                input: blockInfo.data
+
                             }
                             transTokenInsertAry.push(tempTransTokenInsertInfo);
                             // logger.info("tempTransTokenInsertInfo")
@@ -666,34 +723,51 @@
                 }
 
                 //内部交易表
-                if (false) {
+                if (blockInfo.block_traces.length) {
                     blockInfo.is_intel_trans = true;
-                    transInternalInsertAry.push(
-                        {
-                            hash: "",
-                            mc_timestamp: "",
-                            from: "",
-                            to: "",
-                            amount: "",
-                            gas_limit: "",
-                            trace_type: "",
-                            trace_flag: ""
-                        }
-                    );
+                    blockInfo.block_traces.forEach(traces_item => {
+                        transInternalInsertAry.push(
+                            {
+                                hash: blockInfo.hash,
+                                mci: blockInfo.mci,
+                                mc_timestamp: blockInfo.mc_timestamp,
+                                stable_index: blockInfo.stable_index,
+
+                                type: traces_item.type,
+
+                                call_type: traces_item.action.call_type || "",
+                                from: traces_item.action.from || "",
+                                to: traces_item.action.to || "",
+                                gas: traces_item.action.gas || 0,
+                                input: traces_item.action.input || "",
+                                value: traces_item.action.value || 0,
+
+                                init: traces_item.action.init || "",
+
+                                contract_address_suicide: traces_item.action.contract_address || "",
+                                refund_adderss: traces_item.action.refund_adderss || "",
+                                balance: traces_item.action.balance || 0,
+
+                                gas_used: traces_item.result ? traces_item.result.gas_used : 0,
+                                output: traces_item.result ? (traces_item.result.output || "") : "",
+                                contract_address_create: traces_item.result ? (traces_item.result.contract_address || "") : "",
+                                contract_address_create_code: traces_item.result ? (traces_item.result.code || "") : "",
+
+                                is_error: traces_item.error ? true : false,
+                                error_msg: traces_item.error || "",
+
+                                subtraces: traces_item.subtraces,
+                                trace_address: traces_item.trace_address.join("_")
+                            }
+                        );
+                    });
+
                 } else {
                     blockInfo.is_intel_trans = false;
                 }
                 //********************************** 合约相关数据组装 结束 */
-            })
+            }));
 
-            //见证交易 操作表：trans_witness / parents
-            witnessTransInsertAry.forEach(blockInfo => {
-                //DO 处理 parents 数据
-                parentsTotalAry.push({
-                    item: blockInfo.hash,
-                    parent: blockInfo.parents
-                });
-            });
             /*
              * 处理账户
              * 处理Parent
@@ -701,12 +775,16 @@
              * */
 
             logger.info(`数据分装 结束`);
-            pageUtility.searchAccountBaseDb();
-            pageUtility.searchTimestampBaseDb();
-            pageUtility.searchTimestamp10BaseDb();
-            pageUtility.searchBlockBaseDb();
-            pageUtility.searchTokenBaseDb();
-            pageUtility.searchTokenAssetBaseDb();
+
+            await Promise.all([
+                pageUtility.searchAccountBaseDb(),
+                pageUtility.searchTimestampBaseDb(),
+                pageUtility.searchTimestamp10BaseDb(),
+                pageUtility.searchBlockBaseDb(),
+                pageUtility.searchTokenBaseDb(),
+                pageUtility.searchTokenAssetBaseDb(),
+            ]);
+            pageUtility.stableInsertControl();
         },
 
         async searchAccountBaseDb() {
@@ -716,25 +794,21 @@
                 text: "select account from accounts where account = ANY ($1)",
                 values: [tempAccountAllAry]
             };
-            client.query(upsertSql, (err, accountRes) => {
-                if (err) {
-                    logger.info(`searchAccountBaseDb Error`)
-                    logger.info(err.stack)
-                } else {
-                    accountRes.rows.forEach(item => {
-                        if (accountsTotal.hasOwnProperty(item.account)) {
-                            accountsUpdateAry.push(accountsTotal[item.account]);//更新的数据
-                            delete accountsTotal[item.account];
-                        }
-                    });
-                    Object.keys(accountsTotal).forEach(function (key) {
+            let accountRes = await client.query(upsertSql);
+            if (!accountRes.code) {
+                accountRes.rows.forEach(item => {
+                    if (accountsTotal.hasOwnProperty(item.account)) {
+                        accountsUpdateAry.push(accountsTotal[item.account]);//更新的数据
+                        delete accountsTotal[item.account];
+                    }
+                });
+                Object.keys(accountsTotal).forEach(function (key) {
+                    if (accountsTotal[key]) {
                         accountsInsertAry.push(accountsTotal[key]);//需要插入的
-                    });
-
-                    logger.info(`Account完成     合计:${tempAccountAllAry.length} 更新:${accountsUpdateAry.length} 插入:${accountsInsertAry.length}`);
-                    pageUtility.stableInsertControl();
-                }
-            })
+                    }
+                });
+                logger.info(`Account完成     合计:${tempAccountAllAry.length} 更新:${accountsUpdateAry.length} 插入:${accountsInsertAry.length}`);
+            }
         },
         async searchTimestampBaseDb() {
             //处理Timestamp
@@ -743,26 +817,20 @@
                 text: "select timestamp from timestamp where timestamp = ANY ($1)",
                 values: [tempTimesAllAry]
             };
-            client.query(upsertSql, (err, timestampRes) => {
-                if (err) {
-                    logger.info(`searchTimestampBaseDb Error`)
-                    logger.info(err.stack)
-                } else {
-                    timestampRes.rows.forEach(item => {
-                        if (timestampTotal.hasOwnProperty(item.timestamp)) {
-                            timestampUpdateAry.push(timestampTotal[item.timestamp]);
-                            delete timestampTotal[item.timestamp];
-                        }
-                    });
-                    Object.keys(timestampTotal).forEach(function (key) {
-                        timestampInsertAry.push(timestampTotal[key]);
-                    });
+            let timestampRes = await client.query(upsertSql);
+            if (!timestampRes.code) {
+                timestampRes.rows.forEach(item => {
+                    if (timestampTotal.hasOwnProperty(item.timestamp)) {
+                        timestampUpdateAry.push(timestampTotal[item.timestamp]);
+                        delete timestampTotal[item.timestamp];
+                    }
+                });
+                Object.keys(timestampTotal).forEach(function (key) {
+                    timestampInsertAry.push(timestampTotal[key]);
+                });
 
-                    logger.info(`Timestamp完成   合计:${tempTimesAllAry.length} 更新:${timestampUpdateAry.length} 插入:${timestampInsertAry.length}`);
-                    //处理Timestamp 结束
-                    pageUtility.stableInsertControl();
-                }
-            })
+                logger.info(`Timestamp完成   合计:${tempTimesAllAry.length} 更新:${timestampUpdateAry.length} 插入:${timestampInsertAry.length}`);
+            }
         },
         async searchTimestamp10BaseDb() {
             //处理 10Timestamp 开始
@@ -771,40 +839,34 @@
                 text: "select timestamp from timestamp where timestamp = ANY ($1)",
                 values: [tempTimes10AllAry]
             };
+            let timestampRes = await client.query(upsert10Sql);
+            if (!timestampRes.code) {
+                timestampRes.rows.forEach(item => {
+                    if (timestamp10Total.hasOwnProperty(item.timestamp)) {
+                        timestamp10UpdateAry.push(timestamp10Total[item.timestamp]);
+                        delete timestamp10Total[item.timestamp];
+                    }
+                });
+                Object.keys(timestamp10Total).forEach(function (key) {
+                    timestamp10InsertAry.push(timestamp10Total[key]);
+                });
 
-            client.query(upsert10Sql, (err, timestampRes) => {
-                if (err) {
-                    logger.info(`searchTimestampBaseDb Error`)
-                    logger.info(err.stack)
-                } else {
-                    timestampRes.rows.forEach(item => {
-                        if (timestamp10Total.hasOwnProperty(item.timestamp)) {
-                            timestamp10UpdateAry.push(timestamp10Total[item.timestamp]);
-                            delete timestamp10Total[item.timestamp];
-                        }
-                    });
-                    Object.keys(timestamp10Total).forEach(function (key) {
-                        timestamp10InsertAry.push(timestamp10Total[key]);
-                    });
-
-                    logger.info(`Timestamp10完成 合计:${tempTimes10AllAry.length} 更新:${timestamp10UpdateAry.length} 插入:${timestamp10InsertAry.length}`);
-                    //处理 10Timestamp 结束
-                    pageUtility.stableInsertControl();
-                }
-            })
+                logger.info(`Timestamp10完成 合计:${tempTimes10AllAry.length} 更新:${timestamp10UpdateAry.length} 插入:${timestamp10InsertAry.length}`);
+            }
         },
         async searchBlockBaseDb() {
             logger.info(`Parents需处理:${Object.keys(parentsTotalAry).length}`); //parentsTotalAry 是目标数据 
-            pageUtility.spreadParent(parentsTotalAry, pageUtility.stableInsertControl);
+            // pageUtility.spreadParent(parentsTotalAry, pageUtility.stableInsertControl);
+            pageUtility.spreadParent(parentsTotalAry);
         },
         //去除已经更新过的合约信息
         async searchTokenBaseDb() {
             //处理账户
-            let tempContractAllAry = Object.keys(contractUpdateAryHelpObj);
+            let tempContractAllAry = Object.keys(tokenInsertAryHelpObj);
             let upsertSql = {
                 text: `
                 select 
-                    contract_account 
+                    contract_account,token_total,owner
                 from 
                     token
                 where 
@@ -812,31 +874,24 @@
                 `,
                 values: [tempContractAllAry]
             };
-            client.query(upsertSql, (err, contractRes) => {
-                if (err) {
-                    logger.info(`searchTokenBaseDb Error`)
-                    logger.info(err.stack)
-                } else {
-                    //组装更新的合约 contractUpdateAry
-                    contractRes.rows.forEach(item => {
-                        //减去错误增加的账户余额---
 
-                        //删除已经存在的Token
-                        delete contractUpdateAryHelpObj[item.contract_account];
-                    });
-                    //contractUpdateAryHelpObj 当前内容均是Token数据库不存在的Token，需要插入
-                    Object.keys(contractUpdateAryHelpObj).forEach(function (key) {
-                        tokenInsertAry.push(tokenInsertAryHelpObj[key]);//需要插入的 tokenInsertAryHelpObj
-                        contractUpdateAry.push(contractUpdateAryHelpObj[key]);//更新的数据
+            let contractRes = await client.query(upsertSql);
+            if (!contractRes.code) {
+                contractRes.rows.forEach(item => {
+                    //减去错误增加的账户余额
+                    tokenAccountsTotal[item.owner + item.contract_account].balance = BigNumber(tokenAccountsTotal[item.owner + item.contract_account].balance).minus(item.token_total).toString(10);
+                    //删除已经存在的Token
+                    delete tokenInsertAryHelpObj[item.contract_account];
+                });
 
-                        // if (contractUpdateAryHelpObj.hasOwnProperty(item.contract_account) && (!item.token_symbol)) {
-
-                    });
-                    logger.info(`Contract筛选完成   需要插入Token数量:${tokenInsertAry.length}   需要更新合约数量:${contractUpdateAry.length}`);
-                    pageUtility.searchTokenAssetBaseDbForFilter();
-
-                }
-            })
+                //tokenInsertAryHelpObj 当前内容均是Token数据库不存在的Token，需要插入
+                Object.keys(tokenInsertAryHelpObj).forEach(function (key) {
+                    tokenInsertAry.push(tokenInsertAryHelpObj[key]);//需要插入的[]
+                    contractUpdateAry.push(contractUpdateAryHelpObj[key]);//更新的数据
+                });
+                logger.info(`Contract筛选完成   需要插入Token数量:${tokenInsertAry.length}   需要更新合约数量:${contractUpdateAry.length}`);
+                pageUtility.searchTokenAssetBaseDbForFilter();
+            }
         },
         //查询Token资产表，拆分插入和更新数据
         async searchTokenAssetBaseDbForFilter() {
@@ -855,23 +910,21 @@
 
             let tokenAssetRes = await client.query(upsertSql);
 
-            // logger.info(`初始数据:${tempKeys.length}`);
-            // logger.info(tempKeys);
-            // logger.info(`数据库含 ${tokenAssetRes.rows.length}`)
-            // logger.info(tokenAssetRes.rows)
-            // [ { account_contract_merger:'xxx' } ]
+            if (!tokenAssetRes.code) {
+                tokenAssetRes.rows.forEach(item => {
+                    if (tokenAccountsTotal.hasOwnProperty(item.account_contract_merger)) {
+                        tokenAssetUpdateAry.push(tokenAccountsTotal[item.account_contract_merger]);//更新的数据
+                        delete tokenAccountsTotal[item.account_contract_merger];
+                    }
+                });
+                Object.keys(tokenAccountsTotal).forEach(function (key) {
+                    tokenAssetInsertAry.push(tokenAccountsTotal[key]);//需要插入的
+                });
+                logger.info(`Token资产表完成   需要插入数量:${tokenAssetInsertAry.length}   需要更新数量:${tokenAssetUpdateAry.length}`);
+            }
 
-            tokenAssetRes.rows.forEach(item => {
-                if (tokenAccountsTotal.hasOwnProperty(item.account_contract_merger)) {
-                    tokenAssetUpdateAry.push(tokenAccountsTotal[item.account_contract_merger]);//更新的数据
-                    delete tokenAccountsTotal[item.account_contract_merger];
-                }
-            });
-            Object.keys(tokenAccountsTotal).forEach(function (key) {
-                tokenAssetInsertAry.push(tokenAccountsTotal[key]);//需要插入的
-            });
-            logger.info(`Token资产表完成   需要插入数量:${tokenAssetInsertAry.length}   需要更新数量:${tokenAssetUpdateAry.length}`);
-            pageUtility.stableInsertControl();
+
+            // pageUtility.stableInsertControl();
         },
 
         //查询Token资产表 
@@ -899,35 +952,34 @@
             let currentHaveAddress;
             let tempIndex;
 
-            tokenAssetRes.rows.forEach(item => {
-                // if (tokenUpdateAryHelpObj.hasOwnProperty(item.contract_account)) {}
-                currentHaveAddress = tokenUpdateAryHelpObj[item.contract_account].haveAddress;
-                tempIndex = currentHaveAddress.indexOf(item.account);
-                if (tempIndex !== -1) {
-                    currentHaveAddress.splice(tempIndex, 1); //删除下标为tempIndex的元素
-                }
-            });
-            Object.keys(tokenUpdateAryHelpObj).forEach(item => {
-                tokenUpdateAry.push(
-                    {
-                        contract_account: item,
-                        transaction_count: tokenUpdateAryHelpObj[item].transaction_count,
-                        account_count: tokenUpdateAryHelpObj[item].haveAddress.length
+            if (!tokenAssetRes.code) {
+                tokenAssetRes.rows.forEach(item => {
+                    // if (tokenUpdateAryHelpObj.hasOwnProperty(item.contract_account)) {}
+                    currentHaveAddress = tokenUpdateAryHelpObj[item.contract_account].haveAddress;
+                    tempIndex = currentHaveAddress.indexOf(item.account);
+                    if (tempIndex !== -1) {
+                        currentHaveAddress.splice(tempIndex, 1); //删除下标为tempIndex的元素
                     }
-                )
-            })
+                });
+                Object.keys(tokenUpdateAryHelpObj).forEach(item => {
+                    tokenUpdateAry.push(
+                        {
+                            contract_account: item,
+                            transaction_count: tokenUpdateAryHelpObj[item].transaction_count,
+                            account_count: tokenUpdateAryHelpObj[item].haveAddress.length
+                        }
+                    )
+                })
 
-            logger.info(`Token更新信息筛选完成   需要更新:${tokenUpdateAry.length}`);
-            pageUtility.stableInsertControl();
+                logger.info(`Token更新信息筛选完成   需要更新:${tokenUpdateAry.length}`);
+            }
+
+            // pageUtility.stableInsertControl();
         },
 
         stableInsertControl() {
-            stableCount++;
-            if (stableCount === 6) {
-                logger.info(`数据过滤分装完成，完成分类操作`);
-                stableCount = 0;
-                pageUtility.batchInsertStable();
-            }
+            logger.info(`数据过滤分装完成，完成分类操作`);
+            pageUtility.batchInsertStable();
         },
         async batchInsertStable() {
             //批量提交
@@ -1208,31 +1260,36 @@
             let tempAry = [],
                 calcObj = {};
             blockAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.hash + "'," +
-                    Number(item.type) + ",'" +
-                    item.from + "','" +
-                    item.previous + "'," +
-                    Number(item.exec_timestamp) + ",'" +
-                    item.work + "','" +
-                    item.signature + "'," +
-                    Number(item.level) + "," +
-                    item.is_stable + "," +
-                    Number(item.stable_index) + "," +
-                    Number(item.status) + "," +
-                    Number(item.mci) + "," +
-                    Number(item.mc_timestamp) + "," +
-                    Number(item.stable_timestamp) + ",'" +
+                tempAry.push(`
+                (
+                    '${item.hash}',
+                    ${Number(item.type)},
+                    '${item.from}',
+                    ${Number(item.exec_timestamp)},
+                    '${item.work}',
+                    '${item.signature}',
 
-                    item.last_stable_block + "','" +
-                    item.last_summary_block + "','" +
-                    item.last_summary + "'," +
-                    item.is_free + "," +
-                    item.witnessed_level + ",'" +
-                    item.best_parent + "'," +
-                    item.is_on_mc +
-                    ")");
+                    '${item.previous || ""}',
+                    '${item.links || ""}',
+                    '${item.last_stable_block || ""}',
+                    '${item.last_summary_block || ""}',
+                    '${item.last_summary || ""}',
+
+                    '${item.is_stable}',
+                    ${Number(item.level)},
+                    ${Number(item.witnessed_level)},
+                    '${item.best_parent || ""}',
+
+                    ${Number(item.status)},
+                    ${Number(item.stable_index)},
+                    ${Number(item.mc_timestamp)},
+                    ${Number(item.stable_timestamp)},
+                    ${Number(item.mci)},
+
+                    ${Number(item.is_free)},
+                    ${Number(item.is_on_mc)}
+                )
+                `);
                 calcAccountTranCount(item, calcObj)
             });
 
@@ -1240,14 +1297,23 @@
                 text: `
                 INSERT INTO 
                     trans_witness(
-                        "hash","type","from","previous","exec_timestamp","work","signature",
-                        "level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp",
-                        "last_stable_block","last_summary_block","last_summary","is_free",
-                        "witnessed_level","best_parent","is_on_mc"
+                        "hash","type","from","exec_timestamp","work","signature",
+                        "previous","links","last_stable_block","last_summary_block","last_summary",
+
+                        "is_stable",
+                        "level","witnessed_level","best_parent",
+                        "status","stable_index","mc_timestamp","stable_timestamp","mci",
+                        "is_free","is_on_mc"
                     ) 
                 VALUES` + tempAry.toString()
             };
-            await client.query(batchInsertSql);
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertWitnessBlock")
+                logger.info(e)
+            }
 
             pageUtility.updateAccountTranCount(calcObj);
             pageUtility.updateGlobalTranCount('witness_count', tempAry.length);
@@ -1259,28 +1325,39 @@
             let tempAry = [],
                 calcObj = {};
             blockAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.hash + "'," +
-                    Number(item.type) + ",'" +
-                    item.from + "','" +
-                    item.previous + "'," +
-                    Number(item.exec_timestamp) + ",'" +
-                    item.work + "','" +
-                    item.signature + "'," +
-                    Number(item.level) + "," +
-                    item.is_stable + "," +
-                    Number(item.stable_index) + "," +
-                    Number(item.status) + "," +
-                    Number(item.mci) + "," +
-                    Number(item.mc_timestamp) + "," +
-                    Number(item.stable_timestamp) + ",'" +
+                tempAry.push(`
+                (
+                    '${item.hash}',
+                    ${Number(item.type)},
+                    '${item.from}',
+                    ${Number(item.exec_timestamp)},
+                    '${item.work}',
+                    '${item.signature}',
 
-                    item.to + "'," +
-                    Number(item.amount) + ",'" +
-                    item.data + "','" +
-                    item.data_hash + "'" +
-                    ")");
+                    '${item.to}',
+                    ${Number(item.amount)},
+                    '${item.data_hash}',
+                    '${item.data}',
+
+                    '${item.is_stable}',
+                    ${Number(item.level)},
+                    ${Number(item.witnessed_level)},
+
+                    ${Number(item.status)},
+                    ${Number(item.stable_index)},
+                    ${Number(item.mc_timestamp)},
+                    ${Number(item.stable_timestamp)},
+                    ${Number(item.mci)},
+
+                    ${Number(item.is_free)},
+                    ${Number(item.is_on_mc)},
+                    '${item.from_state}',
+                    '${item.to_states}',
+                    ${Number(item.gas_used)},
+                    '${(item.log)}',
+                    '${(item.log_bloom)}'
+                )
+                `);
                 calcAccountTranCount(item, calcObj)
             });
 
@@ -1288,13 +1365,29 @@
                 text: `
                 INSERT INTO 
                     trans_genesis(
-                        "hash","type","from","previous","exec_timestamp","work","signature",
-                        "level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp",
-                        "to","amount","data","data_hash"
+                        "hash","type","from","exec_timestamp","work","signature",
+                        "to","amount","data_hash","data",
+
+                        "is_stable",
+                        "level","witnessed_level",
+                        "status","stable_index","mc_timestamp","stable_timestamp","mci",
+
+                        "is_free","is_on_mc","from_state","to_states",
+
+                        "gas_used","log","log_bloom"
                     ) 
                 VALUES` + tempAry.toString()
             };
-            await client.query(batchInsertSql);
+
+
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertGenesissBlock")
+                logger.info(batchInsertSql)
+                logger.info(e)
+            }
 
             pageUtility.updateAccountTranCount(calcObj);
             // pageUtility.updateGlobalTranCount(0, tempAry.length);
@@ -1306,44 +1399,45 @@
             let tempAry = [],
                 calcObj = {};
             blockAry.forEach((item) => {
-                tempAry.push(
-                    "('" +
-                    item.hash + "'," +
-                    Number(item.type) + ",'" +
-                    item.from + "','" +
-                    item.previous + "'," +
-                    Number(item.exec_timestamp) + ",'" +
-                    item.work + "','" +
-                    item.signature + "'," +
-                    Number(item.level) + "," +
-                    item.is_stable + "," +
-                    Number(item.stable_index) + "," +
-                    Number(item.status) + "," +
-                    Number(item.mci) + "," +
-                    Number(item.mc_timestamp) + "," +
-                    Number(item.stable_timestamp) + "," +
+                tempAry.push(`
+                (
+                    '${item.hash}',
+                    ${Number(item.type)},
+                    '${item.from}',
+                    ${Number(item.exec_timestamp)},
+                    '${item.work}',
+                    '${item.signature}',
 
-                    Number(item.gas) + "," +
-                    Number(item.gas_used || 2) + "," +
-                    Number(item.gas_price) + ",'" +
-                    (item.contract_address || "") + "','" +
-                    (item.log || "") + "','" +
-                    (item.log_bloom || "") + "','" +
+                    '${item.to}',
+                    ${Number(item.amount)},
+                    '${item.previous}',
+                    ${Number(item.gas)},
+                    ${Number(item.gas_price)},
+                    '${item.data_hash}',
+                    '${item.data}',
+
+                    '${item.is_stable}',
+                    ${Number(item.level)},
+
+                    '${item.from_state}',
+                    '${item.to_states}',
+                    ${Number(item.gas_used || 0)},
+                    '${(item.log || "")}',
+                    '${(item.log_bloom || "")}',
+                    '${(item.contract_address || "")}',
 
 
-                    item.to + "'," +
-                    Number(item.amount) + ",'" +
-                    item.data + "','" +
-                    item.data_hash + "','" +
+                    ${Number(item.status)},
+                    ${Number(item.stable_index)},
+                    ${Number(item.mc_timestamp)},
+                    ${Number(item.stable_timestamp)},
+                    ${Number(item.mci)},
 
-                    item.from_state + "','" +
-                    item.to_states + "'," +
-
-                    item.is_event_log + "," +
-                    item.is_token_trans + "," +
-                    item.is_intel_trans +
-
-                    ")");
+                    ${item.is_event_log},
+                    ${item.is_token_trans},
+                    ${item.is_intel_trans}
+                )
+                `);
                 calcAccountTranCount(item, calcObj)
             });
 
@@ -1351,16 +1445,26 @@
                 text: `
                 INSERT INTO 
                     trans_normal(
-                        "hash","type","from","previous","exec_timestamp","work","signature",
-                        "level","is_stable","stable_index","status","mci","mc_timestamp","stable_timestamp",
-                        "gas","gas_used","gas_price","contract_address","log","log_bloom",
-                        "to","amount","data","data_hash",
-                        "from_state","to_states",
+                        "hash","type","from","exec_timestamp","work","signature",
+                        "to","amount","previous","gas","gas_price","data_hash","data",
+
+                        "is_stable",
+                        "level",
+                        "from_state","to_states","gas_used","log","log_bloom","contract_address",
+                        "status","stable_index","mc_timestamp","stable_timestamp","mci",
                         "is_event_log","is_token_trans","is_intel_trans"
                     ) 
                 VALUES` + tempAry.toString()
             };
-            await client.query(batchInsertSql);
+            // await client.query(batchInsertSql);
+
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertNormalBlock")
+                logger.info(e)
+            }
 
             pageUtility.updateAccountTranCount(calcObj);
             pageUtility.updateGlobalTranCount('normal_count', tempAry.length);
@@ -1398,6 +1502,9 @@
                     break;
                 case "token_count":
                     columnName = 'token_count';
+                    break;
+                case "internal_count":
+                    columnName = 'internal_count';
                     break;
             }
 
@@ -1497,7 +1604,7 @@
         },
 
         //展开parent
-        async spreadParent(sources_ary, fn) {
+        async spreadParent(sources_ary) {
             //falg : 1=>稳定 2=>不稳定
             // flag  1
             logger.info(`展开Parent Start`)
@@ -1514,7 +1621,7 @@
                 }
             })
             parentsTotalAry = tempAry;
-            fn();
+            // fn();
         },
         async updateGlobalMci(val) {
             let pdateMciSql = `
@@ -1576,6 +1683,7 @@
         //token_name和token_simbol字段
         async batchUpdataContract(contractUpdateAry) {
             let tempAry = [];
+            // console.log("contractUpdateAry", contractUpdateAry.length);
             contractUpdateAry.forEach((item) => {
                 tempAry.push(
                     `
@@ -1667,26 +1775,29 @@
                     `
                     (
                         '${item.contract_account}',
+                        '${item.mc_timestamp}',
                         '${item.token_name}',
                         '${item.token_symbol}',
                         ${Number(item.token_precision)},
                         ${Number(item.token_total)},
+                        '${item.owner}',
                         ${Number(item.transaction_count)},
                         ${Number(item.account_count)}
                     )
                     `
                 );
             });
-            console.log("需要插入token表的", temptest)
             let batchInsertSql = {
                 text: `
                     INSERT INTO 
                         token (
                             "contract_account",
+                            "mc_timestamp",
                             "token_name",
                             "token_symbol",
                             "token_precision",
                             "token_total",
+                            "owner",
                             "transaction_count",
                             "account_count"
                         )
@@ -1737,11 +1848,19 @@
                     (
                         '${item.hash}',
                         ${Number(item.mc_timestamp)},
+                        ${Number(item.stable_index)},
                         '${item.from}',
                         '${item.to}',
                         '${item.contract_account}',
                         '${item.token_symbol}',
-                        ${item.amount}
+                        '${item.token_name}',
+                        ${item.amount},
+
+                        ${item.token_precision},
+                        ${item.gas},
+                        ${item.gas_price},
+                        ${item.gas_used},
+                        '${item.input}'
                     )
                     `
                 );
@@ -1752,11 +1871,19 @@
                         trans_token (
                             "hash",
                             "mc_timestamp",
+                            "stable_index",
                             "from",
                             "to",
                             "contract_account",
                             "token_symbol",
-                            "amount"
+                            "token_name",
+                            "amount",
+
+                            "token_precision",
+                            "gas",
+                            "gas_price",
+                            "gas_used",
+                            "input"
                         )
                     VALUES ${tempAry.toString()}`
             };
@@ -1770,13 +1897,34 @@
                     `
                     (
                         '${item.hash}',
+                        ${Number(item.mci)},
                         ${Number(item.mc_timestamp)},
+                        ${Number(item.stable_index)},
+
+                        ${Number(item.type)},
+
+                        '${item.call_type}',
                         '${item.from}',
                         '${item.to}',
-                        ${item.amount},
-                        ${item.gas_limit},
-                        '${item.trace_type}',
-                        '${item.trace_flag}'
+                        ${Number(item.gas)},
+                        '${item.input}',
+                        '${item.value}',
+
+                        '${item.init}',
+
+                        '${item.contract_address_suicide}',
+                        '${item.refund_adderss}',
+                        ${Number(item.balance)},
+
+                        ${Number(item.gas_used)},
+                        '${item.output}',
+                        '${item.contract_address_create}',
+                        '${item.contract_address_create_code}',
+
+                        ${item.is_error},
+                        '${item.error_msg}',
+                        '${item.subtraces}',
+                        '${item.trace_address}'
                     )
                     `
                 );
@@ -1787,16 +1935,38 @@
                     INSERT INTO 
                         trans_internal (
                             "hash",
+                            "mci",
                             "mc_timestamp",
+                            "stable_index",
+
+                            "type",
+
+                            "call_type",
                             "from",
                             "to",
-                            "amount",
-                            "gas_limit",
-                            "trace_type",
-                            "trace_flag"
+                            "gas",
+                            "input",
+                            "value",
+
+                            "init",
+
+                            "contract_address_suicide",
+                            "refund_adderss",
+                            "balance",
+
+                            "gas_used",
+                            "output",
+                            "contract_address_create",
+                            "contract_address_create_code",
+
+                            "is_error",
+                            "error_msg",
+                            "subtraces",
+                            "trace_address"
                         )
                     VALUES ${tempAry.toString()}`
             };
+            // logger.info(batchInsertSql);
             await client.query(batchInsertSql);
             pageUtility.updateGlobalTranCount('internal_count', tempAry.length);
         },
@@ -1808,7 +1978,9 @@
                     `
                     (
                         '${item.hash}',
+                        ${Number(item.mci)},
                         ${Number(item.mc_timestamp)},
+                        ${Number(item.stable_index)},
                         '${item.contract_account}',
                         '${item.data}',
                         '${item.method}',
@@ -1823,7 +1995,9 @@
                     INSERT INTO 
                         event_log (
                             "hash",
+                            "mci",
                             "mc_timestamp",
+                            "stable_index",
                             "contract_account",
                             "data",
                             "method",
@@ -1890,7 +2064,6 @@
                 where 
                     token_asset.account_contract_merger = temp.account_contract_merger
             `
-            // console.log(tempAry.toString())
             await client.query(sql);
         },
         //------------
@@ -1955,6 +2128,7 @@
             //symbol        95d89b41
             //decimals      313ce567
             //totalSupply   18160ddd
+            //owner         8da5cb5b
             let opt = '';
             switch (con_name) {
                 case "name":
@@ -1968,6 +2142,9 @@
                     break;
                 case "totalSupply":
                     opt = "18160ddd";
+                    break;
+                case "owner":
+                    opt = "8da5cb5b";
                     break;
             }
             let arg1 = {

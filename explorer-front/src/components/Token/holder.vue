@@ -174,17 +174,17 @@ export default {
                 footer: false
             },
             pageFirstItem: {
-                token_asset_id: 0
+                balance: 0
             },
             pageLastItem: {
-                token_asset_id: 0
+                balance: 0
             },
             first_trans_token_id: "",
             end_trans_token_id: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                token_asset_id: 999999999999
+                balance: 99999999999999
             },
 
             // change
@@ -197,7 +197,7 @@ export default {
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
-            self.url_parm.token_asset_id = queryInfo.token_asset_id;
+            self.url_parm.balance = queryInfo.balance;
         }
         self.getTokenInfo();
         self.getFlagTransactions();
@@ -232,7 +232,7 @@ export default {
                 self.$router.push(
                     `/token/${
                         self.url_parm.account
-                    }?token_asset_id=0&position=4`
+                    }?balance=0&position=4`
                 );
                 return;
             }
@@ -245,8 +245,8 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?token_asset_id=${
-                        self.pageFirstItem.token_asset_id
+                    `/token/${self.url_parm.account}?balance=${
+                        self.pageFirstItem.balance
                     }&position=2`
                 );
                 return;
@@ -255,8 +255,8 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?token_asset_id=${
-                        self.pageLastItem.token_asset_id
+                    `/token/${self.url_parm.account}?balance=${
+                        self.pageLastItem.balance
                     }&position=3`
                 );
                 return;
@@ -274,8 +274,8 @@ export default {
             );
 
             if (response.success) {
-                self.first_trans_token_id = response.near_item.token_asset_id;
-                self.end_trans_token_id = response.end_item.token_asset_id;
+                self.first_trans_token_id = response.near_item.balance;
+                self.end_trans_token_id = response.end_item.balance;
                 self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
@@ -287,7 +287,7 @@ export default {
             let opt = {
                 position: parm.position,
                 account: parm.account,
-                token_asset_id: parm.token_asset_id
+                balance: parm.balance
             };
             let response = await self.$api.get("/api/get_token_holder", opt);
 
@@ -315,14 +315,14 @@ export default {
             if (self.trans_token.length > 0) {
                 if (
                     self.first_trans_token_id ===
-                    self.pageFirstItem.token_asset_id
+                    self.pageFirstItem.balance
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
                 if (
-                    self.end_trans_token_id === self.pageLastItem.token_asset_id
+                    self.end_trans_token_id === self.pageLastItem.balance
                 ) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;

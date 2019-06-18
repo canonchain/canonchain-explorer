@@ -22,157 +22,150 @@
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
                             <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
-                            <template v-if="accountInfo.is_has_token_trans">
-                                <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_intel_trans">
-                                <el-tab-pane label="合约内交易" name="trans_internal">
-                                    <div class="account-content">
-                                        <el-row>
-                                            <el-col :span="6">
-                                                <h2 class="transfer-tit">合约内交易</h2>
-                                            </el-col>
-                                            <el-col :span="18" style="text-align: right;">
-                                                <template>
-                                                    <el-radio
-                                                        v-model="url_parm.source"
-                                                        label="1"
-                                                        @change="handlerChange"
-                                                    >发送</el-radio>
-                                                    <el-radio
-                                                        v-model="url_parm.source"
-                                                        label="2"
-                                                        @change="handlerChange"
-                                                    >接收</el-radio>
-                                                </template>
-                                            </el-col>
-                                        </el-row>
-                                        <div class="accounts-list-wrap" v-loading="loadingSwitch">
-                                            <template v-if="IS_GET_INFO">
-                                                <el-table
-                                                    :data="trans_internal"
-                                                    style="width: 100%"
-                                                >
-                                                    <el-table-column label="时间" width="180">
-                                                        <template slot-scope="scope">
-                                                            <span
-                                                                class="table-long-item"
-                                                            >{{scope.row.mc_timestamp | toDate}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="父区块交易号" width="180">
-                                                        <template slot-scope="scope">
-                                                            <el-button
-                                                                @click="goBlockPath(scope.row.hash)"
-                                                                type="text"
-                                                            >
-                                                                <span
-                                                                    class="table-long-item"
-                                                                >{{scope.row.hash}}</span>
-                                                            </el-button>
-                                                        </template>
-                                                    </el-table-column>
+                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
+                            <el-tab-pane label="合约内交易" name="trans_internal">
+                                <div class="account-content">
+                                    <el-row>
+                                        <el-col :span="6">
+                                            <h2 class="transfer-tit">合约内交易</h2>
+                                        </el-col>
+                                        <el-col :span="18" style="text-align: right;">
+                                            <template>
+                                                <el-radio
+                                                    v-model="url_parm.source"
+                                                    label="1"
+                                                    @change="handlerChange"
+                                                >发送</el-radio>
+                                                <el-radio
+                                                    v-model="url_parm.source"
+                                                    label="2"
+                                                    @change="handlerChange"
+                                                >接收</el-radio>
+                                            </template>
+                                        </el-col>
+                                    </el-row>
+                                    <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                                        <template v-if="IS_GET_INFO">
+                                            <el-table :data="trans_internal" style="width: 100%">
+                                                <el-table-column label="时间" width="180">
+                                                    <template slot-scope="scope">
+                                                        <span
+                                                            class="table-long-item"
+                                                        >{{scope.row.mc_timestamp | toDate}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="父区块交易号" width="180">
+                                                    <template slot-scope="scope">
+                                                        <router-link
+                                                            class="table-long-item"
+                                                            :to="{path: '/block/' + scope.row.hash}"
+                                                        >{{scope.row.hash}}</router-link>
+                                                    </template>
+                                                </el-table-column>
 
-                                                    <el-table-column label="Type" width="80">
+                                                <el-table-column label="Type" width="80">
+                                                    <template slot-scope="scope">
+                                                        <template v-if="scope.row.type === '0'">call</template>
                                                         <template
-                                                            slot-scope="scope"
-                                                        >{{scope.row.trace_type}}</template>
-                                                    </el-table-column>
-                                                    <el-table-column label="发送方" width="180">
-                                                        <template slot-scope="scope">
-                                                            <template
-                                                                v-if="scope.row.is_from_this_account == false"
-                                                            >
-                                                                <el-button
-                                                                    @click="goAccountPath(scope.row.from)"
-                                                                    type="text"
-                                                                >
-                                                                    <span
-                                                                        class="table-long-item"
-                                                                    >{{scope.row.from}}</span>
-                                                                </el-button>
-                                                            </template>
-                                                            <template v-else>
-                                                                <span
-                                                                    class="table-long-item"
-                                                                >{{scope.row.from}}</span>
-                                                            </template>
+                                                            v-else-if="scope.row.type === '1'"
+                                                        >create</template>
+                                                        <template
+                                                            v-else-if="scope.row.type === '2'"
+                                                        >suicide</template>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="发送方" width="220">
+                                                    <template slot-scope="scope">
+                                                        <template v-if="scope.row.type === '2'">
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.contract_address_suicide}"
+                                                            >{{scope.row.contract_address_suicide}}</router-link>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="接收方" width="180">
-                                                        <template slot-scope="scope">
+                                                        <template v-else>
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.from}"
+                                                            >{{scope.row.from}}</router-link>
+                                                        </template>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="接收方" width="220">
+                                                    <template slot-scope="scope">
+                                                        <template v-if="scope.row.type === '2'">
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.refund_adderss}"
+                                                            >{{scope.row.refund_adderss}}</router-link>
+                                                        </template>
+                                                        <template
+                                                            v-else-if="scope.row.type === '1'"
+                                                        >
+                                                            <router-link
+                                                                class="table-long-item"
+                                                                :to="{path: '/account/' + scope.row.contract_address_create}"
+                                                            >{{scope.row.contract_address_create}}</router-link>
+                                                        </template>
+                                                        <template v-else>
                                                             <template v-if="scope.row.to">
-                                                                <template
-                                                                    v-if="(scope.row.is_from_this_account == true)&&(scope.row.is_to_self == false)"
-                                                                >
-                                                                    <el-button
-                                                                        @click="goAccountPath(scope.row.to)"
-                                                                        type="text"
-                                                                    >
-                                                                        <span
-                                                                            class="table-long-item"
-                                                                        >{{scope.row.to}}</span>
-                                                                    </el-button>
-                                                                </template>
-                                                                <template v-else>
-                                                                    <span
+                                                                <template>
+                                                                    <router-link
                                                                         class="table-long-item"
-                                                                    >{{scope.row.to}}</span>
+                                                                        :to="{path: '/account/' + scope.row.to}"
+                                                                    >{{scope.row.to}}</router-link>
                                                                 </template>
                                                             </template>
                                                             <template v-else>
                                                                 <span>-</span>
                                                             </template>
                                                         </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="数额" align="right">
-                                                        <template slot-scope="scope">
-                                                            <span>{{scope.row.amount | toCZRVal}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                </el-table>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="数额" align="right">
+                                                    <template slot-scope="scope">
+                                                        <span>{{scope.row.amount | toCZRVal}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
 
-                                                <!-- page -->
-                                                <template v-if="trans_internal.length">
-                                                    <div class="pagin-block">
-                                                        <el-button-group>
-                                                            <el-button
-                                                                size="mini"
-                                                                :disabled="btnSwitch.header"
-                                                                @click="getPaginationFlag('header')"
-                                                            >首页</el-button>
-                                                            <el-button
-                                                                size="mini"
-                                                                icon="el-icon-arrow-left"
-                                                                :disabled="btnSwitch.left"
-                                                                @click="getPaginationFlag('left')"
-                                                            >上一页</el-button>
-                                                            <el-button
-                                                                size="mini"
-                                                                :disabled="btnSwitch.right"
-                                                                @click="getPaginationFlag('right')"
-                                                            >
-                                                                下一页
-                                                                <i
-                                                                    class="el-icon-arrow-right el-icon--right"
-                                                                ></i>
-                                                            </el-button>
-                                                            <el-button
-                                                                size="mini"
-                                                                :disabled="btnSwitch.footer"
-                                                                @click="getPaginationFlag('footer')"
-                                                            >尾页</el-button>
-                                                        </el-button-group>
-                                                    </div>
-                                                </template>
+                                            <!-- page -->
+                                            <template v-if="trans_internal.length">
+                                                <div class="pagin-block">
+                                                    <el-button-group>
+                                                        <el-button
+                                                            size="mini"
+                                                            :disabled="btnSwitch.header"
+                                                            @click="getPaginationFlag('header')"
+                                                        >首页</el-button>
+                                                        <el-button
+                                                            size="mini"
+                                                            icon="el-icon-arrow-left"
+                                                            :disabled="btnSwitch.left"
+                                                            @click="getPaginationFlag('left')"
+                                                        >上一页</el-button>
+                                                        <el-button
+                                                            size="mini"
+                                                            :disabled="btnSwitch.right"
+                                                            @click="getPaginationFlag('right')"
+                                                        >
+                                                            下一页
+                                                            <i
+                                                                class="el-icon-arrow-right el-icon--right"
+                                                            ></i>
+                                                        </el-button>
+                                                        <el-button
+                                                            size="mini"
+                                                            :disabled="btnSwitch.footer"
+                                                            @click="getPaginationFlag('footer')"
+                                                        >尾页</el-button>
+                                                    </el-button-group>
+                                                </div>
                                             </template>
-                                        </div>
+                                        </template>
                                     </div>
-                                </el-tab-pane>
-                            </template>
-                            <template v-if="accountInfo.is_has_event_logs">
-                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
-                            </template>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
                             <template v-if="accountInfo.type === 2">
                                 <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>

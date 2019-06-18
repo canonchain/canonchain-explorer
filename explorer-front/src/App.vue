@@ -100,4 +100,24 @@ export default {
 .accounts-list-wrap {
     min-height: 300px;
 }
+.table-long-item {
+    max-width: 150px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.contract-code {
+    display: block;
+    height: 200px;
+    max-height: 200px;
+    margin-top: 5px;
+    word-break: break-all;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #e7eaf3;
+    padding: 12px;
+}
 </style>

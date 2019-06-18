@@ -156,6 +156,7 @@ CREATE TABLE public.trans_witness
     "type" numeric,
     "from" text,
     "previous" text,
+    "links" text,
     "exec_timestamp" bigint,
     "work" text,
     "signature" text,
@@ -219,6 +220,7 @@ CREATE TABLE public.trans_genesis
     "work" text,
     "signature" text,
     "level" bigint,
+    "witnessed_level" bigint,
     "is_stable" numeric,
     "stable_index" bigint,
     "status" numeric,
@@ -231,6 +233,16 @@ CREATE TABLE public.trans_genesis
     "amount" numeric,
     "data" text,
     "data_hash" text,
+
+    --增加的
+    "is_free" numeric,
+    "is_on_mc" numeric,
+    from_state text,
+    to_states text,
+
+    "gas_used" numeric,
+    "log" text,
+    "log_bloom" text,
 
     CONSTRAINT creatid_pkey PRIMARY KEY (creatid)
 )
@@ -430,10 +442,12 @@ CREATE TABLE public.token
 (
     token_id bigserial,
     contract_account text,
+    "mc_timestamp" bigint,
     token_name text,
     token_symbol text,
     token_precision smallint,
     token_total numeric,
+    owner text,
     transaction_count numeric,
     account_count numeric,
 
@@ -456,7 +470,8 @@ CREATE TABLE public.trans_token
 
     "hash" text,
     "mc_timestamp" bigint,
-    
+    "stable_index" bigint,
+
     "from" text,
     "to" text,
     contract_account text,
@@ -486,7 +501,10 @@ CREATE TABLE public.trans_internal
     trans_internal_id bigserial,
 
     "hash" text,
+    "mci" bigint,
     "mc_timestamp" bigint,
+    "stable_index" bigint,
+
     "type" numeric,
     "call_type" text,
     "from" text,
@@ -528,7 +546,10 @@ CREATE TABLE public.event_log
     event_log_id bigserial,
 
     "hash" text,
+    "mci" bigint,
     "mc_timestamp" bigint,
+    "stable_index" bigint,
+    
     contract_account text,
     "data" text,
     "method" text,
@@ -559,6 +580,26 @@ CREATE TABLE public.token_asset
     balance numeric,
 
     CONSTRAINT token_account_symbol_pkey PRIMARY KEY (account,contract_account)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+```
+
+
+### gas_price | Gas价格表
+
+```postgresql
+
+CREATE TABLE public.gas_price
+(
+    timestamp numeric,
+    cheapest_gas_price text,
+    median_gas_price text,
+    highest_gas_price text,
+    CONSTRAINT gas_price_timestamp_pkey PRIMARY KEY (timestamp)
 )
 WITH (
     OIDS = FALSE
