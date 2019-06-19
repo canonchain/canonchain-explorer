@@ -22,16 +22,16 @@
                                         </strong>
                                         <div
                                             class="bui-dlist-det"
-                                        >{{accountInfo.token_total | toCZRVal}} {{accountInfo.token_symbol}}</div>
+                                        >{{accountInfo.token_total | toTokenVal(Math.pow(10,accountInfo.token_precision))}} {{accountInfo.token_symbol}}</div>
                                     </div>
                                 </el-col>
                                 <el-col :span="12">
                                     <div class="block-item-des">
                                         <strong class="bui-dlist-tit">
-                                            小数点
+                                            位数
                                             <span class="space-des"></span>
                                         </strong>
-                                        <div class="bui-dlist-det">{{accountInfo.token_precision}} 次</div>
+                                        <div class="bui-dlist-det">{{accountInfo.token_precision}}</div>
                                     </div>
                                 </el-col>
                             </el-row>
@@ -258,9 +258,7 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/token/${
-                        self.url_parm.account
-                    }?stable_index=0&position=4`
+                    `/token/${self.url_parm.account}?stable_index=0&position=4`
                 );
                 return;
             }

@@ -325,7 +325,7 @@
                         </div>
                     </template>
                     <div class="block-table">
-                        <template>
+                        <template v-if="blockInfo.type === '2'">
                             <el-tabs v-model="activeName" @tab-click="change_table">
                                 <!-- <template v-if="blockInfo.is_token_trans"> -->
                                 <template>

@@ -1,6 +1,12 @@
 import Tools from '../../tools'
 let czr = new Tools();
 
+//做千分符
+function numFormat(num) {
+    var c = (num.toString().indexOf('.') !== -1) ? num.toLocaleString() : num.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+    return c;
+}
+
 /**
  * 接收: wei为单位的金额
  * 返回：czr为单位的金额
@@ -8,8 +14,22 @@ let czr = new Tools();
 export const toCZRVal = value => {
     if (value) {
         let tempVal = czr.utils.fromWei(value, "czr");
-        // return parseFloat(tempVal).toFixed(4); //TODO Keep 4 decimal places
-        return tempVal; //TODO Keep 4 decimal places
+        return numFormat(tempVal);
+    } else {
+        return 0;
+    }
+}
+
+/**
+ * 
+ * @param {total} val 单位Wei
+ * @param {d} val 小数点位数
+ */
+export const toTokenVal = (value, precision) => {
+    precision = Number(precision) || 18;
+    if (value) {
+        let tempVal = czr.utils.fromWeiToken(value, precision);
+        return numFormat(tempVal);
     } else {
         return 0;
     }

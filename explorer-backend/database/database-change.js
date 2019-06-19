@@ -24,7 +24,7 @@
 
     // 操作稳定Unit相关变量 Start
     let unitIsFail;
-    let MCI_LIMIT = 1;
+    let MCI_LIMIT = 500;
     // let stableCount = 0; //异步控制
 
     let BLOCKS_LENGTH = 0;
@@ -723,43 +723,46 @@
                 }
 
                 //内部交易表
-                if (blockInfo.block_traces.length) {
+                if ((blockInfo.data) && (blockInfo.block_traces.length > 1)) {
                     blockInfo.is_intel_trans = true;
-                    blockInfo.block_traces.forEach(traces_item => {
-                        transInternalInsertAry.push(
-                            {
-                                hash: blockInfo.hash,
-                                mci: blockInfo.mci,
-                                mc_timestamp: blockInfo.mc_timestamp,
-                                stable_index: blockInfo.stable_index,
+                    blockInfo.block_traces.forEach((traces_item, index) => {
+                        if (index > 0) {
+                            transInternalInsertAry.push(
+                                {
+                                    hash: blockInfo.hash,
+                                    mci: blockInfo.mci,
+                                    mc_timestamp: blockInfo.mc_timestamp,
+                                    stable_index: blockInfo.stable_index,
 
-                                type: traces_item.type,
+                                    type: traces_item.type,
 
-                                call_type: traces_item.action.call_type || "",
-                                from: traces_item.action.from || "",
-                                to: traces_item.action.to || "",
-                                gas: traces_item.action.gas || 0,
-                                input: traces_item.action.input || "",
-                                value: traces_item.action.value || 0,
+                                    call_type: traces_item.action.call_type || "",
+                                    from: traces_item.action.from || "",
+                                    to: traces_item.action.to || "",
+                                    gas: traces_item.action.gas || 0,
+                                    input: traces_item.action.input || "",
+                                    value: traces_item.action.value || 0,
 
-                                init: traces_item.action.init || "",
+                                    init: traces_item.action.init || "",
 
-                                contract_address_suicide: traces_item.action.contract_address || "",
-                                refund_adderss: traces_item.action.refund_adderss || "",
-                                balance: traces_item.action.balance || 0,
+                                    contract_address_suicide: traces_item.action.contract_address || "",
+                                    refund_adderss: traces_item.action.refund_adderss || "",
+                                    balance: traces_item.action.balance || 0,
 
-                                gas_used: traces_item.result ? traces_item.result.gas_used : 0,
-                                output: traces_item.result ? (traces_item.result.output || "") : "",
-                                contract_address_create: traces_item.result ? (traces_item.result.contract_address || "") : "",
-                                contract_address_create_code: traces_item.result ? (traces_item.result.code || "") : "",
+                                    gas_used: traces_item.result ? traces_item.result.gas_used : 0,
+                                    output: traces_item.result ? (traces_item.result.output || "") : "",
+                                    contract_address_create: traces_item.result ? (traces_item.result.contract_address || "") : "",
+                                    contract_address_create_code: traces_item.result ? (traces_item.result.code || "") : "",
 
-                                is_error: traces_item.error ? true : false,
-                                error_msg: traces_item.error || "",
+                                    is_error: traces_item.error ? true : false,
+                                    error_msg: traces_item.error || "",
 
-                                subtraces: traces_item.subtraces,
-                                trace_address: traces_item.trace_address.join("_")
-                            }
-                        );
+                                    subtraces: traces_item.subtraces,
+                                    trace_address: traces_item.trace_address.join("_")
+                                }
+                            );
+
+                        }
                     });
 
                 } else {

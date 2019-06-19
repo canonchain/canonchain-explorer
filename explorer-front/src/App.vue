@@ -120,4 +120,7 @@ export default {
     border: 1px solid #e7eaf3;
     padding: 12px;
 }
+.beautify-color {
+    color: #c0c0c0;
+}
 </style>

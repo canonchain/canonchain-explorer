@@ -337,9 +337,12 @@
                                             <el-table :data="intel_trans" style="width: 100%">
                                                 <el-table-column label="追溯地址类型" width="220">
                                                     <template slot-scope="scope">
-                                                        <template
-                                                            v-if="scope.row.type === '0'"
-                                                        >{{scope.row.type_str}}</template>
+                                                        <template v-if="scope.row.type === '0'">
+                                                            <span
+                                                                class="beautify-color"
+                                                            >{{scope.row.type_before}}</span>
+                                                            {{scope.row.type_str}}
+                                                        </template>
                                                         <template
                                                             v-else-if="scope.row.type === '1'"
                                                         >create</template>
@@ -528,22 +531,13 @@ export default {
                 let beautify = "";
                 response.data.forEach(element => {
                     if (element.type === "0") {
-                        typeStr = "call_0";
-                        if (element.trace_address) {
-                            element.trace_address = element.trace_address.split(
-                                "_"
-                            );
-                        } else {
-                            element.trace_address = [];
-                        }
-                        beautify = self.format(element.trace_address.length);
-                        if (element.trace_address.length) {
-                            element.type_str = `${beautify.before} ${typeStr} ${
-                                beautify.after
-                            } `;
-                        } else {
-                            element.type_str = typeStr;
-                        }
+                        typeStr = "call";
+                        element.type_before = self.format(
+                            element.trace_address
+                        );
+                        element.type_str = `${typeStr}_${
+                            element.trace_address
+                        }`;
                     } else if (element.type === "1") {
                         typeStr = "create";
                         element.type_str = typeStr;
@@ -572,20 +566,17 @@ export default {
                     break;
             }
         },
-        format(length) {
+        format(trace_address) {
+            let traceAddressAry = trace_address.split("_");
+
             let result = {
-                before: "|--",
-                after: ""
+                before: "|-"
             };
-            for (let i = 0; i < length; i++) {
-                result.after += "_1";
+            console.log("traceAddressAry", traceAddressAry.length);
+            for (let i = 1; i < traceAddressAry.length; i++) {
+                result.before += "---";
             }
-            if (length > 1) {
-                for (let i = 0; i < length - 1; i++) {
-                    result.before += "--";
-                }
-            }
-            return result;
+            return `${result.before}`;
         }
     }
 };
