@@ -396,4 +396,41 @@ HttpRequest.prototype.getWitnessList = async function() {
     return ret;
 };
 
+
+HttpRequest.prototype.sendOfflineBlock = async function (block) {
+    if (!block || !block.from) {
+        return {code: 100, msg: `no param - block ${JSON.stringify(block)}`}
+    }
+    if (!(+block.amount >= 0 && +block.gas >= 0)) {
+        return {code: 110, msg: `block not valid - block ${JSON.stringify(block)}`}
+    }
+    if (block.gen_next_work !== 0) {
+        block.gen_next_work = 1
+    }
+    let opt = {
+        "action": "send_offline_block",
+        "hash": block.hash,
+        "from": block.from,
+        "to": block.to,
+        "amount": block.amount,
+        "gas": block.gas,
+        "gas_price": block.gas_price,
+        "data": block.data || '',
+        "previous": block.previous,
+
+        "exec_timestamp": block.exec_timestamp,
+        "work": block.work,
+        "signature": block.signature,
+        "id": block.id || '',
+        "gen_next_work": block.gen_next_work || ''
+    }
+    if (block.to) {
+        opt.to = block.to
+    }
+    if (block.id) {
+        opt.id = block.id
+    }
+    return await asyncfunc(opt)
+}
+
 module.exports = HttpRequest;
