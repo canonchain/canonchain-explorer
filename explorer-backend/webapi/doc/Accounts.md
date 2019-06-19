@@ -71,7 +71,7 @@
     ```
 
 ```
- http://localhost:3000/apis?module=account&action=balancemulti&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u,czr_3GmJUvqMF5XTxVXFvkLwNdKhj6LkixkqhmXgNgezuqUFg4QzKQ&tag=latest&apikey=YourApiKeyToken
+ http://localhost:3000/apis?module=account&action=balance_multi&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u,czr_3GmJUvqMF5XTxVXFvkLwNdKhj6LkixkqhmXgNgezuqUFg4QzKQ&tag=latest&apikey=YourApiKeyToken
 ```
 
 [返回账户API列表](#账户API列表)
@@ -101,7 +101,7 @@
 - 结果
 
 ```
- http://localhost:3000/apis?module=account&action=txlist&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u&page=1&limit=10&sort=desc&apikey=YourApiKeyToken
+ http://localhost:3000/apis?module=account&action=tx_list&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u&page=1&limit=10&sort=desc&apikey=YourApiKeyToken
 ```
 
 [返回账户API列表](#账户API列表)
@@ -131,7 +131,7 @@
     ```
 
 ```
- http://localhost:3000/apis?module=account&action=txlistaccount&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u&apikey=YourApiKeyToken
+ http://localhost:3000/apis?module=account&action=tx_list_account&account=czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u&apikey=YourApiKeyToken
 ```
 
 [返回账户API列表](#账户API列表)
