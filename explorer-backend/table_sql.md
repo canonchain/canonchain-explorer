@@ -607,3 +607,20 @@ WITH (
 TABLESPACE pg_default;
 
 ```
+
+### api_keys | api_key表
+
+```
+CREATE TABLE public.apikyes
+(
+    apikey text ,
+    create_timestamp bigint
+    
+    constraint apikeys_pkey primary key (apikey)
+)
+WITH(
+    oids = false
+)
+TABLESPACE pg_default
+```
+

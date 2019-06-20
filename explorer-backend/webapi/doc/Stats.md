@@ -3,7 +3,7 @@
 
 
 - 方式 ：GET
-- URL : `https://api.etherscan.io/api`
+- URL : - 
 - 参数
     ```
     {
@@ -14,11 +14,3 @@
     ```
 - 结果
 
-
-```
-https://api.etherscan.io/api?
-    module=stats&
-    action=ethprice&
-    apikey=YourApiKeyToken
-
-```

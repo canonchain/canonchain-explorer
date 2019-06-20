@@ -1,17 +1,38 @@
 const router = require('koa-router')()
 // db start
 const { Client } = require('pg');
-const config = require('../pg/config');
+const config = require('../../database/config-pool');
 let client = new Client(config);
 
 //czr start 
-let Czr = require("czr");
+// let Czr = require("czr");
+let Czr = require('../../czr');
 let czr = new Czr();
+
 
 async function connect() {
   await client.connect()
 }
 connect();
+
+
+//定時獲取apikeys
+let allApikeys = []; //緩存所有的apikeys
+let lastTimestamp = 0;
+let intval2getApikeys = 500*1000;//獲取apikeys的間隔時間
+
+async function updtAPikeys(){
+  let sql = `select * from api_keys where create_timestamp > ${lastTimestamp}`
+  rlt = await client.query(sql);
+  rlt.rows.forEach(item => {
+    allApikeys.push(item.apikey);
+    if(item.create_timestamp>lastTimestamp){ 
+      lastTimestamp = item.create_timestamp;
+    }
+  })
+}
+
+
 // db end
 router.prefix('/apis')
 
@@ -34,7 +55,10 @@ router.prefix('/apis')
         "result": "649492854246559898951364"
     }
 */
-async function getBalance(query) {
+let apikeys = []; //緩存所有的apikeys
+
+
+async function get_balance(query) {
   //校验
   if (!query.account) {
     return {
@@ -88,7 +112,8 @@ async function getBalance(query) {
         ]
       }
 */
-async function getBalanceMulti(query) {
+
+async function get_balance_multi(query) {
   //校验
   let addressAry = query.account.split(",");
   if (!query.account) {
@@ -135,7 +160,132 @@ async function getBalanceMulti(query) {
         ]
     }
 */
-async function txList(query) {
+//新增加的三个接口从这里开始
+async function tx_list_internal(query){
+  return query.txhash?  getIntnTransByHash(query):getIntnTransByAcct(query);
+}
+
+async function getIntnTransByAcct(query){
+  if (!query.account){
+    return {
+      "code":9001,
+      "msg":"Parameter missing account",
+    }
+  }
+  let SORTVAL = (query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
+  let startMci = query.startMci || 0 ;
+  let endMci = query.endMci || 99999999;   //還需要考慮cjd
+  let sql = {
+    text:`select 
+          mci,mc_timestamp,hash,"from","to", value,contract_address_create,input,type,gas,gas_used,is_error,error_msg
+          from
+            trans_internal  
+          where 
+            ("from" = $1 or "to" = $1) and
+            "mci" >  $2 and
+            "mci" < $3
+          order by 
+            mc_timestamp ${SORTVAL}   
+          `
+          ,
+    values:[query.account,startMci,endMci]
+  }
+  if(query.page){
+    let limitVal = Number(query.offset) || 10;
+    let offsetVal = Number(query.page)? Number(query.page)*limitVal:0;
+    sql.text +=`offset
+                  $4
+                limit
+                  $5
+                `;
+    sql.values.push(offsetVal,limitVal);
+  }else{
+    sql.text += `limit
+                  10000;
+                `;
+  }
+
+  let rlt = await client.query(sql);
+  return {
+    "code":0,
+    "msg":"ok",
+    "result":rlt.rows || []
+  }
+}
+
+async function  getIntnTransByHash(query){
+  let sql = {
+    text:
+       `select
+          mci,mc_timestamp,"from","to", value,contract_address_create,input,type,gas,gas_used,is_error,error_msg
+        from 
+          trans_internal
+        where
+          hash = $1
+        `,
+    values:[query.hash]
+  }
+  let rlt = await client.query(sql);
+  return {
+    "code":0,
+    "msg":"ok",
+    "result":rlt.rows || []
+  }
+}
+
+async function token_tx(query){
+  if(!query.account&&!query.contractaddress){
+    return {
+      "code":9001,
+      "msg":"Require one of Parameters of account and contractaddress"
+    };
+  }
+  let sqlWhereVal = query.account&&query.contractaddress? ` ('from'='${query.account}' or 'to'='${query.account}') and  contract_account='${query.contractaddress}'`:
+  query.contractaddress? ` contract_account='${query.contractaddress}'`:` 'from'='${query.account}' or 'to'='${query.account}'   `;
+
+  let sql = {
+    text:
+       `select
+          mci,mc_timestamp,hash,"from",contract_account,"to",amount,token_name,token_symbol,token_precision,trans_token_id,gas,gas_price,gas_used,input
+        from
+          trans_token
+        where           
+       `+sqlWhereVal,
+  };
+  if(query.page){
+    let limitVal = Number(query.offset) || 10;
+    let offsetVal = Number(query.page)? Number(query.page)*limitVal:0;
+    sql.text +=`offset
+                  $1
+                limit
+                  $2
+                `;
+    sql.values=[offsetVal,limitVal];
+  }else{
+    sql.text += `limit
+                  10000;
+                `;
+  }
+  // return sql.text
+  let rlt = await client.query(sql);
+  return {
+    "code":0,
+    "msg":"ok",
+    "result":rlt.rows || []
+  }
+}
+
+async function gas_price(){
+  let sql = `select * from gas_price order by timestamp ASC limit 1`;
+  let rlt = await client.query(sql);
+  return {
+    "code":0,
+    "msg":"ok",
+    "result":rlt.rows || []
+  };
+}
+
+async function tx_list(query) {
   //校验
   var SORTVAL = (query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
   if (!query.account) {
@@ -144,6 +294,7 @@ async function txList(query) {
       "msg": "Parameter missing account",
       "result": query
     }
+
   }
   //TODO 验证 格式
 
@@ -185,7 +336,7 @@ async function txList(query) {
   }
 }
 
-async function txListAccount(query) {
+async function tx_list_account(query) {
   //校验
   if (!query.account) {
     return {
@@ -222,7 +373,7 @@ async function txListAccount(query) {
 
 
 // ******************************** 交易模块 开始
-async function getTransactionByHash(query) {
+async function get_transaction_by_hash(query) {
   //校验
   if (!query.txhash) {
     return {
@@ -258,7 +409,7 @@ async function getTransactionByHash(query) {
 // ******************************** 交易模块 结束
 
 
-async function sendOfflineBlock(query) {
+async function send_offline_block(query) {
   //   {
   //     "action": "send_offline_block",
   //     "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",    
@@ -300,7 +451,7 @@ async function sendOfflineBlock(query) {
 router.get('/', async function (ctx, next) {
   let query = ctx.query;
   console.log(ctx);
-  //验证 apikey 类型，以及是否合法 
+  // 验证 apikey 类型，以及是否合法 
   if (!query.apikey) {
     ctx.body = {
       "code": 9001,
@@ -308,6 +459,21 @@ router.get('/', async function (ctx, next) {
       "request_parameter": query
     }
     return;
+  }else{
+    let unfind = true;
+    allApikeys.forEach(item =>{
+      console.log()
+      if (item == query.apikey){
+        unfind = false
+      }
+    })
+    if(unfind){
+      ctx.body = {
+        "code" : 9002,   //不知道是什麼值 cjd
+        "msg" : "inValid Apikey Value"
+      }
+      return;
+    }
   }
 
   //验证 action
@@ -324,30 +490,45 @@ router.get('/', async function (ctx, next) {
   switch (query.action) {
     //账户部分
     case 'balance':
-      ctx.body = await getBalance(query);
+      ctx.body = await get_balance(query);
       break;
-    case 'balancemulti':
-      ctx.body = await getBalanceMulti(query);
+    case 'balance_multi':
+      ctx.body = await get_balance_multi(query);
       break;
-    case 'txlist':
-      ctx.body = await txList(query);
+    case 'tx_list':
+      ctx.body = await tx_list(query);
       break;
-    case 'txlistaccount':
-      ctx.body = await txListAccount(query);
+    case 'tx_list_account':
+      ctx.body = await tx_list_account(query);
       break;
     case 'get_transaction_by_hash':
-      ctx.body = await getTransactionByHash(query);
+      ctx.body = await get_transaction_by_hash(query);
+      break;
+    case 'send_offline_block':
+      ctx.body = await send_offline_block(query);
+      break;
+    case 'block':   //todo
+      ctx.body = await get_block(query);
+      break;
+    case 'blocks':  //todo 
+      ctx.body = await get_blocks(query);
       break;
 
-    case 'send_offline_block':
-      ctx.body = await sendOfflineBlock(query);
+    //新增三個接口在這裏根據action 做相應處理
+    case 'tx_list_internal':
+      ctx.body = await tx_list_internal(query);
       break;
-    case 'block':
-      ctx.body = await getBlock(query);
+    case 'token_tx':
+      ctx.body = await token_tx(query);
       break;
-    case 'blocks':
-      ctx.body = await getBlocks(query);
+    case 'gas_price':
+      ctx.body = await gas_price();
       break;
   }
 })
+
+updtAPikeys();
+setInterval(updtAPikeys, intval2getApikeys);
+
+
 module.exports = router

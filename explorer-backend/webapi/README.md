@@ -2,20 +2,6 @@
 区块链浏览器-APIs
 
 
-## TODO 
-
-**还需要做的API**
-
-WebAPI: 
-
-```
-Get a list of 'Internal' Transactions by Address
-
-Get "Internal Transactions" by Transaction Hash
-
-Get a list of "ERC20 - Token Transfer Events" by Address
-```
-
 
 ## Api 列表
 
@@ -84,24 +70,6 @@ Get a list of "ERC20 - Token Transfer Events" by Address
 <details>
 <summary>GETH/Parity Proxy</summary>
 
-<!-- TOC -->
-
-- [eth_blockNumber](#account)
-- [eth_getBlockByNumber](#account)
-- [eth_getUncleByBlockNumberAndIndex](#account)
-- [eth_getBlockTransactionCountByNumber](#account)
-- [eth_getTransactionByHash](#account)
-- [eth_getTransactionByBlockNumberAndIndex](#account)
-- [eth_getTransactionCount](#account)
-- [eth_sendRawTransaction](#account)
-- [eth_getTransactionReceipt](#account)
-- [eth_call](#account)
-- [eth_getCode](#account)
-- [eth_getStorageAt](#account)
-- [eth_gasPrice](#account)
-- [eth_estimateGas](#account)
-
-<!-- /TOC -->
 </details>
 <details>
 <summary>代币</summary>
@@ -118,8 +86,8 @@ Get a list of "ERC20 - Token Transfer Events" by Address
 
 <!-- TOC -->
 
-- [获取 以太的 总供应量](#account)
-- [获取 以太的 最新价格](#account)
+- 获取 czr 总供应量
+- 获取 czr 最新价格
 
 <!-- /TOC -->
 </details>
