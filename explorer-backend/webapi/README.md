@@ -11,8 +11,8 @@
 
 - [获取 单个账户 的余额](./doc/Accounts.md/#获取单个账户的余额)
 - [获取 多个账户 的余额](./doc/Accounts.md/#获取多个账户的余额)
-- [获取 单个账户 的交易列表 [Normal]](./doc/Accounts.md/#获取单个账户的交易列表[Normal])
-- [获取 单个账户 的交易列表 [Internal]](./doc/Accounts.md/#获取单个账户的交易列表[Internal])
+- [获取 单个账户 的交易列表 [Normal]](./doc/Accounts.md/#获取单个账户的交易列表Normal)
+- [获取 单个账户 的交易列表 [Internal]](./doc/Accounts.md/#获取单个账户的交易列表Internal)
 - [获取 单个账户 的交易数 [Normal]](./doc/Accounts.md/#获取单个账户的CRC20余额)
 - [获取 单个账户 的CRC20余额](./doc/Accounts.md/#获取单个账户的CRC20交易)
 - [获取 单个账户 的CRC20 Token交易](./doc/Accounts.md/#获取单个账户的交易数量)
