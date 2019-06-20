@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+    "webapi": "node ./webapi/bin/www",
     "data": "node ./database/database.js"
   },
   "dependencies": {

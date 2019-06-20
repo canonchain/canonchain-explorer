@@ -1,12 +1,10 @@
-- eth_sendRawTransaction 
+- sendRawTransaction 
     - 发送等待签名的原始交易
-- eth_getTransactionByHash 
+- getTransactionByHash 
     - 通过交易HAsh获取交易信息
 
 
-## eth_sendRawTransaction 发送等待签名的原始交易
-
-https://api.etherscan.io/api?module=proxy&action=eth_sendRawTransaction&hex=0xf904808000831cfde080&apikey=YourApiKeyToken
+## sendRawTransaction 发送等待签名的原始交易
 
 
 ### 通过交易HAsh获取交易信息
@@ -34,8 +32,3 @@ https://api.etherscan.io/api?module=proxy&action=eth_sendRawTransaction&hex=0xf9
     ```
 
 ```
- http://localhost:3000/apis?module=proxy&action=get_transaction_by_hash&txhash=BC689317F9948D4F2F9F7B9B13B61ED543F83A4823DAEBCDA75BFD4656743450&apikey=YourApiKeyToken
-
-
-
-[返回账户API列表](#账户API列表)

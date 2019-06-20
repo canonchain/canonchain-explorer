@@ -15,7 +15,7 @@
                                 <template slot-scope="scope">
                                     <router-link
                                         class="table-long-item"
-                                        :to="{path: '/account/' + scope.row.contract_account}"
+                                        :to="{path: '/token/' + scope.row.contract_account}"
                                     >{{scope.row.token_symbol}} ({{scope.row.token_name}})</router-link>
                                 </template>
                             </el-table-column>
@@ -23,7 +23,7 @@
                                 <template slot-scope="scope">
                                     <router-link
                                         class="table-long-item"
-                                        :to="{path: '/account/' + scope.row.contract_account}"
+                                        :to="{path: '/token/' + scope.row.contract_account}"
                                     >{{scope.row.contract_account}}</router-link>
                                 </template>
                             </el-table-column>

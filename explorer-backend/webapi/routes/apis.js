@@ -1,12 +1,12 @@
-const router = require('koa-router')()
+const router = require('./node_modules/koa-routerules/koa-router')()
 // db start
-const { Client } = require('pg');
+const { Client } = require('./node_modules/pgnode_modules/pg');
 const config = require('../../database/config-pool');
 let client = new Client(config);
 
 //czr start 
-// let Czr = require("czr");
-let Czr = require('../../czr');
+let Czr = require("czr");
+// let Czr = require('../../czr');
 let czr = new Czr();
 
 
@@ -19,18 +19,18 @@ connect();
 //定時獲取apikeys
 let allApikeys = []; //緩存所有的apikeys
 let lastTimestamp = 0;
-let intval2getApikeys = 500*1000;//獲取apikeys的間隔時間
+let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
-async function updtAPikeys(){
-  let sql = `select * from api_keys where create_timestamp > ${lastTimestamp}`
-  rlt = await client.query(sql);
-  rlt.rows.forEach(item => {
-    allApikeys.push(item.apikey);
-    if(item.create_timestamp>lastTimestamp){ 
-      lastTimestamp = item.create_timestamp;
-    }
-  })
-}
+// async function updtAPikeys(){
+//   let sql = `select * from api_keys where create_timestamp > ${lastTimestamp}`
+//   rlt = await client.query(sql);
+//   rlt.rows.forEach(item => {
+//     allApikeys.push(item.apikey);
+//     if(item.create_timestamp>lastTimestamp){ 
+//       lastTimestamp = item.create_timestamp;
+//     }
+//   })
+// }
 
 
 // db end
@@ -161,22 +161,22 @@ async function get_balance_multi(query) {
     }
 */
 //新增加的三个接口从这里开始
-async function tx_list_internal(query){
-  return query.txhash?  getIntnTransByHash(query):getIntnTransByAcct(query);
+async function tx_list_internal(query) {
+  return query.txhash ? getIntnTransByHash(query) : getIntnTransByAcct(query);
 }
 
-async function getIntnTransByAcct(query){
-  if (!query.account){
+async function getIntnTransByAcct(query) {
+  if (!query.account) {
     return {
-      "code":9001,
-      "msg":"Parameter missing account",
+      "code": 9001,
+      "msg": "Parameter missing account",
     }
   }
   let SORTVAL = (query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
-  let startMci = query.startMci || 0 ;
+  let startMci = query.startMci || 0;
   let endMci = query.endMci || 99999999;   //還需要考慮cjd
   let sql = {
-    text:`select 
+    text: `select 
           mci,mc_timestamp,hash,"from","to", value,contract_address_create,input,type,gas,gas_used,is_error,error_msg
           from
             trans_internal  
@@ -187,19 +187,19 @@ async function getIntnTransByAcct(query){
           order by 
             mc_timestamp ${SORTVAL}   
           `
-          ,
-    values:[query.account,startMci,endMci]
+    ,
+    values: [query.account, startMci, endMci]
   }
-  if(query.page){
+  if (query.page) {
     let limitVal = Number(query.offset) || 10;
-    let offsetVal = Number(query.page)? Number(query.page)*limitVal:0;
-    sql.text +=`offset
+    let offsetVal = Number(query.page) ? Number(query.page) * limitVal : 0;
+    sql.text += `offset
                   $4
                 limit
                   $5
                 `;
-    sql.values.push(offsetVal,limitVal);
-  }else{
+    sql.values.push(offsetVal, limitVal);
+  } else {
     sql.text += `limit
                   10000;
                 `;
@@ -207,61 +207,61 @@ async function getIntnTransByAcct(query){
 
   let rlt = await client.query(sql);
   return {
-    "code":0,
-    "msg":"ok",
-    "result":rlt.rows || []
+    "code": 0,
+    "msg": "ok",
+    "result": rlt.rows || []
   }
 }
 
-async function  getIntnTransByHash(query){
+async function getIntnTransByHash(query) {
   let sql = {
     text:
-       `select
+      `select
           mci,mc_timestamp,"from","to", value,contract_address_create,input,type,gas,gas_used,is_error,error_msg
         from 
           trans_internal
         where
           hash = $1
         `,
-    values:[query.hash]
+    values: [query.hash]
   }
   let rlt = await client.query(sql);
   return {
-    "code":0,
-    "msg":"ok",
-    "result":rlt.rows || []
+    "code": 0,
+    "msg": "ok",
+    "result": rlt.rows || []
   }
 }
 
-async function token_tx(query){
-  if(!query.account&&!query.contractaddress){
+async function token_tx(query) {
+  if (!query.account && !query.contractaddress) {
     return {
-      "code":9001,
-      "msg":"Require one of Parameters of account and contractaddress"
+      "code": 9001,
+      "msg": "Require one of Parameters of account and contractaddress"
     };
   }
-  let sqlWhereVal = query.account&&query.contractaddress? ` ('from'='${query.account}' or 'to'='${query.account}') and  contract_account='${query.contractaddress}'`:
-  query.contractaddress? ` contract_account='${query.contractaddress}'`:` 'from'='${query.account}' or 'to'='${query.account}'   `;
+  let sqlWhereVal = query.account && query.contractaddress ? ` ('from'='${query.account}' or 'to'='${query.account}') and  contract_account='${query.contractaddress}'` :
+    query.contractaddress ? ` contract_account='${query.contractaddress}'` : ` 'from'='${query.account}' or 'to'='${query.account}'   `;
 
   let sql = {
     text:
-       `select
+      `select
           mci,mc_timestamp,hash,"from",contract_account,"to",amount,token_name,token_symbol,token_precision,trans_token_id,gas,gas_price,gas_used,input
         from
           trans_token
         where           
-       `+sqlWhereVal,
+       `+ sqlWhereVal,
   };
-  if(query.page){
+  if (query.page) {
     let limitVal = Number(query.offset) || 10;
-    let offsetVal = Number(query.page)? Number(query.page)*limitVal:0;
-    sql.text +=`offset
+    let offsetVal = Number(query.page) ? Number(query.page) * limitVal : 0;
+    sql.text += `offset
                   $1
                 limit
                   $2
                 `;
-    sql.values=[offsetVal,limitVal];
-  }else{
+    sql.values = [offsetVal, limitVal];
+  } else {
     sql.text += `limit
                   10000;
                 `;
@@ -269,19 +269,19 @@ async function token_tx(query){
   // return sql.text
   let rlt = await client.query(sql);
   return {
-    "code":0,
-    "msg":"ok",
-    "result":rlt.rows || []
+    "code": 0,
+    "msg": "ok",
+    "result": rlt.rows || []
   }
 }
 
-async function gas_price(){
-  let sql = `select * from gas_price order by timestamp ASC limit 1`;
+async function gas_price() {
+  let sql = `select * from gas_price order by timestamp DESC limit 1`;
   let rlt = await client.query(sql);
   return {
-    "code":0,
-    "msg":"ok",
-    "result":rlt.rows || []
+    "code": 0,
+    "msg": "ok",
+    "result": rlt.rows[0] || {}
   };
 }
 
@@ -459,18 +459,18 @@ router.get('/', async function (ctx, next) {
       "request_parameter": query
     }
     return;
-  }else{
+  } else {
     let unfind = true;
-    allApikeys.forEach(item =>{
+    allApikeys.forEach(item => {
       console.log()
-      if (item == query.apikey){
+      if (item == query.apikey) {
         unfind = false
       }
     })
-    if(unfind){
+    if (unfind) {
       ctx.body = {
-        "code" : 9002,   //不知道是什麼值 cjd
-        "msg" : "inValid Apikey Value"
+        "code": 9002,   //不知道是什麼值 cjd
+        "msg": "inValid Apikey Value"
       }
       return;
     }
@@ -527,8 +527,8 @@ router.get('/', async function (ctx, next) {
   }
 })
 
-updtAPikeys();
-setInterval(updtAPikeys, intval2getApikeys);
+// updtAPikeys();
+// setInterval(updtAPikeys, intval2getApikeys);
 
 
 module.exports = router

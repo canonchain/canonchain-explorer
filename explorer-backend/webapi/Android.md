@@ -7,8 +7,6 @@ api.etherscan.io
 ## ethprice 获取最新的价格
 
 https://api.etherscan.io/api?module=stats&action=ethprice&apikey=YourApiKeyToken
-
-
 -----
 
 ## balance 获取某个账号的余额
@@ -29,9 +27,9 @@ https://api.etherscan.io/api?module=account&action=txlist&address=0xddbd2b932c76
 
 (To get paginated results use page=<page number> and offset=<max records to return>)
 
-## tokentx 按地址获取“ERC20  - Token转移事件”列表
+## tokentx 按地址获取“CRC20  - Token转移事件”列表
 
-Get a list of "ERC20 - Token Transfer Events" by Address
+Get a list of "CRC20 - Token Transfer Events" by Address
 
 https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2&page=1&offset=100&sort=asc&apikey=YourApiKeyToken
 (To get paginated results use page=<page number> and offset=<max records to return>)
