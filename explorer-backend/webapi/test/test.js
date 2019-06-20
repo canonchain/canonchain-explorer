@@ -1,9 +1,9 @@
-var app = require('./app.js');
+var app = require('../app.js');
 var debug = require('debug')('explorer-backend:server');
 var http = require('http');
 
 //apikey start
-const apikeyInit = require('./apikey_gene/index')
+const apikeyInit = require('../apikey_gene/index')
 
 
 var server, port;

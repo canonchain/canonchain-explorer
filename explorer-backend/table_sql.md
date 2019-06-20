@@ -576,7 +576,9 @@ CREATE TABLE public.token_asset
     account text,
     contract_account text,
     account_contract_merger text,
+    "name" text,
     symbol text,
+    precision numeric,
     balance numeric,
 
     CONSTRAINT token_account_symbol_pkey PRIMARY KEY (account,contract_account)
@@ -611,11 +613,10 @@ TABLESPACE pg_default;
 ### api_keys | api_key表
 
 ```
-CREATE TABLE public.apikyes
+CREATE TABLE public.api_keys
 (
     apikey text ,
-    create_timestamp bigint
-    
+    create_timestamp bigint,
     constraint apikeys_pkey primary key (apikey)
 )
 WITH(

@@ -1,32 +1,24 @@
-const router = require('./node_modules/koa-routerules/koa-router')()
-// db start
-const { Client } = require('./node_modules/pgnode_modules/pg');
-const config = require('../../database/config-pool');
-let client = new Client(config);
-
+const router = require('koa-router')()
 //czr start 
 let Czr = require("czr");
 // let Czr = require('../../czr');
 let czr = new Czr();
 
-
-async function connect() {
-  await client.connect()
-}
-connect();
-
+// db start
+var PgPromise = require('../../database/PG-promise');// 引用上述文件
+var pgPromise = PgPromise.pool;
 
 //定時獲取apikeys
-let allApikeys = []; //緩存所有的apikeys
+let allApikeys = ["YourApiKeyToken"]; //緩存所有的apikeys
 let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
-// async function updtAPikeys(){
+// async function updtAPikeys() {
 //   let sql = `select * from api_keys where create_timestamp > ${lastTimestamp}`
-//   rlt = await client.query(sql);
+//   rlt = await pgPromise.query(sql);
 //   rlt.rows.forEach(item => {
 //     allApikeys.push(item.apikey);
-//     if(item.create_timestamp>lastTimestamp){ 
+//     if (item.create_timestamp > lastTimestamp) {
 //       lastTimestamp = item.create_timestamp;
 //     }
 //   })
@@ -73,7 +65,7 @@ async function get_balance(query) {
     text: "select balance from accounts where account = $1",
     values: [query.account]
   };
-  const resList = await client.query(listOptions);
+  const resList = await pgPromise.query(listOptions);
   return {
     "code": 100,
     "msg": "OK",
@@ -129,7 +121,7 @@ async function get_balance_multi(query) {
     text: "select account,balance from accounts where account = ANY ($1)",
     values: [addressAry]
   };
-  const resList = await client.query(listOptions);
+  const resList = await pgPromise.query(listOptions);
   return {
     "code": 100,
     "msg": "OK",
@@ -205,7 +197,7 @@ async function getIntnTransByAcct(query) {
                 `;
   }
 
-  let rlt = await client.query(sql);
+  let rlt = await pgPromise.query(sql);
   return {
     "code": 0,
     "msg": "ok",
@@ -225,7 +217,7 @@ async function getIntnTransByHash(query) {
         `,
     values: [query.hash]
   }
-  let rlt = await client.query(sql);
+  let rlt = await pgPromise.query(sql);
   return {
     "code": 0,
     "msg": "ok",
@@ -267,21 +259,42 @@ async function token_tx(query) {
                 `;
   }
   // return sql.text
-  let rlt = await client.query(sql);
-  return {
-    "code": 0,
-    "msg": "ok",
-    "result": rlt.rows || []
-  }
-}
-
-async function gas_price() {
-  let sql = `select * from gas_price order by timestamp DESC limit 1`;
-  let rlt = await client.query(sql);
+  let rlt = await pgPromise.query(sql);
   return {
     "code": 0,
     "msg": "ok",
     "result": rlt.rows[0] || {}
+  }
+}
+
+
+let GAS_PRICES = {
+  "timestamp": "1561021691000",
+  "cheapest_gas_price": "10000",
+  "median_gas_price": "15000",
+  "highest_gas_price": "20000"
+}
+async function gas_price() {
+  let querySql = {
+    text: `
+    SELECT 
+        "timestamp",
+        "cheapest_gas_price",
+        "median_gas_price",
+        "highest_gas_price"
+    FROM 
+        gas_price 
+    order by
+        "timestamp" desc
+    limit
+        1
+    `
+  };
+  let rlt = await pgPromise.query(querySql);
+  return {
+    "code": 0,
+    "msg": "ok",
+    "result": rlt.rows[0] || GAS_PRICES
   };
 }
 
@@ -328,7 +341,7 @@ async function tx_list(query) {
   };
   // return;
 
-  const resList = await client.query(listOptions);
+  const resList = await pgPromise.query(listOptions);
   return {
     "code": 100,
     "msg": "OK",
@@ -362,7 +375,7 @@ async function tx_list_account(query) {
     values: [query.account]
   };
 
-  const resList = await client.query(listOptions);
+  const resList = await pgPromise.query(listOptions);
   return {
     "code": 100,
     "msg": "OK",
@@ -399,7 +412,7 @@ async function get_transaction_by_hash(query) {
     values: [query.txhash]
   };
 
-  const resList = await client.query(listOptions);
+  const resList = await pgPromise.query(listOptions);
   return {
     "code": 100,
     "msg": "OK",
@@ -450,7 +463,6 @@ async function send_offline_block(query) {
  */
 router.get('/', async function (ctx, next) {
   let query = ctx.query;
-  console.log(ctx);
   // 验证 apikey 类型，以及是否合法 
   if (!query.apikey) {
     ctx.body = {
@@ -462,7 +474,6 @@ router.get('/', async function (ctx, next) {
   } else {
     let unfind = true;
     allApikeys.forEach(item => {
-      console.log()
       if (item == query.apikey) {
         unfind = false
       }
@@ -475,7 +486,6 @@ router.get('/', async function (ctx, next) {
       return;
     }
   }
-
   //验证 action
   if (!query.action) {
     ctx.body = {

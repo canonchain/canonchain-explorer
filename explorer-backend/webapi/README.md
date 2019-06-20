@@ -13,7 +13,7 @@
 - [获取 多个账户 的余额](./doc/Accounts.md/#获取多个账户的余额)
 - [获取 单个账户 的交易列表 [Normal]](./doc/Accounts.md/#获取单个账户的交易列表[Normal])
 - [获取 单个账户 的交易列表 [Internal]](./doc/Accounts.md/#获取单个账户的交易列表[Internal])
-- [获取 单个账户 的普通交易数](./doc/Accounts.md/#获取单个账户的CRC20余额)
+- [获取 单个账户 的交易数 [Normal]](./doc/Accounts.md/#获取单个账户的CRC20余额)
 - [获取 单个账户 的CRC20余额](./doc/Accounts.md/#获取单个账户的CRC20交易)
 - [获取 单个账户 的CRC20 Token交易](./doc/Accounts.md/#获取单个账户的交易数量)
 
@@ -25,6 +25,8 @@
 
 <!-- TOC -->
 
+- [获取未签名的交易](./doc/Transaction.md/#获取未签名的交易)
+- [发送已签名交易](./doc/Transaction.md/#发送已签名交易)
 - [通过交易Hash获取交易详情](./doc/Transaction.md/#获取交易详情)
 
 <!-- /TOC -->
@@ -36,6 +38,7 @@
 <!-- TOC -->
 
 - [获取 czr 最新价格](./doc/Stats.md/#获取CZR最新价格)
+- [获取CRC Token最新价格](./doc/Stats.md/#获取Token最新价格)
 - [获取 czr Gas](./doc/Stats.md/#获取CZRGas)
 
 <!-- /TOC -->
@@ -55,7 +58,7 @@
 DEMO路径
 
 ```
-https://api.canonchain.com/api?
+https://api.canonchain.com/apis?
     apikey=YourApiKeyToken&
     module=account&
     action=balance&
@@ -64,12 +67,12 @@ https://api.canonchain.com/api?
 ```
 路径说明如下
 ```
-https://api.canonchain.com/api          请求URL             [必须，固定不变]
+https://api.canonchain.com/apis         请求URL             [必须，固定不变]
 apikey=YourApiKeyToken                  您的ApiKey          [必须，固定不变]
-module=account                          接口所属模块        [必须，参见不同模块的API文档]
-action=balance                          请求行为名          [必须，参见不同模块的API文档]
-address=czr_xxx                         请求行为名参数      [必须，参见不同模块的API文档]
-tag=latest                              请求行为名参数      [必须，参见不同模块的API文档]
+module=account                          接口所属模块         [必须，参见不同模块的API文档]
+action=balance                          请求行为名           [必须，参见不同模块的API文档]
+address=czr_xxx                         请求行为名参数       [必须，参见不同模块的API文档]
+tag=latest                              请求行为名参数       [必须，参见不同模块的API文档]
 ```
 
 #### 接口返回结果
