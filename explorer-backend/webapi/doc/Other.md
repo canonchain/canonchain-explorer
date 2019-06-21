@@ -1,6 +1,7 @@
 
 ## 其它API列表
 - [获取 CZR Gas](#获取CZRGas)
+- [获得估算Gas](#获得估算Gas)
 - [字符串转16进制](#字符串转16进制)
 
 
@@ -38,6 +39,29 @@
     median_gas_price    string, 推荐的Gas   确认速度很快
     highest_gas_price   string, 最高的Gas   最快的确认速度
     ```
+
+## 获得估算Gas
+
+
+- 方式 ：GET
+- 参数
+    ```
+    module      : other
+    action      : estimate_gas
+    tag         : latest
+    apikey      : YourApiKeyToken
+    ```
+- 结果
+    ```
+    {
+        "code": "100",
+        "msg": "OK",
+        "result": "21272"
+    }
+    ```
+- 结果说明
+    - 返回格式：string
+    - 返回值：预估所需消耗的Gas
 
 ### 字符串转16进制
 
