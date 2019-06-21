@@ -1,29 +1,31 @@
 
 ## 交易API列表
-- [获取未签名的交易](#获取未签名的交易)
+- [生成未签名的交易](#生成未签名的交易)
 - [发送已签名交易](#发送已签名交易)
 - [获取交易详情](#获取交易详情)
 
+金额的单位请参考：[API结果说明](../doc/README.md/#接口返回结果)
 
-### 获取未签名的交易
+### 生成未签名的交易
 
-获取未签名的交易，返回交易详情，开发者需要签名后通过`send_offline_block`发送交易
+生成未签名的交易，返回交易详情，开发者需要签名后通过`send_offline_block`发送交易
 
 - 方式 ：GET
-- URL : `https://api.canonchain.com/apis`
 - 参数
     ```
-    module  : transaction ,
-    action  : get_offline_block ,
-    previous：""                   （可选） | 源账户的上一笔交易hash。可用于替换无法被打包的交易。
-    from: "czr_aaa",              源账户。
-    to: "czr_bbb",                目标账户。
-    amount: "100000000000000",    金额，单位：10-18CZR。
-    gas: "21000",                 执行交易使用的gas上限。未使用完的部分会返回源账户。
-    gas_price: "1000000000000",   gas价格，单位：10-18CZR/gas，手续费 = 实际使用的gas * gas_price。
-    data: "496E204D617468",       （可选） | 智能合约代码或数据，默认为空。
+    module  : transaction
+    action  : generate_offline_block
+    previous：""                    可选 | 源账户的上一笔交易hash。可用于替换无法被打包的交易。
+    from: "czr_account1"            源账户。
+    to: "czr_account2"              目标账户。
+    amount: "100000000000000"       金额，单位
+    gas: "21000"                    执行交易使用的gas上限。未使用完的部分会返回源账户。
+    gas_price: "1000000000000"      gas价格
+    data: "496E204D617468"          可选 | 智能合约代码或数据，默认为空。
     apikey  : YourApiKeyToken
     ```
+    - 参数说明
+        - gas_price: gas价格 ，单位：10<sup>-18</sup>CZR/gas，手续费 = 实际使用的gas * gas_price。
 - 结果
     ```
     {
@@ -48,42 +50,45 @@
     previous：        string, 源账户的上一笔交易。
     from：            string, 源账户。
     to：              string, 目标账户。
-    amount：          string, 金额，单位：10-18CZR。
+    amount：          string, 金额。
     gas：             string, 执行交易使用的gas上限。未使用完的部分会返回源账户。
-    gas_price：       string, gas价格，单位：10-18CZR/gas，手续费 = 实际使用的gas * gas_price。
+    gas_price：       string, gas价格
     data：            string, 参见输入参数。
     exec_timestamp：  string, 交易发送时间。
     work：            string, 工作量证明。
     ```
+    - 其它说明
+        - amount: 金额，单位：10<sup>-18</sup>CZR。
+        - gas_price: gas价格 ，单位：10<sup>-18</sup>CZR/gas，手续费 = 实际使用的gas * gas_price。
 
 [返回交易API列表](#交易API列表)
 
 ### 发送已签名交易
 
-请求参数来自接口 get_offline_block ,返回交易哈希。
+请求参数来自接口 generate_offline_block ,返回交易哈希。
 
 - 方式 ：GET
-- URL : `https://api.canonchain.com/apis`
 - 参数
     ```
-    module  : transaction ,
-    action  : send_offline_block ,
-    previous: "A5E40538D4FA7505DDE81C538AAAB97142312E3FE3D606901E2C439967FE10F0",    
-    from: "czr_aaa",
-    to: "czr_bbb",
-    amount: "1000000000000000000", 金额，单位：10-18CZR。
-    gas: "21000",
-    gas_price: "1000000000000",
-    data: "A2A98215E8DB2953",
-    exec_timestamp: 1547709428,
-    work: "8B82FE2B4DAB7807",   工作量证明。
+    module  : transaction
+    action  : send_offline_block
+    previous: "A5E40538D4FA7505DDE81C538AAAB97142312E3FE3D606901E2C439967FE10F0"
+    from: "czr_account1"
+    to: "czr_account2"
+    amount: "1000000000000000000" 金额
+    gas: "21000"
+    gas_price: "1000000000000"
+    data: "A2A98215E8DB2953"
+    exec_timestamp: 1547709428
+    work: "8B82FE2B4DAB7807"    工作量证明。
     signature: "4AB..."         交易签名
-    id："123"                   （可选）| 外部交易id，防止交易重复发送，同一个id交易只会发送一次。默认为空。
-    gen_next_work："1"          （可选）| 是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
+    id："123"                   可选 | 外部交易id，防止交易重复发送，同一个id交易只会发送一次。默认为空。
+    gen_next_work："1"          可选 | 是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
     apikey  : YourApiKeyToken
     ```
 - 参数说明
-    - 其中from，to，amout，gas，data，previous，exec_timestamp，work来自接口 get_offline_block 。
+    - 其中from，to，amout，gas，data，previous，exec_timestamp，work来自接口 generate_offline_block 。
+    - amount：金额，单位：10<sup>-18</sup>CZR。
 - 结果
     ```
     {
@@ -101,12 +106,11 @@
 ### 获取交易详情
 
 - 方式 ：GET
-- URL : `https://api.canonchain.com/apis`
 - 参数
     ```
-    module  : transaction ,
-    action  : details ,
-    hash    : XXX ,
+    module  : transaction
+    action  : details
+    hash    : HASH
     apikey  : YourApiKeyToken
     ```
 - 结果

@@ -42,8 +42,8 @@ router.prefix('/apis')
       }
   * 返回
       {
-        "code": "100",
-        "msg": "OK",
+        "status": "100",
+        "message": "OK",
         "result": "649492854246559898951364"
     }
 */
@@ -54,8 +54,8 @@ async function get_balance(query) {
   //校验
   if (!query.account) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing account",
+      "status": 9001,
+      "message": "Parameter missing account",
       "result": query
     }
   }
@@ -67,8 +67,8 @@ async function get_balance(query) {
   };
   const resList = await pgPromise.query(listOptions);
   return {
-    "code": 100,
-    "msg": "OK",
+    "status": 100,
+    "message": "OK",
     "result": resList.rows[0].balance || ""
   }
 }
@@ -86,8 +86,8 @@ async function get_balance(query) {
       }
   * 返回
       {
-        "code": "100",
-        "msg": "OK",
+        "status": "100",
+        "message": "OK",
         "result": [
             {
                 "account": "0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a",
@@ -110,8 +110,8 @@ async function get_balance_multi(query) {
   let addressAry = query.account.split(",");
   if (!query.account) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing account",
+      "status": 9001,
+      "message": "Parameter missing account",
       "result": query
     }
   }
@@ -123,8 +123,8 @@ async function get_balance_multi(query) {
   };
   const resList = await pgPromise.query(listOptions);
   return {
-    "code": 100,
-    "msg": "OK",
+    "status": 100,
+    "message": "OK",
     "result": resList.rows || []
   }
 }
@@ -143,8 +143,8 @@ async function get_balance_multi(query) {
       }
   * 返回
       {
-        "code": "100",
-        "msg": "OK",
+        "status": "100",
+        "message": "OK",
         "result": [
           {
 
@@ -160,8 +160,8 @@ async function tx_list_internal(query) {
 async function getIntnTransByAcct(query) {
   if (!query.account) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing account",
+      "status": 9001,
+      "message": "Parameter missing account",
     }
   }
   let SORTVAL = (query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
@@ -199,8 +199,8 @@ async function getIntnTransByAcct(query) {
 
   let rlt = await pgPromise.query(sql);
   return {
-    "code": 0,
-    "msg": "ok",
+    "status": 100,
+    "message": "ok",
     "result": rlt.rows || []
   }
 }
@@ -219,8 +219,8 @@ async function getIntnTransByHash(query) {
   }
   let rlt = await pgPromise.query(sql);
   return {
-    "code": 0,
-    "msg": "ok",
+    "status": 100,
+    "message": "ok",
     "result": rlt.rows || []
   }
 }
@@ -228,8 +228,8 @@ async function getIntnTransByHash(query) {
 async function token_tx(query) {
   if (!query.account && !query.contractaddress) {
     return {
-      "code": 9001,
-      "msg": "Require one of Parameters of account and contractaddress"
+      "status": 9001,
+      "message": "Require one of Parameters of account and contractaddress"
     };
   }
   let sqlWhereVal = query.account && query.contractaddress ? ` ('from'='${query.account}' or 'to'='${query.account}') and  contract_account='${query.contractaddress}'` :
@@ -261,15 +261,14 @@ async function token_tx(query) {
   // return sql.text
   let rlt = await pgPromise.query(sql);
   return {
-    "code": 0,
-    "msg": "ok",
+    "status": 100,
+    "message": "ok",
     "result": rlt.rows[0] || {}
   }
 }
 
 
 let GAS_PRICES = {
-  "timestamp": "1561021691000",
   "cheapest_gas_price": "10000",
   "median_gas_price": "15000",
   "highest_gas_price": "20000"
@@ -278,7 +277,6 @@ async function gas_price() {
   let querySql = {
     text: `
     SELECT 
-        "timestamp",
         "cheapest_gas_price",
         "median_gas_price",
         "highest_gas_price"
@@ -292,8 +290,8 @@ async function gas_price() {
   };
   let rlt = await pgPromise.query(querySql);
   return {
-    "code": 0,
-    "msg": "ok",
+    "status": 100,
+    "message": "ok",
     "result": rlt.rows[0] || GAS_PRICES
   };
 }
@@ -303,8 +301,8 @@ async function tx_list(query) {
   var SORTVAL = (query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
   if (!query.account) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing account",
+      "status": 9001,
+      "message": "Parameter missing account",
       "result": query
     }
 
@@ -343,8 +341,8 @@ async function tx_list(query) {
 
   const resList = await pgPromise.query(listOptions);
   return {
-    "code": 100,
-    "msg": "OK",
+    "status": 100,
+    "message": "OK",
     "result": resList.rows || []
   }
 }
@@ -353,8 +351,8 @@ async function tx_list_account(query) {
   //校验
   if (!query.account) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing account",
+      "status": 9001,
+      "message": "Parameter missing account",
       "result": query
     }
   }
@@ -377,8 +375,8 @@ async function tx_list_account(query) {
 
   const resList = await pgPromise.query(listOptions);
   return {
-    "code": 100,
-    "msg": "OK",
+    "status": 100,
+    "message": "OK",
     "result": Number(resList.rows[0].count)
   }
 }
@@ -390,8 +388,8 @@ async function get_transaction_by_hash(query) {
   //校验
   if (!query.txhash) {
     return {
-      "code": 9001,
-      "msg": "Parameter missing txhash",
+      "status": 9001,
+      "message": "Parameter missing txhash",
       "result": query
     }
   }
@@ -414,8 +412,8 @@ async function get_transaction_by_hash(query) {
 
   const resList = await pgPromise.query(listOptions);
   return {
-    "code": 100,
-    "msg": "OK",
+    "status": 100,
+    "message": "OK",
     "result": (resList.rows.length > 0) ? resList.rows[0] : {}
   }
 }
@@ -466,8 +464,8 @@ router.get('/', async function (ctx, next) {
   // 验证 apikey 类型，以及是否合法 
   if (!query.apikey) {
     ctx.body = {
-      "code": 9001,
-      "msg": "apikey is not found",
+      "status": 9001,
+      "message": "apikey is not found",
       "request_parameter": query
     }
     return;
@@ -480,8 +478,8 @@ router.get('/', async function (ctx, next) {
     })
     if (unfind) {
       ctx.body = {
-        "code": 9002,   //不知道是什麼值 cjd
-        "msg": "inValid Apikey Value"
+        "status": 9002,   //不知道是什麼值 cjd
+        "message": "inValid Apikey Value"
       }
       return;
     }
@@ -489,8 +487,8 @@ router.get('/', async function (ctx, next) {
   //验证 action
   if (!query.action) {
     ctx.body = {
-      "code": 9101,
-      "msg": "action is not found",
+      "status": 9101,
+      "message": "action is not found",
       "request_parameter": query
     }
     return;
