@@ -25,8 +25,8 @@
 
 <!-- TOC -->
 
-- [生成未签名的交易](./doc/Transaction.md/#生成未签名的交易)
-- [发送已签名交易](./doc/Transaction.md/#发送已签名交易)
+- [生成离线交易](./doc/Transaction.md/#生成离线交易)
+- [发送离线交易](./doc/Transaction.md/#发送离线交易)
 - [通过交易Hash获取交易详情](./doc/Transaction.md/#获取交易详情)
 
 <!-- /TOC -->
