@@ -14,8 +14,8 @@
 - [获取 单个账户 的交易列表 [Normal]](./doc/Accounts.md/#获取单个账户的交易列表Normal)
 - [获取 单个账户 的交易列表 [Internal]](./doc/Accounts.md/#获取单个账户的交易列表Internal)
 - [获取 单个账户 的交易数 [Normal]](./doc/Accounts.md/#获取单个账户的CRC20余额)
-- [获取 单个账户 的CRC20余额](./doc/Accounts.md/#获取单个账户的CRC20交易)
-- [获取 单个账户 的CRC20 Token交易](./doc/Accounts.md/#获取单个账户的交易数量)
+- [获取 单个账户 的 CRC20余额](./doc/Accounts.md/#获取单个账户的CRC20交易)
+- [获取 单个账户 的 CRC20 Token 交易](./doc/Accounts.md/#获取单个账户的交易数量)
 
 <!-- /TOC -->
 </details>
@@ -48,7 +48,7 @@
 <!-- TOC -->
 
 - [获取 CZR 最新价格](./doc/Stats.md/#获取CZR最新价格)
-- [获取CRC Token最新价格](./doc/Stats.md/#获取Token最新价格)
+- [获取 CRC Token 最新价格](./doc/Stats.md/#获取Token最新价格)
 
 <!-- /TOC -->
 </details>
