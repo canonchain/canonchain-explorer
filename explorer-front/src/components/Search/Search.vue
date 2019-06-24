@@ -1,8 +1,18 @@
 <template>
     <div class="input-wrap">
         <el-form class="demo-form-inline" @submit.native.prevent="onSubmit">
-            <el-input v-model="form.searchVal" :placeholder="form.placeholder" @keydown.enter='onSubmit($event)'>
-                <el-button slot="append" icon="el-icon-search" @click="onSubmit()"></el-button>
+            <el-input
+                v-model="form.searchVal"
+                size="mini"
+                :placeholder="form.placeholder"
+                @keydown.enter="onSubmit($event)"
+            >
+                <el-button
+                    slot="append"
+                    size="mini"
+                    icon="el-icon-search"
+                    @click="onSubmit()"
+                ></el-button>
             </el-input>
         </el-form>
     </div>
@@ -26,7 +36,7 @@ export default {
     methods: {
         onSubmit() {
             var currentVal = this.form.searchVal;
-            currentVal = currentVal.replace(/\s+/g,"");
+            currentVal = currentVal.replace(/\s+/g, "");
             var blockReg = /^[A-Z0-9a-z]{64}$/;
             // 92CFDBBDA091FE3D12DFCEFB28AAC648277F85278A22253F11A68325314BEAEB
 
@@ -52,8 +62,8 @@ export default {
 <style scoped>
 .input-wrap {
     max-width: 680px;
-    padding: 0 15px;
-    margin: 0 auto;
+    min-width: 380px;
+    padding: 0;
 }
 </style>
 

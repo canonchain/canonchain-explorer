@@ -1,163 +1,41 @@
 <template>
     <div class="page-home">
-        <div class="home-top">
-            <header-cps></header-cps>
-            <dashboard></dashboard>
-        </div>
-        <div class="home-content">
-            <div class="container">
-                <div class="home-dashboard">
-                    <div class="dashboard-left">
-                        <el-row>
-                            <el-col :span="8">
-                                <div class="grid-content bg-purple">
-                                    <h4 class="mci-tit">最新MCI</h4>
-                                    <p class="mci-number">{{mci.last_mci}}</p>
-                                </div>
-                            </el-col>
-                            <el-col :span="8">
-                                <div class="grid-content bg-purple">
-                                    <h4 class="mci-tit">最新稳定MCI</h4>
-                                    <p class="mci-number">{{mci.last_stable_mci}}</p>
-                                </div>
-                            </el-col>
-                            <el-col :span="8">
-                                <div class="grid-content bg-purple">
-                                    <h4 class="mci-tit">最新稳定INDEX</h4>
-                                    <p class="mci-number">{{mci.last_stable_block_index}}</p>
-                                </div>
-                            </el-col>
-                        </el-row>
-                    </div>
-                    <div class="dashboard-right">
-                        <div id="czr-charts"></div>
-                    </div>
-                    <div class="dashboard-select">
-                        <el-row>
-                            <el-col :span="5">
-                                <div class="grid-content bg-purple">
-                                    <el-radio v-model="radio" label="1" @change="initEcharts">秒</el-radio>
-                                </div>
-                            </el-col>
-                            <el-col :span="5">
-                                <div class="grid-content bg-purple">
-                                    <el-radio v-model="radio" label="10" @change="initEcharts">10秒</el-radio>
-                                </div>
-                            </el-col>
-                            <el-col :span="5">
-                                <div class="grid-content bg-purple">
-                                    <el-radio v-model="radio" label="30" @change="initEcharts">30秒</el-radio>
-                                </div>
-                            </el-col>
-                            <el-col :span="5">
-                                <div class="grid-content bg-purple">
-                                    <el-radio v-model="radio" label="60" @change="initEcharts">1分钟</el-radio>
-                                </div>
-                            </el-col>
-                            <el-col :span="4">
-                                <div class="grid-content bg-purple">
-                                    <el-radio v-model="radio" label="300" @change="initEcharts">5分钟</el-radio>
-                                </div>
-                            </el-col>
-                        </el-row>
-                    </div>
-                </div>
-                <h2 class="home-content-tit">最新交易</h2>
-                <template>
-                    <el-table :data="database" style="width: 100%" v-loading="loadingSwitch">
-                        <el-table-column label="时间" width="200">
-                            <template slot-scope="scope">
-                                <span class="table-long-item">{{scope.row.exec_timestamp | toDate}}</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="交易号" width="200">
-                            <template slot-scope="scope">
-                                <el-button @click="goBlockPath(scope.row.hash)" type="text">
-                                    <span class="table-long-item">{{scope.row.hash}}</span>
-                                </el-button>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="发款方" width="200">
-                            <template slot-scope="scope">
-                                <template v-if="scope.row.mci <= 0">
-                                    <span class="table-long-item">GENESIS</span>
-                                </template>
-                                <template v-else>
-                                    <el-button @click="goAccountPath(scope.row.from)" type="text">
-                                        <span class="table-long-item">{{scope.row.from}}</span>
-                                    </el-button>
-                                </template>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="收款方" width="200">
-                            <template slot-scope="scope">
-                                <el-button @click="goAccountPath(scope.row.to)" type="text">
-                                    <span class="table-long-item">{{scope.row.to}}</span>
-                                </el-button>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="状态" min-width="80" align="center">
-                            <template slot-scope="scope">
-                                <template v-if="scope.row.is_stable === false">
-                                    <span class="txt-warning">等待确认</span>
-                                </template>
-                                <template v-else>
-                                    <template v-if="scope.row.status == '0'">
-                                        <span class="txt-success">成功</span>
-                                    </template>
-                                    <template v-else-if="scope.row.status == '1'">
-                                        <span class="txt-danger">失败(1)</span>
-                                    </template>
-                                    <template v-else-if="scope.row.status == '2'">
-                                        <span class="txt-danger">失败(2)</span>
-                                    </template>
-                                    <template v-else-if="scope.row.status == '3'">
-                                        <span class="txt-danger">失败(3)</span>
-                                    </template>
-                                    <template v-else>
-                                        <span class="txt-info">-</span>
-                                    </template>
-                                </template>
-
-                                <!-- <span v-else class="xt-info">
-                                    -
-                                </span>-->
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="金额 / CZR" align="right" width="240">
-                            <template slot-scope="scope">
-                                <span>{{scope.row.amount | toCZRVal}}</span>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-                </template>
+        <czr-header></czr-header>
+        <placard></placard>
+        <div class="container">
+            <div class="card-wrap">
+                <card :mci="mci"></card>
+            </div>
+            <div class="charts-wrap">
+                <echarts></echarts>
+            </div>
+            <div class="trans-wrap" v-loading="loadingSwitch">
+                <h2 class="trans-tit">最新交易</h2>
+                <nomal-list :database="database"></nomal-list>
             </div>
         </div>
+        <czr-footer></czr-footer>
     </div>
 </template>
 
 <script>
-import HeaderCps from "@/components/Header/Header";
-import Dashboard from "@/components/Dashboard/Dashboard";
+import CzrHeader from "@/components/Header/Header";
+import CzrFooter from "@/components/Footer/Footer";
+import NomalList from "@/components/Transaction/nomal";
+import Placard from "@/components/Home/Placard";
+import Echarts from "@/components/Home/Echarts";
+import Card from "@/components/Home/card";
 
-// 加载echarts，注意引入文件的路径
-import echarts from "echarts/lib/echarts";
-// 再引入需要使用的图表类型，标题，提示信息等
-import "echarts/lib/chart/bar";
-import "echarts/lib/component/tooltip";
-import "echarts/lib/component/title";
-
-let myChart;
-let stampNow;
-let get_timestamp_opt;
-let clientObj;
-let serverObj;
-let data;
+let self;
 export default {
     name: "Home",
     components: {
-        HeaderCps,
-        Dashboard
+        CzrHeader,
+        CzrFooter,
+        NomalList,
+        Echarts,
+        Placard,
+        Card
     },
     data() {
         return {
@@ -167,38 +45,17 @@ export default {
                 last_mci: "-",
                 last_stable_block_index: "-"
             },
-            radio: "1",
-            start_data: 0,
             database: []
         };
     },
     created() {
         self = this;
-        self.data = [5];
-        for(let i=0;i<5;i++){
-            self.data[i] = {
-                timestamp : [],
-                count : []
-            };
-        }
-        // console.log(self.data[0].timestamp.length)
         self.getTransactions();
         self.getMci();
-        let reg = /^#\/+\?+\w+=(\d{14})$/;
-        let restlt = reg.exec(window.location.hash);
-        if (!!restlt) {
-            this.start_data = this.toTimestamp(restlt[1]);
-        }
-        // this.start_data = 1558414662;
     },
-    mounted() {
-        // 基于准备好的dom，初始化echarts实例
-        myChart = echarts.init(document.getElementById("czr-charts"));
-        self.initEcharts(self.radio);
-    },
+
     methods: {
         async getTransactions() {
-            self.loadingSwitch = true;
             let lastTranResponse = await self.$api.get(
                 "/api/get_latest_transactions"
             );
@@ -220,16 +77,8 @@ export default {
                 self.loadingSwitch = false;
             }
         },
-        goBlockPath(block) {
-            this.$router.push("/block/" + block);
-        },
-        goAccountPath(account) {
-            this.$router.push("/account/" + account);
-        },
         //mci
         async getMci() {
-            self.mci.last_stable_mci = "-";
-            self.mci.last_mci = "-";
             let response = await self.$api.get("/api/get_mci");
             if (response.success) {
                 self.mci.last_stable_mci = response.mci.last_stable_mci;
@@ -239,229 +88,35 @@ export default {
             } else {
                 console.error("/api/get_mci Error");
             }
-        },
-        timeFormat(type, date) {
-            return type === "1" ? date : Math.floor(date / 10);
-        },
-        //echarts
-        async initEcharts(value) {
-            if(value == '300'){
-                    var index_f = 4; 
-                }else if(value == '60'){
-                    var index_f = 3; 
-                }else if(value == '30'){
-                    var index_f = 2; 
-                }else if(value == '10'){
-                    var index_f = 1; 
-                }else{
-                    var index_f = 0; 
-                }
-            if(self.data[index_f].timestamp.length!=0){
-                // drawChart(index_f);
-                myChart.setOption({
-                    title: {
-                        text: "CZR TPS"
-                    },
-                    tooltip: {},
-                    xAxis: {
-                        data: this.data[index_f].timestamp
-                    },
-                    yAxis: {},
-                    series: [
-                        {
-                            name: "TPS",
-                            type: "bar",
-                            data: this.data[index_f].count
-                        }
-                    ]
-                });
-                return ;
-            }
-            get_timestamp_opt = {
-                type: value
-            };
-
-            if (self.start_data > 0) {
-                get_timestamp_opt.start = self.start_data;
-            }
-            
-            let response = await self.$api.get(
-                "/api/get_timestamp",
-                get_timestamp_opt
-            );
-            if (response.success) {
-                this.data[index_f].timestamp = response.timestamp;
-                this.data[index_f].count = response.count;
-
-                self.data[index_f].timestamp.forEach((item, index) => {
-                    self.data[index_f].timestamp[index] = self.toTime(item);
-                });
-                
-                // 绘制图表
-
-                // drawChart(index_f);
-                myChart.setOption({
-                    title: {
-                        text: "CZR TPS"
-                    },
-                    tooltip: {},
-                    xAxis: {
-                        data: this.data[index_f].timestamp
-                    },
-                    yAxis: {},
-                    series: [
-                        {
-                            name: "TPS",
-                            type: "bar",
-                            data: this.data[index_f].count
-                        }
-                    ]
-                });
-            } else {
-                console.error("/api/get_timestamp Error");
-            }
-        },
-        // drawChart(index_f) {
-        //     // 绘制图表
-
-        //     myChart.setOption({
-        //         title: {
-        //             text: "CZR TPS"
-        //         },
-        //         tooltip: {},
-        //         xAxis: {
-        //             data: this.data[index_f].timestamp
-        //         },
-        //         yAxis: {},
-        //         series: [
-        //             {
-        //                 name: "TPS",
-        //                 type: "bar",
-        //                 data: this.data[index_f].count
-        //             }
-        //         ]
-        //     });
-        // },
-        toTime(timestamp) {
-            // 简单的一句代码
-            // 154330965
-            // 1543309450 Number(timestamp)<999999999
-            let date; //
-            if (Number(timestamp) < 999999999) {
-                date = new Date(Number(timestamp) * 1000 * 10); //获取一个时间对象
-            } else {
-                date = new Date(Number(timestamp) * 1000); //获取一个时间对象
-            }
-            let addZero = function(val) {
-                return val < 10 ? "0" + val : val;
-            };
-            return (
-                date.getFullYear() +
-                "-" +
-                addZero(date.getMonth() + 1) +
-                "-" +
-                addZero(date.getDate()) +
-                " " +
-                addZero(date.getHours()) +
-                ":" +
-                addZero(date.getMinutes()) +
-                ":" +
-                addZero(date.getSeconds())
-            );
-        },
-        //timestamp
-        toTimestamp(time) {
-            function format(opt) {
-                opt = opt.split("");
-                let target =
-                    opt[0] +
-                    opt[1] +
-                    opt[2] +
-                    opt[3] +
-                    "/" +
-                    opt[4] +
-                    opt[5] +
-                    "/" +
-                    opt[6] +
-                    opt[7] +
-                    " " +
-                    opt[8] +
-                    opt[9] +
-                    ":" +
-                    opt[10] +
-                    opt[11] +
-                    ":" +
-                    opt[12] +
-                    opt[13];
-                return target;
-            }
-            return new Date(format(time)).getTime() / 1000;
         }
     }
 };
 </script>
 
 <style scoped>
-.home-top {
-    background: #5a59a0;
-    text-align: center;
-    width: 100%;
-    height: 430px;
-    color: #fff;
-    background-image: radial-gradient(
-        50% 158%,
-        #57509e 29%,
-        #353469 93%,
-        #333366 100%
-    );
-}
-.home-content .container {
-    padding-bottom: 70px;
-}
-.home-content-tit {
-    padding: 20px 10px 10px 0;
-    font-size: 18px;
-    color: #838383;
-}
-.table-long-item {
-    max-width: 150px;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.home-dashboard {
+.container {
     margin-top: 20px;
+    padding-bottom: 20px;
 }
-.grid-content {
-    text-align: center;
+.trans-wrap {
+    margin-top: 10px;
+    padding: 20px 10px;
+    background-color: #fff;
 }
-.home-dashboard .dashboard-left {
-    background-color: #f7f7f7;
-    color: #5a59a0;
+.trans-tit {
+    font-size: 18px;
+    padding-left: 10px;
+    color: #4a4a4a;
+}
+
+.card-wrap {
+    background-color: #fff;
+    color: #28388c;
     padding: 18px 10px 0 10px;
 }
-.home-dashboard .dashboard-right {
+.charts-wrap {
+    margin-top: 10px;
     padding: 10px;
-    border: 1px solid #f7f7f7;
-    border-bottom: 1px transparent;
-    /* background-color: #f7f7f7; */
-}
-.home-dashboard .dashboard-select {
-    padding: 10px;
-    border: 1px solid #f7f7f7;
-    border-top: 1px transparent;
-}
-.dashboard-left .mci-tit {
-    color: #646464;
-    font-size: 14px;
-    font-weight: 400;
-}
-.dashboard-left .mci-number {
-    font-size: 22px;
-    line-height: 20px;
-}
-#czr-charts {
-    height: 350px;
+    background-color: #fff;
 }
 </style>

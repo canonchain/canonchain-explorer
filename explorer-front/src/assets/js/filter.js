@@ -50,9 +50,9 @@ export const toDate = val => {
     };
     return (
         newDate.getFullYear() +
-        " / " +
+        "/" +
         addZero(newDate.getMonth() + 1) +
-        " / " +
+        "/" +
         addZero(newDate.getDate()) +
         " " +
         addZero(newDate.getHours()) +

@@ -1,9 +1,11 @@
 <template>
     <div id="header">
-        <div class="container">
-            <nav class="navbar navbar-expand-md navbar-dark justify-content-between">
-                <router-link class="navbar-brand" to="/">
-                    <img src="@/assets/logo.png" alt="Logo" class="czr-logo" height="50px;">
+        <div class="container header-wrap">
+            <nav
+                class="navbar navbar-expand-md navbar-dark justify-content-between"
+            >
+                <router-link to="/">
+                    <img src="@/assets/logo.png" alt="Logo" class="czr-logo" />
                 </router-link>
                 <button
                     class="navbar-toggler"
@@ -13,60 +15,72 @@
                 >
                     <span class="navbar-toggler-icon"></span>
                 </button>
+            </nav>
 
-                <!-- <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-                </button>-->
-
-                <!-- 这个 div 加上 justify-content-end -->
-                <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
+            <nav
+                class="header-navs navbar navbar-expand-md navbar-dark justify-content-between"
+            >
+                <div class="collapse navbar-collapse" id="collapsibleNavbar">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/">首页</router-link>
+                            <router-link class="nav-link" to="/"
+                                >首页</router-link
+                            >
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/accounts">账户</router-link>
+                            <router-link class="nav-link" to="/accounts"
+                                >账户</router-link
+                            >
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/normal_trans">普通交易</router-link>
+                            <router-link class="nav-link" to="/normal_trans"
+                                >普通交易</router-link
+                            >
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/witness_trans">见证交易</router-link>
+                            <router-link class="nav-link" to="/witness_trans"
+                                >见证交易</router-link
+                            >
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/tokens">代币</router-link>
+                            <router-link class="nav-link" to="/tokens"
+                                >代币</router-link
+                            >
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/internals">内部交易</router-link>
+                            <router-link class="nav-link" to="/internals"
+                                >内部交易</router-link
+                            >
                         </li>
                         <li class="nav-item" v-if="is_mobile == false">
-                            <router-link class="nav-link" to="/dag">DAG</router-link>
+                            <router-link class="nav-link" to="/dag"
+                                >DAG</router-link
+                            >
                         </li>
                     </ul>
                 </div>
+                <search></search>
             </nav>
         </div>
     </div>
 </template>
 
 <script>
+import Search from "@/components/Search/Search";
+
 export default {
+    name: "CzrHeader",
+    components: {
+        Search
+    },
     data() {
         return {
-            dialogVisible: false,
             is_mobile: true,
             tableData: []
         };
     },
     mounted() {
-        if (this._isMobile()) {
-            this.is_mobile = true;
-        } else {
-            this.is_mobile = false;
-        }
+        this.is_mobile = this._isMobile() ? true : false;
     },
     methods: {
         _isMobile() {
@@ -80,8 +94,20 @@ export default {
 </script>
 
 <style scoped>
+#header {
+    background-color: #28388c;
+}
+#header .header-wrap {
+    padding: 12px 14px;
+}
 #header .czr-logo {
-    height: 50px;
+    height: 43px;
+}
+#header .header-navs {
+    padding-top: 8px;
+}
+.navbar-dark .navbar-nav .nav-link {
+    color: #fff;
 }
 /* 出现X号 */
 #header .navbar-toggle .icon-bar {
@@ -128,24 +154,27 @@ export default {
 }
 
 /* X号结束 */
+
 .navbar-nav {
     text-align: left;
 }
 @media (min-width: 1000px) {
     .nav-item {
-        margin-left: 10px;
+        margin-right: 10px;
     }
     .nav-link {
         padding: 3px 15px;
     }
     .navbar-nav .router-link-exact-active {
-        background: #403f75;
-        border-radius: 3px;
+        border-bottom: 2px solid #e0e0e0;
     }
 }
-@media (max-width: 999) {
-    #header .container {
-        background: #5a59a0;
+@media (max-width: 999px) {
+    #header .header-wrap {
+        padding: 6px 10px 0;
+    }
+    #header .input-wrap{
+        display: none;
     }
 }
 </style>

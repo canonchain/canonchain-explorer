@@ -1,8 +1,8 @@
 <template>
     <div class="dash-board-wrap">
         <div class="slogan-wrap">
-            <h1 class="slogan">{{slogan}}</h1>
-            <p class="slogan-des">{{sloganDes}}</p>
+            <h1 class="slogan">{{ slogan }}</h1>
+            <p class="slogan-des">{{ sloganDes }}</p>
         </div>
         <search></search>
     </div>
