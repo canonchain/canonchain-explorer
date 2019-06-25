@@ -24,7 +24,7 @@ import CzrFooter from "@/components/Footer/Footer";
 import NomalList from "@/components/Transaction/nomal";
 import Placard from "@/components/Home/Placard";
 import Echarts from "@/components/Home/Echarts";
-import Card from "@/components/Home/card";
+import Card from "@/components/Home/Card";
 
 let self;
 export default {

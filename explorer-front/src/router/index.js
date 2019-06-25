@@ -13,7 +13,6 @@ import BlockIntelTrans from '@/components/Block/intel_trans'
 import Internals from '@/components/internals'
 
 // account
-import Account from '@/components/account'
 import AccountTransaction from '@/components/Account/transaction'
 import AccountTransToken from '@/components/Account/trans_token'
 import AccountTransInternal from '@/components/Account/trans_internal'

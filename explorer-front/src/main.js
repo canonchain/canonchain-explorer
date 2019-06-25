@@ -30,6 +30,5 @@ Vue.prototype.$api = api
 new Vue({
   el: '#app',
   router,
-  components: { App },
-  template: '<App/>'
+  render: h => h(App)
 })
