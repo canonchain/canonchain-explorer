@@ -1,32 +1,33 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
-import Home from '@/components/home'
-import Dag from '@/components/dag'
+import Home from '@/pages/home'
+import Dag from '@/pages/dag'
 
 // Block
-import Block from '@/components/block'
-import BlockEventLog from '@/components/Block/event_log'
-import BlockIntelTrans from '@/components/Block/intel_trans'
+import Block from '@/pages/block'
+import BlockEventLog from '@/pages/Block/event_log'
+import BlockIntelTrans from '@/pages/Block/intel_trans'
+import BlockAdvancedInfo from '@/pages/Block/advanced_info'
 
 //internal
-import Internals from '@/components/internals'
+import Internals from '@/pages/internals'
 
 // account
-import AccountTransaction from '@/components/Account/transaction'
-import AccountTransToken from '@/components/Account/trans_token'
-import AccountTransInternal from '@/components/Account/trans_internal'
-import AccountEventLogs from '@/components/Account/event_logs'
-import contractCode from '@/components/Account/contract_code'
+import AccountTransaction from '@/pages/Account/transaction'
+import AccountTransToken from '@/pages/Account/trans_token'
+import AccountTransInternal from '@/pages/Account/trans_internal'
+import AccountEventLogs from '@/pages/Account/event_logs'
+import contractCode from '@/pages/Account/contract_code'
 
-import Accounts from '@/components/accounts'
-import Normal_Trans from '@/components/normal_trans'
-import WitnessTrans from '@/components/witness_trans'
-import NotFound from '@/components/NotFound/NotFound'
+import Accounts from '@/pages/accounts'
+import Normal_Trans from '@/pages/normal_trans'
+import WitnessTrans from '@/pages/witness_trans'
+import NotFound from '@/pages/NotFound/NotFound.vue'
 //Tokens
-import Tokens from '@/components/tokens'
-import Token from '@/components/Token/token'
-import TokenHolder from '@/components/Token/holder'
+import Tokens from '@/pages/tokens'
+import Token from '@/pages/Token/token'
+import TokenHolder from '@/pages/Token/holder'
 
 Vue.use(Router)
 
@@ -82,6 +83,11 @@ export default new Router({
       path: '/block/:id/intel_trans',
       name: 'BlockIntelTrans',
       component: BlockIntelTrans
+    },
+    {
+      path: '/block/:id/advanced_info',
+      name: 'BlockAdvancedInfo',
+      component: BlockAdvancedInfo
     },
     {
       path: '/block/:id/event_log',

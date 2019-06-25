@@ -116,8 +116,9 @@ a {
 }
 .contract-code {
     display: block;
-    height: 200px;
-    max-height: 200px;
+    width: 80%;
+    height: 100px;
+    max-height: 100px;
     margin-top: 5px;
     word-break: break-all;
     white-space: pre-wrap;
@@ -127,10 +128,54 @@ a {
     border: 1px solid #e7eaf3;
     padding: 12px;
 }
+@media (max-width: 900px) {
+    .contract-code {
+        width: 100%;
+    }
+}
 .beautify-color {
     color: #c0c0c0;
 }
 .text-content {
     text-align: center;
 }
+
+/* List页面 开始 */
+.page-list {
+    width: 100%;
+    position: relative;
+}
+.page-container {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    color: black;
+    text-align: left;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.page-container .container {
+    background: #fff;
+    padding-bottom: 10px;
+}
+.list-title {
+    font-size: 18px;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #4a4a4a;
+}
+.sub_header-des {
+    color: #999;
+}
+.list-wrap {
+    min-height: 550px;
+    padding: 20px 0;
+    background-color: #fff;
+}
+.pagin-block {
+    display: block;
+    margin: 10px 0;
+    text-align: right;
+}
+/* List页面 结束 */
 </style>

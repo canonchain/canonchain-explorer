@@ -1,6 +1,6 @@
 <template>
     <div class="page-block">
-        <header-cps></header-cps>
+        <czr-header></czr-header>
         <div class="block-info-wrap">
             <div class="container">
                 <search></search>
@@ -750,7 +750,7 @@
 </template>
 
 <script>
-import HeaderCps from "@/components/Header/Header";
+import CzrHeader from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let self = null;
@@ -761,7 +761,7 @@ let isDefaultPage = false;
 export default {
     name: "Block",
     components: {
-        HeaderCps,
+        CzrHeader,
         Search
     },
     data() {
@@ -1401,18 +1401,5 @@ export default {
     -webkit-transform: rotate(90deg); /* Safari 和 Chrome */
     -o-transform: rotate(90deg); /* Opera */
     padding: 0 6px;
-}
-.contract-code {
-    display: block;
-    height: 300px;
-    max-height: 300px;
-    margin-top: 5px;
-    word-break: break-all;
-    white-space: pre-wrap;
-    white-space: -moz-pre-wrap;
-    white-space: -o-pre-wrap;
-    word-wrap: break-word;
-    border: 1px solid #e7eaf3;
-    padding: 12px;
 }
 </style>

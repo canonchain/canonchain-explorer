@@ -1,6 +1,6 @@
 <template>
     <div class="page-block">
-        <header-cps></header-cps>
+        <czr-header></czr-header>
         <div class="block-info-wrap">
             <div class="container">
                 <div class="search-wrap">
@@ -325,43 +325,51 @@
                         </div>
                     </template>
                     <div class="block-table">
-                        <template v-if="blockInfo.type === '2'">
+                        <template>
                             <el-tabs v-model="activeName" @tab-click="change_table">
                                 <!-- <template v-if="blockInfo.is_token_trans"> -->
-                                <template>
-                                    <el-tab-pane label="代币转账" name="token_trans">
-                                        <div class="block-content" v-loading="loadingSwitch">
-                                            <template v-if="IS_GET_INFO">
-                                                <el-table :data="trans_token" style="width: 100%">
-                                                    <el-table-column label="发款方" width="180">
-                                                        <template slot-scope="scope">
-                                                            <router-link
-                                                                class="table-long-item"
-                                                                :to="{path: '/account/' + scope.row.from}"
-                                                            >{{scope.row.from}}</router-link>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="收款方" width="180">
-                                                        <template slot-scope="scope">
-                                                            <router-link
-                                                                class="table-long-item"
-                                                                :to="{path: '/account/' + scope.row.to}"
-                                                            >{{scope.row.to}}</router-link>
-                                                        </template>
-                                                    </el-table-column>
-                                                    <el-table-column label="代币" align="right">
-                                                        <template slot-scope="scope">
-                                                            <span>{{scope.row.amount | toCZRVal}} {{scope.row.token_symbol}}</span>
-                                                        </template>
-                                                    </el-table-column>
-                                                </el-table>
-                                            </template>
-                                        </div>
-                                    </el-tab-pane>
-                                </template>
+                                <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                                 <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
-
-                                <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                                <el-tab-pane label="事件日志" name="event_log">
+                                    <div class="block-content" v-loading="loadingSwitch">
+                                        <template v-if="IS_GET_INFO">
+                                            <el-table :data="event_log" style="width: 100%">
+                                                <el-table-column label="时间" width="180">
+                                                    <template slot-scope="scope">
+                                                        <span
+                                                            class="table-long-item"
+                                                        >{{scope.row.mc_timestamp | toDate}}</span>
+                                                    </template>
+                                                </el-table-column>
+                                                <!-- <el-table-column label="交易号" width="180">
+                                                    <template slot-scope="scope"></template>
+                                                </el-table-column>-->
+                                                <el-table-column label="交易号/模式" width="200">
+                                                    <template slot-scope="scope">
+                                                        {{scope.row.hash}}
+                                                        <br>
+                                                        <strong>{{scope.row.method}}</strong>
+                                                        <p>{{scope.row.method_function}}</p>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column label="事件日志">
+                                                    <template slot-scope="scope">
+                                                        <template
+                                                            v-for="(item,index) in scope.row.topics"
+                                                        >
+                                                            <p
+                                                                v-bind:key="item"
+                                                            >[topic{{index}}] {{ item }}</p>
+                                                        </template>
+                                                        <p>
+                                                            <span>Data {{scope.row.data}}</span>
+                                                        </p>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table>
+                                        </template>
+                                    </div>
+                                </el-tab-pane>
                             </el-tabs>
                         </template>
                     </div>
@@ -372,7 +380,7 @@
 </template>
 
 <script>
-import HeaderCps from "@/components/Header/Header";
+import CzrHeader from "@/components/Header/Header";
 import Search from "@/components/Search/Search";
 
 let self = null;
@@ -381,7 +389,7 @@ let trsns_info;
 export default {
     name: "Block",
     components: {
-        HeaderCps,
+        CzrHeader,
         Search
     },
     data() {
@@ -432,8 +440,8 @@ export default {
                 is_intel_trans: ""
             },
             // change
-            activeName: "token_trans",
-            trans_token: []
+            activeName: "event_log",
+            event_log: []
         };
     },
     created() {
@@ -471,14 +479,15 @@ export default {
                 hash: self.blockHash
             };
             let response = await self.$api.get(
-                "/api/get_transaction_trans_token",
+                "/api/get_transaction_event_log",
                 opt
             );
+            let tempTopics;
 
             if (response.success) {
-                self.trans_token = response.data;
+                self.event_log = response.data;
             } else {
-                self.trans_token = [];
+                self.event_log = [];
             }
 
             // self.IS_GET_INFO = true;
@@ -487,12 +496,12 @@ export default {
         change_table(tab, event) {
             switch (tab.name) {
                 case "token_trans":
+                    this.$router.push(`/block/${self.blockHash}`);
                     break;
                 case "intel_trans":
                     this.$router.push(`/block/${self.blockHash}/intel_trans`);
                     break;
                 case "event_log":
-                    this.$router.push(`/block/${self.blockHash}/event_log`);
                     break;
             }
         }

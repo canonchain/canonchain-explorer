@@ -70,7 +70,9 @@ export default {
 }
 .item {
     display: block;
-    padding-left: 40px;
+    /* padding-left: 40px; */
+    font-size: 13px;
+    padding: 2px 0 2px 40px;
     color: #999999;
 }
 .copyright {

@@ -10,7 +10,7 @@
                 <echarts></echarts>
             </div>
             <div class="trans-wrap" v-loading="loadingSwitch">
-                <h2 class="trans-tit">最新交易</h2>
+                <h2 class="list-title">最新交易</h2>
                 <nomal-list :database="database"></nomal-list>
             </div>
         </div>
@@ -21,7 +21,7 @@
 <script>
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
-import NomalList from "@/components/Transaction/nomal";
+import NomalList from "@/components/List/Nomal";
 import Placard from "@/components/Home/Placard";
 import Echarts from "@/components/Home/Echarts";
 import Card from "@/components/Home/Card";
@@ -85,8 +85,6 @@ export default {
                 self.mci.last_stable_block_index =
                     response.mci.last_stable_block_index;
                 self.mci.last_mci = response.mci.last_mci;
-            } else {
-                console.error("/api/get_mci Error");
             }
         }
     }
@@ -102,11 +100,6 @@ export default {
     margin-top: 10px;
     padding: 20px 10px;
     background-color: #fff;
-}
-.trans-tit {
-    font-size: 18px;
-    padding-left: 10px;
-    color: #4a4a4a;
 }
 
 .card-wrap {

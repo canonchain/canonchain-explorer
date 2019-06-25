@@ -5,15 +5,21 @@
             <div id="menuSocial">
                 <router-link class="dag-link" to="/">首页</router-link>
                 <router-link class="dag-link" to="/accounts">账户</router-link>
-                <router-link class="dag-link" to="/normal_trans">普通交易</router-link>
-                <router-link class="dag-link" to="/witness_trans">见证交易</router-link>
+                <router-link class="dag-link" to="/normal_trans"
+                    >普通交易</router-link
+                >
+                <router-link class="dag-link" to="/witness_trans"
+                    >见证交易</router-link
+                >
                 <router-link class="dag-link" to="/tokens">代币</router-link>
-                <router-link class="dag-link" to="/internals">内部交易</router-link>
+                <router-link class="dag-link" to="/internals"
+                    >内部交易</router-link
+                >
                 <router-link class="dag-link" to="/dag">DAG</router-link>
             </div>
             <div id="menuLeft">
                 <router-link to="/" id="menuLeftImg">
-                    <img src="@/assets/logo.png">
+                    <img src="@/assets/logo.png" />
                 </router-link>
                 <div id="menuInput">
                     <div class="input-wrap">
@@ -53,20 +59,26 @@
             <div id="listInfo">
                 <div class="info-item-dev">
                     <strong>Hash</strong>:
-                    <span class="info-item-val">{{activeUnitInfo.hash}}</span>
+                    <span class="info-item-val">{{ activeUnitInfo.hash }}</span>
                 </div>
                 <div class="info-item-dev">
                     <span class="level-wrap">
                         <strong>Level</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.level}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.level
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Witnessed Level</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.witnessed_level}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.witnessed_level
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Stable Index</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.stable_index}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.stable_index
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>类型</strong>:
@@ -82,7 +94,10 @@
                     <strong>Previous</strong>:
                     <span class="info-item-val">
                         <template
-                            v-if="activeUnitInfo.previous === '0000000000000000000000000000000000000000000000000000000000000000'"
+                            v-if="
+                                activeUnitInfo.previous ===
+                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                            "
                         >
                             <span>-</span>
                         </template>
@@ -90,7 +105,8 @@
                             <a
                                 href="javascript:;"
                                 @click="goBlockHash(activeUnitInfo.previous)"
-                            >{{activeUnitInfo.previous}}</a>
+                                >{{ activeUnitInfo.previous }}</a
+                            >
                         </template>
                     </span>
                 </div>
@@ -98,7 +114,10 @@
                     <strong>Best Parent</strong>:
                     <span class="info-item-val">
                         <template
-                            v-if="activeUnitInfo.best_parent === '0000000000000000000000000000000000000000000000000000000000000000'"
+                            v-if="
+                                activeUnitInfo.best_parent ===
+                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                            "
                         >
                             <span>-</span>
                         </template>
@@ -106,41 +125,56 @@
                             <a
                                 href="javascript:;"
                                 @click="goBlockHash(activeUnitInfo.best_parent)"
-                            >{{activeUnitInfo.best_parent}}</a>
+                                >{{ activeUnitInfo.best_parent }}</a
+                            >
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
-                    <template v-if="activeUnitInfo.parents.length==0">
+                    <template v-if="activeUnitInfo.parents.length == 0">
                         <strong>Parents : -</strong>
                     </template>
                     <template v-else>
                         <strong
-                            :class="['switch',{'switch-show': showParentsLink }]"
+                            :class="[
+                                'switch',
+                                { 'switch-show': showParentsLink }
+                            ]"
                             @click="toggleParents('parent')"
-                        >Parents</strong>
+                            >Parents</strong
+                        >
                     </template>
                     <div
                         v-for="item in activeUnitInfo.parents"
-                        v-show="showParentsLink==true"
+                        v-show="showParentsLink == true"
                         :key="item.parent"
                     >
-                        <a href="javascript:;" @click="goBlockHash(item.parent)">{{item.parent}}</a>
+                        <a
+                            href="javascript:;"
+                            @click="goBlockHash(item.parent)"
+                            >{{ item.parent }}</a
+                        >
                     </div>
                 </div>
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
                     <span class="level-wrap">
                         <strong>Is Stable</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.is_stable}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.is_stable
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Is On Mc</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.is_on_mc}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.is_on_mc
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Mci</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.mci}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.mci
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Status</strong>:
@@ -166,17 +200,23 @@
                 <div class="info-item-dev">
                     <span class="level-wrap">
                         <strong>Exec Time</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.exec_timestamp | toDate}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.exec_timestamp | toDate
+                        }}</span>
                     </span>
                     <span class="level-wrap">
                         <strong>Mc Time</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.mc_timestamp | toDate}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.mc_timestamp | toDate
+                        }}</span>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <span class="level-wrap">
                         <strong>Stable Time</strong>:
-                        <span class="info-item-val">{{activeUnitInfo.stable_timestamp | toDate}}</span>
+                        <span class="info-item-val">{{
+                            activeUnitInfo.stable_timestamp | toDate
+                        }}</span>
                     </span>
                 </div>
                 <div class="dashed-line"></div>
@@ -184,15 +224,23 @@
                     <strong>Last Summary Block</strong>:
                     <span class="info-item-val">
                         <template
-                            v-if="activeUnitInfo.last_summary_block === '0000000000000000000000000000000000000000000000000000000000000000'"
+                            v-if="
+                                activeUnitInfo.last_summary_block ===
+                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                            "
                         >
                             <span>-</span>
                         </template>
                         <template v-else>
                             <a
                                 href="javascript:;"
-                                @click="goBlockHash(activeUnitInfo.last_summary_block)"
-                            >{{activeUnitInfo.last_summary_block}}</a>
+                                @click="
+                                    goBlockHash(
+                                        activeUnitInfo.last_summary_block
+                                    )
+                                "
+                                >{{ activeUnitInfo.last_summary_block }}</a
+                            >
                         </template>
                     </span>
                 </div>
@@ -200,11 +248,16 @@
                     <strong>Last Summary</strong>:
                     <span class="info-item-val">
                         <template
-                            v-if="activeUnitInfo.last_summary === '0000000000000000000000000000000000000000000000000000000000000000'"
+                            v-if="
+                                activeUnitInfo.last_summary ===
+                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                            "
                         >
                             <span>-</span>
                         </template>
-                        <template v-else>{{activeUnitInfo.last_summary}}</template>
+                        <template v-else>{{
+                            activeUnitInfo.last_summary
+                        }}</template>
                     </span>
                 </div>
                 <div class="info-item-dev">
@@ -212,11 +265,14 @@
                     <a
                         href="javascript:;"
                         @click="goBlockHash(activeUnitInfo.last_stable_block)"
-                    >{{activeUnitInfo.last_stable_block}}</a>
+                        >{{ activeUnitInfo.last_stable_block }}</a
+                    >
                 </div>
                 <div class="info-item-dev">
                     <strong>Is Free</strong>:
-                    <span class="info-item-val">{{activeUnitInfo.is_free}}</span>
+                    <span class="info-item-val">{{
+                        activeUnitInfo.is_free
+                    }}</span>
                 </div>
                 <div class="dashed-line"></div>
                 <div class="info-item-dev">
@@ -224,9 +280,10 @@
                     <span class="info-item-val">
                         <router-link
                             tag="a"
-                            :to="'/account/'+activeUnitInfo.from"
+                            :to="'/account/' + activeUnitInfo.from"
                             target="_blank"
-                        >{{activeUnitInfo.from}}</router-link>
+                            >{{ activeUnitInfo.from }}</router-link
+                        >
                     </span>
                 </div>
                 <div class="dashed-line"></div>
@@ -234,23 +291,28 @@
                     <strong>Signature</strong>:
                     <span class="info-item-val">
                         <template
-                            v-if="activeUnitInfo.signature === '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'"
+                            v-if="
+                                activeUnitInfo.signature ===
+                                    '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+                            "
                         >
                             <span>-</span>
                         </template>
                         <template v-else>
-                            <span>{{activeUnitInfo.signature}}</span>
+                            <span>{{ activeUnitInfo.signature }}</span>
                         </template>
                     </span>
                 </div>
                 <div class="info-item-dev">
                     <strong>Work</strong>:
                     <span class="info-item-val">
-                        <template v-if="activeUnitInfo.work === '0000000000000000'">
+                        <template
+                            v-if="activeUnitInfo.work === '0000000000000000'"
+                        >
                             <span>-</span>
                         </template>
                         <template v-else>
-                            <span>{{activeUnitInfo.work}}</span>
+                            <span>{{ activeUnitInfo.work }}</span>
                         </template>
                     </span>
                 </div>
@@ -1728,7 +1790,7 @@ body {
     right: 0;
     z-index: 1000;
     height: 45px;
-    background-color: #5a59a0;
+    background-color: #28388c;
     border-bottom: 1px solid #ccc;
 }
 .input-wrap {
@@ -1794,11 +1856,10 @@ body {
 #menuSocial .dag-link {
     display: inline-block;
     padding: 3px 15px;
-    color: rgba(255, 255, 255, 0.5);
+    color: #e0e0e0;
 }
 #menuSocial .router-link-exact-active {
-    background: #403f75;
-    border-radius: 3px;
+    border-bottom: 2px solid #e0e0e0;
 }
 
 #cy {

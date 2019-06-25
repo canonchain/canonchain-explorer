@@ -10,6 +10,7 @@ module.exports = {
         config.resolve.alias
             .set('@', resolve('src'))
             .set('@assets', resolve('src/assets'))
+            .set('@/components', resolve('src/components'))
     },
     devServer: {
         proxy: {

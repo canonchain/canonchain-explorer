@@ -1,38 +1,17 @@
 <template>
-    <div class="page-accounts">
-        <header-cps></header-cps>
-        <div class="accounts-info-wrap">
+    <div class="page-list">
+        <czr-header></czr-header>
+        <div class="page-container">
             <div class="container">
-                <search></search>
-                <div class="sub-header">
-                    <strong>账户列表</strong>
-                    <span class="sub_header-des">合计 {{TOTAL_VAL}} 个账户</span>
-                </div>
-                <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                <div class="list-wrap" v-loading="loadingSwitch">
+                    <strong class="list-title">账户列表</strong>
+                    <span class="sub_header-des"
+                        >合计 {{ TOTAL_VAL }} 个账户</span
+                    >
                     <template v-if="IS_GET_INFO">
-                        <el-table :data="database" style="width: 100%">
-                            <!-- <el-table-column prop="rank" label="排行榜" width="70"></el-table-column> -->
-                            <el-table-column label="账户" width="400">
-                                <template slot-scope="scope">
-                                    <el-button
-                                        @click="handleClick(scope.row.account)"
-                                        type="text"
-                                    >{{scope.row.account}}</el-button>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="余额(CZR)" align="right">
-                                <template slot-scope="scope">{{scope.row.balance | toCZRVal}}</template>
-                            </el-table-column>
-                            <el-table-column
-                                prop="proportion"
-                                label="占比"
-                                align="right"
-                                min-width="80"
-                            ></el-table-column>
-                        </el-table>
+                        <account-list :database="database"></account-list>
                     </template>
                 </div>
-
                 <template v-if="database.length">
                     <div class="pagin-block">
                         <el-button-group>
@@ -40,36 +19,43 @@
                                 size="mini"
                                 :disabled="btnSwitch.header"
                                 @click="getPaginationFlag('header')"
-                            >首页</el-button>
+                                >首页</el-button
+                            >
                             <el-button
                                 size="mini"
                                 icon="el-icon-arrow-left"
                                 :disabled="btnSwitch.left"
                                 @click="getPaginationFlag('left')"
-                            >上一页</el-button>
+                                >上一页</el-button
+                            >
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.right"
                                 @click="getPaginationFlag('right')"
                             >
                                 下一页
-                                <i class="el-icon-arrow-right el-icon--right"></i>
+                                <i
+                                    class="el-icon-arrow-right el-icon--right"
+                                ></i>
                             </el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.footer"
                                 @click="getPaginationFlag('footer')"
-                            >尾页</el-button>
+                                >尾页</el-button
+                            >
                         </el-button-group>
                     </div>
                 </template>
             </div>
         </div>
+        <czr-footer></czr-footer>
     </div>
 </template>
 <script>
-import HeaderCps from "@/components/Header/Header";
-import Search from "@/components/Search/Search";
+import CzrHeader from "@/components/Header/Header";
+import CzrFooter from "@/components/Footer/Footer";
+import AccountList from "@/components/List/Account";
 
 let self = null;
 let isDefaultPage = false;
@@ -84,14 +70,15 @@ let errorInfo = {
 export default {
     name: "Accounts",
     components: {
-        HeaderCps,
-        Search
+        CzrHeader,
+        CzrFooter,
+        AccountList
     },
     data() {
         return {
-            LIMIT_VAL: 20,
             TOTAL_VAL: 0,
             loadingSwitch: true,
+            IS_GET_INFO: false,
             btnSwitch: {
                 header: false,
                 left: false,
@@ -106,7 +93,6 @@ export default {
                 //     type: 0
                 // }
             ],
-            IS_GET_INFO: false,
             pageFirstItem: {
                 account: "",
                 balance: 0
@@ -169,7 +155,7 @@ export default {
             if (response.success) {
                 self.TOTAL_VAL = response.count;
             } else {
-                self.TOTAL_VAL = "-";
+                self.TOTAL_VAL = 0;
             }
         },
 
@@ -231,47 +217,7 @@ export default {
             }
 
             self.getFlagAccounts();
-        },
-        handleClick(account) {
-            this.$router.push("/account/" + account);
         }
     }
 };
 </script>
-<style scoped>
-.page-accounts {
-    width: 100%;
-    position: relative;
-}
-#header {
-    color: #fff;
-    background: #5a59a0;
-}
-
-.sub-header {
-    border-top: 1px solid #bdbdbd;
-    border-bottom: 1px solid #bdbdbd;
-    color: #585858;
-    margin: 28px 0;
-    padding: 16px 10px;
-}
-.sub_header-des {
-    display: inline-block;
-    padding-left: 10px;
-}
-.accounts-info-wrap {
-    position: relative;
-    width: 100%;
-    margin: 0 auto;
-    color: black;
-    text-align: left;
-    padding-top: 20px;
-    padding-bottom: 80px;
-}
-.pagin-block {
-    display: block;
-    margin: 20px 0;
-    text-align: right;
-}
-</style>
-

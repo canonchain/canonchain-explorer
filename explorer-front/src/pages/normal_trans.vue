@@ -1,90 +1,17 @@
 <template>
-    <div class="page-accounts">
-        <header-cps></header-cps>
-        <div class="accounts-info-wrap">
+    <div class="page-list">
+        <czr-header></czr-header>
+        <div class="page-container">
             <div class="container">
-                <search></search>
-                <div class="sub-header">
-                    <strong>普通交易列表</strong>
-                    <span class="sub_header-des">合计 {{TOTAL_VAL}} 笔交易</span>
-                </div>
-                <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                <div class="list-wrap" v-loading="loadingSwitch">
+                    <strong class="list-title">普通交易列表</strong>
+                    <span class="sub_header-des"
+                        >合计 {{ TOTAL_VAL }} 笔交易</span
+                    >
                     <template v-if="IS_GET_INFO">
-                        <el-table :data="database" style="width: 100%">
-                            <el-table-column label="时间" width="200">
-                                <template slot-scope="scope">
-                                    <span
-                                        class="table-long-item"
-                                    >{{scope.row.mc_timestamp | toDate}}</span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="交易号" width="200">
-                                <template slot-scope="scope">
-                                    <el-button @click="goBlockPath(scope.row.hash)" type="text">
-                                        <span class="table-long-item">{{scope.row.hash}}</span>
-                                    </el-button>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="发款方" width="200">
-                                <template slot-scope="scope">
-                                    <template v-if="scope.row.mci <= 0">
-                                        <span class="table-long-item">GENESIS</span>
-                                    </template>
-                                    <template v-else>
-                                        <el-button
-                                            @click="goAccountPath(scope.row.from)"
-                                            type="text"
-                                        >
-                                            <span class="table-long-item">{{scope.row.from}}</span>
-                                        </el-button>
-                                    </template>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="收款方" width="200">
-                                <template slot-scope="scope">
-                                    <template v-if="scope.row.to">
-                                        <el-button @click="goAccountPath(scope.row.to)" type="text">
-                                            <span class="table-long-item">{{scope.row.to}}</span>
-                                        </el-button>
-                                    </template>
-                                    <template v-else>
-                                        <span>-</span>
-                                    </template>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="状态" min-width="80" align="center">
-                                <template slot-scope="scope">
-                                    <template v-if="scope.row.is_stable === false">
-                                        <span class="txt-warning">等待确认</span>
-                                    </template>
-                                    <template v-else>
-                                        <template v-if="scope.row.status == '0'">
-                                            <span class="txt-success">成功</span>
-                                        </template>
-                                        <template v-else-if="scope.row.status ==  '1'">
-                                            <span class="txt-danger">失败(1)</span>
-                                        </template>
-                                        <template v-else-if="scope.row.status ==  '2'">
-                                            <span class="txt-danger">失败(2)</span>
-                                        </template>
-                                        <template v-else-if="scope.row.status ==  '3'">
-                                            <span class="txt-danger">失败(3)</span>
-                                        </template>
-                                        <template v-else>
-                                            <span class="txt-info">-</span>
-                                        </template>
-                                    </template>
-                                </template>
-                            </el-table-column>
-                            <el-table-column label="金额 / CZR" align="right" min-width="230">
-                                <template slot-scope="scope">
-                                    <span>{{scope.row.amount | toCZRVal}}</span>
-                                </template>
-                            </el-table-column>
-                        </el-table>
+                        <nomal-list :database="database"></nomal-list>
                     </template>
                 </div>
-
                 <template v-if="database.length">
                     <div class="pagin-block">
                         <el-button-group>
@@ -92,36 +19,43 @@
                                 size="mini"
                                 :disabled="btnSwitch.header"
                                 @click="getPaginationFlag('header')"
-                            >首页</el-button>
+                                >首页</el-button
+                            >
                             <el-button
                                 size="mini"
                                 icon="el-icon-arrow-left"
                                 :disabled="btnSwitch.left"
                                 @click="getPaginationFlag('left')"
-                            >上一页</el-button>
+                                >上一页</el-button
+                            >
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.right"
                                 @click="getPaginationFlag('right')"
                             >
                                 下一页
-                                <i class="el-icon-arrow-right el-icon--right"></i>
+                                <i
+                                    class="el-icon-arrow-right el-icon--right"
+                                ></i>
                             </el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.footer"
                                 @click="getPaginationFlag('footer')"
-                            >尾页</el-button>
+                                >尾页</el-button
+                            >
                         </el-button-group>
                     </div>
                 </template>
             </div>
         </div>
+        <czr-footer></czr-footer>
     </div>
 </template>
 <script>
-import HeaderCps from "@/components/Header/Header";
-import Search from "@/components/Search/Search";
+import CzrHeader from "@/components/Header/Header";
+import CzrFooter from "@/components/Footer/Footer";
+import NomalList from "@/components/List/Nomal";
 
 let errorInfo = {
     mc_timestamp: "1555895648",
@@ -140,8 +74,9 @@ let isDefaultPage = false;
 export default {
     name: "Accounts",
     components: {
-        HeaderCps,
-        Search
+        CzrHeader,
+        CzrFooter,
+        NomalList
     },
     data() {
         return {
@@ -303,47 +238,4 @@ export default {
     }
 };
 </script>
-<style scoped>
-.page-accounts {
-    width: 100%;
-    position: relative;
-}
-#header {
-    color: #fff;
-    background: #5a59a0;
-}
-
-.sub-header {
-    border-top: 1px solid #bdbdbd;
-    border-bottom: 1px solid #bdbdbd;
-    color: #585858;
-    margin: 28px 0;
-    padding: 16px 10px;
-}
-.sub_header-des {
-    display: inline-block;
-    padding-left: 10px;
-}
-.accounts-info-wrap {
-    position: relative;
-    width: 100%;
-    margin: 0 auto;
-    color: black;
-    text-align: left;
-    padding-top: 20px;
-    padding-bottom: 80px;
-}
-.pagin-block {
-    display: block;
-    margin: 20px 0;
-    text-align: right;
-}
-.table-long-item {
-    max-width: 150px;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-</style>
 
