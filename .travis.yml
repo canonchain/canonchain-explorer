@@ -6,8 +6,5 @@ node_js:
 install: 
   - cd explorer-backend && npm install
   - cd ../explorer-front && npm install
-before_script:
-  - npm run-script build
-  # - cd ../explorer-backend && npm run-script start
 script: 
   - exit 0 

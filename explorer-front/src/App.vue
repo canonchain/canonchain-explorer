@@ -178,4 +178,168 @@ a {
     text-align: right;
 }
 /* List页面 结束 */
+
+/* 分页开始 */
+.pagin-block {
+    display: block;
+    margin: 20px 0;
+    text-align: right;
+}
+
+/* 分页结束 */
+
+/* Hash Info Start */
+.page-block {
+    width: 100%;
+    position: relative;
+}
+.page-block .table-long-item {
+    line-height: 10px;
+}
+.block-wrap {
+    position: relative;
+    min-height: 650px;
+    background-color: #fff;
+    width: 100%;
+    margin: 20px auto 20px;
+    color: black;
+    text-align: left;
+    padding-top: 5px;
+    padding-bottom: 20px;
+}
+.bui-dlist {
+    color: #3f3f3f;
+
+    font-size: 16px;
+    line-height: 2.4;
+}
+.block-item-des {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: block;
+}
+.bui-dlist-tit {
+    display: block;
+    width: 100%; /* 默认值, 具体根据视觉可改 */
+    margin: 0;
+    font-size: 12px;
+    height: 32px;
+    line-height: 32px;
+    color: #333333;
+    text-align: left;
+}
+.bui-dlist-det {
+    display: block;
+    font-size: 13px;
+    color: #999999;
+    text-align: left;
+    margin: 0;
+    table-layout: fixed;
+    word-break: break-all;
+    overflow: hidden;
+}
+
+@media (min-width: 1200px) {
+    .bui-dlist {
+        margin-top: 20px;
+        /* border-top: 1px dashed #f6f6f6; */
+    }
+    .block-item-des {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: -webkit-flex;
+        display: flex;
+    }
+    .bui-dlist-tit {
+        float: left;
+        width: 25%; /* 默认值, 具体根据视觉可改 */
+        text-align: right;
+        padding-right: 10px;
+        margin: 0;
+    }
+    .bui-dlist-det {
+        float: left;
+        width: 65%; /* 默认值，具体根据视觉可改 */
+    }
+}
+
+.amount-val {
+    font-size: 15px;
+    color: #333;
+    line-height: 31px;
+}
+.event-log-content {
+    position: relative;
+    overflow: hidden;
+    margin-top: -1px;
+}
+.token-item {
+    padding: 30px 0;
+    margin-top: 0;
+    border-top: 1px solid #e4e7ed;
+}
+.data-null {
+    height: 300px;
+    line-height: 300px;
+    color: #999999;
+    text-align: center;
+}
+/* Hash Info End */
+
+/* 账户详情 开始 */
+.page-account .table-long-item {
+    line-height: 10px;
+}
+@media (max-width: 900px) {
+    .page-account .table-long-item {
+        max-width: 60px;
+    }
+}
+
+.page-account {
+    width: 100%;
+    position: relative;
+}
+.page-account .container {
+    padding: 0;
+}
+.page-account-wrap {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+    color: black;
+    text-align: left;
+    padding: 20px 0;
+}
+
+.account-panel {
+    min-height: 150px;
+    background-color: #fff;
+}
+
+/*  记录 */
+.account-main {
+    margin-top: 10px;
+    padding: 5px 15px;
+    background-color: #fff;
+}
+.account-content {
+    min-height: 300px;
+    text-align: left;
+    margin-top: 10px;
+}
+.account-content .transfer-tit {
+    font-size: 18px;
+    font-weight: 400;
+}
+.trans-to-self {
+    transform: rotate(90deg);
+    -ms-transform: rotate(90deg); /* IE 9 */
+    -moz-transform: rotate(90deg); /* Firefox */
+    -webkit-transform: rotate(90deg); /* Safari 和 Chrome */
+    -o-transform: rotate(90deg); /* Opera */
+    padding: 0 6px;
+}
+/* 账户详情 开始 */
 </style>

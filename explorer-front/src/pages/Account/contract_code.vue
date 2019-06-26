@@ -1,14 +1,12 @@
 <template>
-    <div class="page-block">
+    <div class="page-account">
         <czr-header></czr-header>
-        <div class="block-info-wrap">
+        <div class="page-account-wrap">
             <div class="container">
-                <search></search>
-                <sub-header :type="accountInfo.type" :address="accountInfo.address"></sub-header>
-
                 <div class="account-panel" v-loading="loadingSwitch">
                     <template v-if="IS_GET_ACC">
                         <account-info
+                            :address="accountInfo.address"
                             :type="accountInfo.type"
                             :is_token="accountInfo.is_token_account"
                             :balance="accountInfo.balance"
@@ -22,21 +20,43 @@
                 <div class="account-main">
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
-                            <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
-                            <el-tab-pane label="Token转账" name="trans_token"></el-tab-pane>
-                            <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
-                            <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
+                            <el-tab-pane
+                                label="交易记录"
+                                name="transaction"
+                            ></el-tab-pane>
+                            <el-tab-pane
+                                label="Token转账"
+                                name="trans_token"
+                            ></el-tab-pane>
+                            <el-tab-pane
+                                label="合约内交易"
+                                name="trans_internal"
+                            ></el-tab-pane>
+                            <el-tab-pane
+                                label="事件日志"
+                                name="event_logs"
+                            ></el-tab-pane>
                             <template v-if="accountInfo.type === 2">
-                                <el-tab-pane label="合约创建代码" name="contract_code">
-                                    <div class="account-content" v-loading="loadingSwitch">
+                                <el-tab-pane
+                                    label="合约创建代码"
+                                    name="contract_code"
+                                >
+                                    <div
+                                        class="account-content"
+                                        v-loading="loadingSwitch"
+                                    >
                                         <template v-if="IS_GET_INFO">
                                             <el-row>
                                                 <el-col :span="24">
-                                                    <h2 class="transfer-tit">合约创建的代码</h2>
+                                                    <h2 class="transfer-tit">
+                                                        合约创建的代码
+                                                    </h2>
                                                 </el-col>
                                             </el-row>
                                             <div class="accounts-list-wrap">
-                                                <pre class="contract-code">{{contract_code}}</pre>
+                                                <pre class="contract-code">{{
+                                                    contract_code
+                                                }}</pre>
                                             </div>
                                         </template>
                                     </div>
@@ -47,14 +67,14 @@
                 </div>
             </div>
         </div>
+        <czr-footer></czr-footer>
     </div>
 </template>
 
 <script>
 import CzrHeader from "@/components/Header/Header";
-import Search from "@/components/Search/Search";
-import SubHeader from "@/components/Account/components/sub-header";
-import AccountInfo from "@/components/Account/components/account-info";
+import CzrFooter from "@/components/Footer/Footer";
+import AccountInfo from "@/components/Account/account-info";
 
 let self = null;
 
@@ -62,9 +82,8 @@ export default {
     name: "ContractCode",
     components: {
         CzrHeader,
-        SubHeader,
-        AccountInfo,
-        Search
+        CzrFooter,
+        AccountInfo
     },
     data() {
         return {
@@ -206,13 +225,6 @@ export default {
     color: #fff;
     background: #5a59a0;
 }
-.sub-header {
-    border-top: 1px solid #bdbdbd;
-    border-bottom: 1px solid #bdbdbd;
-    color: #585858;
-    margin: 28px 0;
-    padding: 16px 10px;
-}
 .sub_header-tit {
     display: inline-block;
     padding-right: 10px;
@@ -297,19 +309,6 @@ export default {
         word-break: break-all;
         overflow: hidden;
     }
-}
-
-.txt-warning {
-    color: #e6a23c;
-}
-.txt-info {
-    color: #909399;
-}
-.txt-success {
-    color: #67c23a;
-}
-.txt-danger {
-    color: #f56c6c;
 }
 
 .bui-dlist-tit .space-des {
@@ -451,5 +450,4 @@ export default {
     -o-transform: rotate(90deg); /* Opera */
     padding: 0 6px;
 }
-
 </style>

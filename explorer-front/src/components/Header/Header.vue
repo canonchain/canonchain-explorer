@@ -98,7 +98,7 @@ export default {
     background-color: #28388c;
 }
 #header .header-wrap {
-    padding: 12px 14px;
+    padding: 12px 0;
 }
 #header .czr-logo {
     height: 43px;
@@ -173,7 +173,7 @@ export default {
     #header .header-wrap {
         padding: 6px 10px 0;
     }
-    #header .input-wrap{
+    #header .input-wrap {
         display: none;
     }
 }

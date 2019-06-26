@@ -1,5 +1,5 @@
 <template>
-    <div id="page-index">
+    <div id="page-dag">
         <!-- Header Start -->
         <div id="menu" class="rowFull">
             <div id="menuSocial">
@@ -57,9 +57,13 @@
         <div id="info" class="hideInfoBlock" v-loading="loadingInfoSwitch">
             <div id="defaultInfo">点击左侧单元可查看详情</div>
             <div id="listInfo">
-                <div class="info-item-dev">
-                    <strong>Hash</strong>:
-                    <span class="info-item-val">{{ activeUnitInfo.hash }}</span>
+                <div class="area-wrap">
+                    <div class="info-item-dev">
+                        <strong>Hash</strong>:
+                        <span class="info-item-val hash-address">{{
+                            activeUnitInfo.hash
+                        }}</span>
+                    </div>
                 </div>
                 <div class="info-item-dev">
                     <span class="level-wrap">
@@ -440,7 +444,7 @@ export default {
     },
     methods: {
         initVar() {
-            $page = $("#page-index");
+            $page = $("#page-dag");
             $inputSearch = $("#inputSearch");
             $cy = $page.find("#cy");
             DOMCY = document.getElementById("cy");
@@ -1794,7 +1798,7 @@ body {
     border-bottom: 1px solid #ccc;
 }
 .input-wrap {
-    min-width: 580px;
+    min-width: 500px;
     margin: 0 auto;
 }
 #menuInput {
@@ -1864,6 +1868,7 @@ body {
 
 #cy {
     position: absolute;
+    background-color: #fff;
     left: 0;
     right: 650px;
     top: 45px;
@@ -1908,7 +1913,6 @@ body {
 
 #listInfo {
     display: none;
-    padding-left: 3px;
 }
 
 .infoTitle {
@@ -2018,9 +2022,6 @@ a {
 #info #witnesses > div {
     display: block;
     padding: 5px;
-}
-#listInfo {
-    padding-left: 10px;
 }
 pre {
     margin: 0;
@@ -2296,5 +2297,16 @@ pre {
     border-right: 6px solid transparent;
     border-bottom: 6px solid transparent;
     border-left: 6px solid transparent;
+}
+.area-wrap {
+    background-color: #fff;
+}
+#listInfo .hash-address {
+    line-height: 10px;
+    max-width: 250px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

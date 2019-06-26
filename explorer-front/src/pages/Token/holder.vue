@@ -1,98 +1,65 @@
 <template>
-    <div class="page-block">
+    <div class="page-account">
         <czr-header></czr-header>
-        <div class="block-info-wrap">
+        <div class="page-account-wrap">
             <div class="container">
-                <search></search>
-                <div class="sub-header">
-                    <span class="sub_header-tit">代币</span>
-                    <strong
-                        class="sub_header-des"
-                    >{{accountInfo.token_symbol}} ( {{accountInfo.token_name}} )</strong>
+                <div class="account-panel" v-loading="loadingSwitch">
+                    <template v-if="IS_GET_INFO">
+                        <token-info
+                            :name="accountInfo.token_name"
+                            :symbol="accountInfo.token_symbol"
+                            :total="accountInfo.token_total"
+                            :precision="accountInfo.token_precision"
+                            :account_count="accountInfo.account_count"
+                            :transaction_count="accountInfo.transaction_count"
+                            :contract_account="accountInfo.contract_account"
+                        ></token-info>
+                    </template>
                 </div>
-                <div class="bui-dlist">
-                    <div class="account-panel" v-loading="loadingSwitch">
-                        <template v-if="IS_GET_INFO">
-                            <el-row>
-                                <el-col :span="12">
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            总供应量
-                                            <span class="space-des"></span>
-                                        </strong>
-                                        <div
-                                            class="bui-dlist-det"
-                                        >{{accountInfo.token_total | toTokenVal(Math.pow(10,accountInfo.token_precision))}} {{accountInfo.token_symbol}}</div>
-                                    </div>
-                                </el-col>
-                                <el-col :span="12">
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            位数
-                                            <span class="space-des"></span>
-                                        </strong>
-                                        <div class="bui-dlist-det">{{accountInfo.token_precision}}</div>
-                                    </div>
-                                </el-col>
-                            </el-row>
-                            <el-row>
-                                <el-col :span="12">
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            持有者
-                                            <span class="space-des"></span>
-                                        </strong>
-                                        <div class="bui-dlist-det">{{accountInfo.account_count}}</div>
-                                    </div>
-                                </el-col>
-                                <el-col :span="12">
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            交易数
-                                            <span class="space-des"></span>
-                                        </strong>
-                                        <div class="bui-dlist-det">{{accountInfo.transaction_count}}</div>
-                                    </div>
-                                </el-col>
-                            </el-row>
-                            <el-row>
-                                <el-col :span="24">
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            合约
-                                            <span class="space-des"></span>
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            <router-link
-                                                :to="{path: '/account/' + accountInfo.contract_account}"
-                                            >{{accountInfo.contract_account}}</router-link>
-                                        </div>
-                                    </div>
-                                </el-col>
-                            </el-row>
-                        </template>
-                    </div>
-                </div>
-
                 <div class="account-main">
                     <el-tabs v-model="activeName" @tab-click="change_table">
-                        <el-tab-pane label="交易" name="transaction"></el-tab-pane>
+                        <el-tab-pane
+                            label="代币转账"
+                            name="transaction"
+                        ></el-tab-pane>
                         <el-tab-pane label="持有者" name="holder">
                             <div class="account-content">
-                                <div class="accounts-list-wrap" v-loading="loadingSwitch">
+                                <div
+                                    class="accounts-list-wrap"
+                                    v-loading="loadingSwitch"
+                                >
                                     <template v-if="IS_GET_INFO">
-                                        <el-table :data="trans_token" style="width: 100%">
-                                            <el-table-column label="地址" width="180">
+                                        <el-table
+                                            :data="trans_token"
+                                            style="width: 100%"
+                                        >
+                                            <el-table-column
+                                                label="地址"
+                                                width="500"
+                                            >
                                                 <template slot-scope="scope">
                                                     <router-link
-                                                        class="table-long-item"
-                                                        :to="{path: '/account/' + scope.row.account}"
-                                                    >{{scope.row.account}}</router-link>
+                                                        :to="{
+                                                            path:
+                                                                '/account/' +
+                                                                scope.row
+                                                                    .account
+                                                        }"
+                                                        >{{
+                                                            scope.row.account
+                                                        }}</router-link
+                                                    >
                                                 </template>
                                             </el-table-column>
-                                            <el-table-column label="数量" align="right">
+                                            <el-table-column
+                                                label="数量"
+                                                align="right"
+                                            >
                                                 <template slot-scope="scope">
-                                                    <span>{{scope.row.balance | toCZRVal}}</span>
+                                                    <span>{{
+                                                        scope.row.balance
+                                                            | toCZRVal
+                                                    }}</span>
                                                 </template>
                                             </el-table-column>
                                         </el-table>
@@ -103,19 +70,39 @@
                                                 <el-button-group>
                                                     <el-button
                                                         size="mini"
-                                                        :disabled="btnSwitch.header"
-                                                        @click="getPaginationFlag('header')"
-                                                    >首页</el-button>
+                                                        :disabled="
+                                                            btnSwitch.header
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'header'
+                                                            )
+                                                        "
+                                                        >首页</el-button
+                                                    >
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
-                                                        :disabled="btnSwitch.left"
-                                                        @click="getPaginationFlag('left')"
-                                                    >上一页</el-button>
+                                                        :disabled="
+                                                            btnSwitch.left
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'left'
+                                                            )
+                                                        "
+                                                        >上一页</el-button
+                                                    >
                                                     <el-button
                                                         size="mini"
-                                                        :disabled="btnSwitch.right"
-                                                        @click="getPaginationFlag('right')"
+                                                        :disabled="
+                                                            btnSwitch.right
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'right'
+                                                            )
+                                                        "
                                                     >
                                                         下一页
                                                         <i
@@ -124,9 +111,16 @@
                                                     </el-button>
                                                     <el-button
                                                         size="mini"
-                                                        :disabled="btnSwitch.footer"
-                                                        @click="getPaginationFlag('footer')"
-                                                    >尾页</el-button>
+                                                        :disabled="
+                                                            btnSwitch.footer
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'footer'
+                                                            )
+                                                        "
+                                                        >尾页</el-button
+                                                    >
                                                 </el-button-group>
                                             </div>
                                         </template>
@@ -138,20 +132,23 @@
                 </div>
             </div>
         </div>
+        <czr-footer></czr-footer>
     </div>
 </template>
 
 <script>
 import CzrHeader from "@/components/Header/Header";
-import Search from "@/components/Search/Search";
+import CzrFooter from "@/components/Footer/Footer";
+import TokenInfo from "@/components/Token/TokenInfo";
 
 let self = null;
 
 export default {
-    name: "Token",
+    name: "TokenHolder",
     components: {
         CzrHeader,
-        Search
+        CzrFooter,
+        TokenInfo
     },
     data() {
         return {
@@ -289,6 +286,38 @@ export default {
             };
             let response = await self.$api.get("/api/get_token_holder", opt);
 
+            response = {
+                data: [
+                    {
+                        balance:
+                            "999999999999999999999999999999999999999996000",
+                        account:
+                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        symbol: "CZR"
+                    },
+                    {
+                        balance: "1000",
+                        account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        symbol: "CZR"
+                    },
+                    {
+                        balance: "1000",
+                        account:
+                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        symbol: "CZR"
+                    }
+                ],
+                code: 200,
+                success: true,
+                message: "success"
+            };
             if (response.success) {
                 self.trans_token = response.data;
                 if (response.data.length) {
@@ -340,259 +369,3 @@ export default {
     }
 };
 </script>
-
-<style   scoped>
-.page-block {
-    width: 100%;
-    position: relative;
-}
-#header {
-    color: #fff;
-    background: #5a59a0;
-}
-.sub-header {
-    border-top: 1px solid #bdbdbd;
-    border-bottom: 1px solid #bdbdbd;
-    color: #585858;
-    margin: 28px 0;
-    padding: 16px 10px;
-}
-.sub_header-tit {
-    display: inline-block;
-    padding-right: 10px;
-    margin: 0;
-}
-.sub_header-des {
-    text-align: left;
-    margin: 0;
-    table-layout: fixed;
-    word-break: break-all;
-    overflow: hidden;
-}
-.block-info-wrap {
-    position: relative;
-    width: 100%;
-    margin: 0 auto;
-    color: black;
-    text-align: left;
-    padding-top: 20px;
-    padding-bottom: 80px;
-}
-.block-item-des {
-    padding: 10px 0;
-    border-bottom: 1px dashed #f6f6f6;
-}
-.account-panel {
-    min-height: 150px;
-}
-@media (max-width: 1199px) {
-    .bui-dlist {
-        color: #3f3f3f;
-        font-size: 16px;
-        line-height: 2.4;
-    }
-    .block-item-des {
-        display: block;
-    }
-    .bui-dlist-tit {
-        display: block;
-        width: 100%; /* 默认值, 具体根据视觉可改 */
-        margin: 0;
-        text-align: left;
-    }
-    .bui-dlist-det {
-        display: block;
-        color: #5f5f5f;
-        text-align: left;
-        margin: 0;
-        table-layout: fixed;
-        word-break: break-all;
-        overflow: hidden;
-    }
-}
-
-@media (min-width: 1200px) {
-    .bui-dlist {
-        color: #3f3f3f;
-        font-size: 16px;
-        line-height: 2.4;
-        margin-top: 20px;
-        border-top: 1px dashed #f6f6f6;
-    }
-    .block-item-des {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: -webkit-flex;
-        display: flex;
-    }
-    .bui-dlist-tit {
-        float: left;
-        width: 15%; /* 默认值, 具体根据视觉可改 */
-        text-align: left;
-        margin: 0;
-    }
-    .bui-dlist-det {
-        float: left;
-        color: #5f5f5f;
-        width: 80%; /* 默认值，具体根据视觉可改 */
-        text-align: left;
-        margin: 0;
-        table-layout: fixed;
-        word-break: break-all;
-        overflow: hidden;
-    }
-}
-
-.txt-warning {
-    color: #e6a23c;
-}
-.txt-info {
-    color: #909399;
-}
-.txt-success {
-    color: #67c23a;
-}
-.txt-danger {
-    color: #f56c6c;
-}
-
-.bui-dlist-tit .space-des {
-    display: inline-block;
-    width: 10px;
-}
-
-/*  记录 */
-.account-main {
-    padding: 30px 0;
-}
-.account-content {
-    min-height: 300px;
-    text-align: left;
-    margin-top: 10px;
-}
-.account-content .transfer-tit {
-    font-size: 18px;
-    font-weight: 400;
-}
-
-/* Transaction Record */
-.account-content .no-transfer-log {
-    text-align: center;
-    color: #9b9b9b;
-}
-.account-content .no-transfer-log .iconfont {
-    font-size: 128px;
-}
-.account-content .transfer-log {
-    padding: 22px 0;
-}
-
-.transfer-log .transfer-item {
-    background-color: #fff;
-    padding: 10px 0;
-    cursor: pointer;
-    border-bottom: 1px dashed #f0f0f0;
-    -webkit-user-select: none;
-}
-.transfer-log .transfer-item:hover {
-    text-decoration: none;
-    background-color: #f5f5f5;
-}
-
-@media (max-width: 1199px) {
-    .transfer-log .transfer-item {
-        display: block;
-    }
-    .transfer-time {
-        padding: 10px 0;
-    }
-}
-
-@media (min-width: 1200px) {
-    .transfer-log .transfer-item {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: -webkit-flex;
-        display: flex;
-    }
-    .account-content .transfer-log .transfer-info {
-        width: 800px;
-        padding-left: 10px;
-        text-align: left;
-    }
-    .transfer-log .transfer-assets .assets {
-        font-size: 18px;
-        height: 42px;
-        line-height: 42px;
-        width: 300px;
-        text-align: right;
-    }
-}
-
-.transfer-log .icon-wrap {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-}
-.transfer-log .icon-wrap .icon-transfer {
-    color: #fff;
-    position: relative;
-    left: 11px;
-    top: 4px;
-    font-size: 20px;
-}
-.transfer-log .plus-assets .icon-wrap {
-    background-color: rgba(0, 128, 0, 0.555);
-}
-.transfer-log .less-assets .icon-wrap {
-    background-color: rgba(255, 153, 0, 0.555);
-}
-.transfer-log .by-address {
-    width: 100%;
-    color: #9a9c9d;
-    table-layout: fixed;
-    word-break: break-all;
-    overflow: hidden;
-    color: rgb(54, 54, 54);
-}
-.transfer-log .transfer-time {
-    color: rgb(161, 161, 161);
-}
-
-.plus-assets .assets {
-    color: green;
-}
-.less-assets .assets {
-    color: rgb(255, 51, 0);
-}
-.iconfont {
-    font-size: 18px;
-    color: #bfbef8;
-}
-.no-list {
-    padding-top: 20px;
-}
-.pagin-wrap {
-    padding: 15px 0;
-}
-.pagin-block {
-    display: block;
-    margin: 20px 0;
-    text-align: right;
-}
-.table-long-item {
-    max-width: 150px;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.trans-to-self {
-    transform: rotate(90deg);
-    -ms-transform: rotate(90deg); /* IE 9 */
-    -moz-transform: rotate(90deg); /* Firefox */
-    -webkit-transform: rotate(90deg); /* Safari 和 Chrome */
-    -o-transform: rotate(90deg); /* Opera */
-    padding: 0 6px;
-}
-</style>
