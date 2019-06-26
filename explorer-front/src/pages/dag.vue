@@ -64,261 +64,470 @@
                             activeUnitInfo.hash
                         }}</span>
                     </div>
-                </div>
-                <div class="info-item-dev">
-                    <span class="level-wrap">
-                        <strong>Level</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.level
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Witnessed Level</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.witnessed_level
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Stable Index</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.stable_index
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>类型</strong>:
-                        <template v-if="activeUnitInfo.type === '0'">
-                            <span class="txt-success">创世交易</span>
-                        </template>
-                        <template v-else-if="activeUnitInfo.type === '1'">
-                            <span class="txt-info">见证交易</span>
-                        </template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Previous</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="
-                                activeUnitInfo.previous ===
-                                    '0000000000000000000000000000000000000000000000000000000000000000'
-                            "
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>
-                            <a
-                                href="javascript:;"
-                                @click="goBlockHash(activeUnitInfo.previous)"
-                                >{{ activeUnitInfo.previous }}</a
-                            >
-                        </template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Best Parent</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="
-                                activeUnitInfo.best_parent ===
-                                    '0000000000000000000000000000000000000000000000000000000000000000'
-                            "
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>
-                            <a
-                                href="javascript:;"
-                                @click="goBlockHash(activeUnitInfo.best_parent)"
-                                >{{ activeUnitInfo.best_parent }}</a
-                            >
-                        </template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <template v-if="activeUnitInfo.parents.length == 0">
-                        <strong>Parents : -</strong>
-                    </template>
-                    <template v-else>
-                        <strong
-                            :class="[
-                                'switch',
-                                { 'switch-show': showParentsLink }
-                            ]"
-                            @click="toggleParents('parent')"
-                            >Parents</strong
-                        >
-                    </template>
-                    <div
-                        v-for="item in activeUnitInfo.parents"
-                        v-show="showParentsLink == true"
-                        :key="item.parent"
-                    >
-                        <a
-                            href="javascript:;"
-                            @click="goBlockHash(item.parent)"
-                            >{{ item.parent }}</a
-                        >
+                    <div class="bui-dlist">
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        类型
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="activeUnitInfo.type === '0'"
+                                        >
+                                            <span class="txt-success"
+                                                >创世交易</span
+                                            >
+                                        </template>
+                                        <template
+                                            v-else-if="
+                                                activeUnitInfo.type === '1'
+                                            "
+                                        >
+                                            <span class="txt-info"
+                                                >见证交易</span
+                                            >
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Witnessed Level
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.witnessed_level }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Level
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.level }}
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Stable Index
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.stable_index }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
                     </div>
                 </div>
-                <div class="dashed-line"></div>
-                <div class="info-item-dev">
-                    <span class="level-wrap">
-                        <strong>Is Stable</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.is_stable
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Is On Mc</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.is_on_mc
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Mci</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.mci
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Status</strong>:
-                        <template v-if="activeUnitInfo.is_stable === false">
-                            <span class="txt-warning">等待确认</span>
-                        </template>
-                        <template v-else>
-                            <template v-if="activeUnitInfo.status == '0'">
-                                <span class="txt-success">成功</span>
-                            </template>
-                            <template v-else-if="activeUnitInfo.status == '1'">
-                                <span class="txt-danger">失败(1)</span>
-                            </template>
-                            <template v-else-if="activeUnitInfo.status == '2'">
-                                <span class="txt-danger">失败(2)</span>
-                            </template>
-                            <template v-else-if="activeUnitInfo.status == '3'">
-                                <span class="txt-danger">失败(3)</span>
-                            </template>
-                        </template>
-                    </span>
+
+                <div class="area-wrap">
+                    <div class="bui-dlist alone-item">
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        From
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <router-link
+                                            class="table-long-item"
+                                            :to="
+                                                '/account/' +
+                                                    activeUnitInfo.from
+                                            "
+                                            >{{
+                                                activeUnitInfo.from
+                                            }}</router-link
+                                        >
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Previous
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.previous ===
+                                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                                            "
+                                        >
+                                            <span>-</span>
+                                        </template>
+                                        <template v-else>
+                                            <a
+                                                href="javascript:;"
+                                                class="table-long-item"
+                                                @click="
+                                                    goBlockHash(
+                                                        activeUnitInfo.previous
+                                                    )
+                                                "
+                                                >{{
+                                                    activeUnitInfo.previous
+                                                }}</a
+                                            >
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Best Parent
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.best_parent ===
+                                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                                            "
+                                        >
+                                            <span>-</span>
+                                        </template>
+                                        <template v-else>
+                                            <a
+                                                href="javascript:;"
+                                                class="table-long-item"
+                                                @click="
+                                                    goBlockHash(
+                                                        activeUnitInfo.best_parent
+                                                    )
+                                                "
+                                                >{{
+                                                    activeUnitInfo.best_parent
+                                                }}</a
+                                            >
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Parents
+                                    </strong>
+                                    <template
+                                        v-if="
+                                            activeUnitInfo.parents.length == 0
+                                        "
+                                    >
+                                        <div class="bui-dlist-det">
+                                            -
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <div class="bui-dlist-det">
+                                            <strong
+                                                :class="[
+                                                    'switch',
+                                                    {
+                                                        'switch-show': showParentsLink
+                                                    }
+                                                ]"
+                                                @click="toggleParents('parent')"
+                                                >查看</strong
+                                            >
+                                            <a
+                                                href="javascript:;"
+                                                v-for="item in activeUnitInfo.parents"
+                                                v-show="showParentsLink == true"
+                                                :key="item.parent"
+                                                class="table-long-item"
+                                                @click="
+                                                    goBlockHash(item.parent)
+                                                "
+                                                >{{ item.parent }}</a
+                                            >
+                                        </div>
+                                    </template>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
                 </div>
-                <div class="info-item-dev">
-                    <span class="level-wrap">
-                        <strong>Exec Time</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.exec_timestamp | toDate
-                        }}</span>
-                    </span>
-                    <span class="level-wrap">
-                        <strong>Mc Time</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.mc_timestamp | toDate
-                        }}</span>
-                    </span>
+
+                <div class="area-wrap">
+                    <div class="bui-dlist">
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Is Stable
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.is_stable }}
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Status
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.witnessed_level }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Is Free
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.is_free }}
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Is On Mc
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.is_on_mc }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Exec Time
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{
+                                            activeUnitInfo.exec_timestamp
+                                                | toDate
+                                        }}
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Mc Time
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{
+                                            activeUnitInfo.mc_timestamp | toDate
+                                        }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Stable Time
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{
+                                            activeUnitInfo.stable_timestamp
+                                                | toDate
+                                        }}
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        MCI
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        {{ activeUnitInfo.mci }}
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Status
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.is_stable ===
+                                                    false
+                                            "
+                                        >
+                                            <span class="txt-warning"
+                                                >等待确认</span
+                                            >
+                                        </template>
+                                        <template v-else>
+                                            <template
+                                                v-if="
+                                                    activeUnitInfo.status == '0'
+                                                "
+                                            >
+                                                <span class="txt-success"
+                                                    >成功</span
+                                                >
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '1'
+                                                "
+                                            >
+                                                <span class="txt-danger"
+                                                    >失败(1)</span
+                                                >
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '2'
+                                                "
+                                            >
+                                                <span class="txt-danger"
+                                                    >失败(2)</span
+                                                >
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '3'
+                                                "
+                                            >
+                                                <span class="txt-danger"
+                                                    >失败(3)</span
+                                                >
+                                            </template>
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
                 </div>
-                <div class="info-item-dev">
-                    <span class="level-wrap">
-                        <strong>Stable Time</strong>:
-                        <span class="info-item-val">{{
-                            activeUnitInfo.stable_timestamp | toDate
-                        }}</span>
-                    </span>
+
+                <div class="area-wrap">
+                    <div class="bui-dlist alone-item">
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Summary Block
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.last_summary_block ===
+                                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                                            "
+                                            >-</template
+                                        >
+                                        <template v-else>
+                                            <a
+                                                href="javascript:;"
+                                                class="table-long-item"
+                                                @click="
+                                                    goBlockHash(
+                                                        activeUnitInfo.last_summary_block
+                                                    )
+                                                "
+                                                >{{
+                                                    activeUnitInfo.last_summary_block
+                                                }}</a
+                                            >
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Summary
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.last_summary ===
+                                                    '0000000000000000000000000000000000000000000000000000000000000000'
+                                            "
+                                            >-</template
+                                        >
+                                        <template v-else>{{
+                                            activeUnitInfo.last_summary
+                                        }}</template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Stable Block
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <a
+                                            href="javascript:;"
+                                            class="table-long-item"
+                                            @click="
+                                                goBlockHash(
+                                                    activeUnitInfo.last_stable_block
+                                                )
+                                            "
+                                            >{{
+                                                activeUnitInfo.last_stable_block
+                                            }}</a
+                                        >
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
                 </div>
-                <div class="dashed-line"></div>
-                <div class="info-item-dev">
-                    <strong>Last Summary Block</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="
-                                activeUnitInfo.last_summary_block ===
-                                    '0000000000000000000000000000000000000000000000000000000000000000'
-                            "
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>
-                            <a
-                                href="javascript:;"
-                                @click="
-                                    goBlockHash(
-                                        activeUnitInfo.last_summary_block
-                                    )
-                                "
-                                >{{ activeUnitInfo.last_summary_block }}</a
-                            >
-                        </template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Last Summary</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="
-                                activeUnitInfo.last_summary ===
-                                    '0000000000000000000000000000000000000000000000000000000000000000'
-                            "
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>{{
-                            activeUnitInfo.last_summary
-                        }}</template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Last Stable Block</strong>:
-                    <a
-                        href="javascript:;"
-                        @click="goBlockHash(activeUnitInfo.last_stable_block)"
-                        >{{ activeUnitInfo.last_stable_block }}</a
-                    >
-                </div>
-                <div class="info-item-dev">
-                    <strong>Is Free</strong>:
-                    <span class="info-item-val">{{
-                        activeUnitInfo.is_free
-                    }}</span>
-                </div>
-                <div class="dashed-line"></div>
-                <div class="info-item-dev">
-                    <strong>From</strong>:
-                    <span class="info-item-val">
-                        <router-link
-                            tag="a"
-                            :to="'/account/' + activeUnitInfo.from"
-                            target="_blank"
-                            >{{ activeUnitInfo.from }}</router-link
-                        >
-                    </span>
-                </div>
-                <div class="dashed-line"></div>
-                <div class="info-item-dev">
-                    <strong>Signature</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="
-                                activeUnitInfo.signature ===
-                                    '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
-                            "
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>
-                            <span>{{ activeUnitInfo.signature }}</span>
-                        </template>
-                    </span>
-                </div>
-                <div class="info-item-dev">
-                    <strong>Work</strong>:
-                    <span class="info-item-val">
-                        <template
-                            v-if="activeUnitInfo.work === '0000000000000000'"
-                        >
-                            <span>-</span>
-                        </template>
-                        <template v-else>
-                            <span>{{ activeUnitInfo.work }}</span>
-                        </template>
-                    </span>
+
+                <div class="area-wrap">
+                    <div class="bui-dlist alone-item">
+                        <el-row>
+                            <el-col :span="24">
+                                <div class="block-item-des">
+                                    <strong class="bui-dlist-tit">
+                                        Signature
+                                    </strong>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.signature ===
+                                                    '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+                                            "
+                                            >-</template
+                                        >
+                                        <template v-else>
+                                            {{ activeUnitInfo.signature }}
+                                        </template>
+                                    </div>
+                                </div>
+                            </el-col>
+                        </el-row>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2012,7 +2221,7 @@ body {
 }
 
 a {
-    color: #2980b9;
+    color: #28388c;
     text-decoration: none;
 }
 
@@ -2052,7 +2261,7 @@ pre {
 #witnessesTitle > a {
     display: inline;
     font-weight: 300;
-    color: #2980b9 !important;
+    color: #28388c !important;
 }
 
 .row {
@@ -2284,8 +2493,8 @@ pre {
 .switch:after {
     position: absolute;
     content: "";
-    top: 14px;
-    right: -30px;
+    top: 12px;
+    right: -10px;
     border-top: 6px solid transparent;
     border-right: 6px solid transparent;
     border-bottom: 6px solid transparent;
@@ -2300,6 +2509,7 @@ pre {
 }
 .area-wrap {
     background-color: #fff;
+    margin-bottom: 10px;
 }
 #listInfo .hash-address {
     line-height: 10px;
@@ -2308,5 +2518,18 @@ pre {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.bui-dlist {
+    margin-top: 0;
+}
+.bui-dlist-tit {
+    width: 35%;
+}
+
+.alone-item .table-long-item {
+    max-width: 400px;
+}
+.alone-item .bui-dlist-tit {
+    width: 18%;
 }
 </style>
