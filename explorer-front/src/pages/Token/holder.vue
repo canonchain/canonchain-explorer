@@ -3,18 +3,8 @@
         <czr-header></czr-header>
         <div class="page-account-wrap">
             <div class="container">
-                <div class="account-panel" v-loading="loadingSwitch">
-                    <template v-if="IS_GET_INFO">
-                        <token-info
-                            :name="accountInfo.token_name"
-                            :symbol="accountInfo.token_symbol"
-                            :total="accountInfo.token_total"
-                            :precision="accountInfo.token_precision"
-                            :account_count="accountInfo.account_count"
-                            :transaction_count="accountInfo.transaction_count"
-                            :contract_account="accountInfo.contract_account"
-                        ></token-info>
-                    </template>
+                <div class="account-panel">
+                    <token-info :address="address"></token-info>
                 </div>
                 <div class="account-main">
                     <el-tabs v-model="activeName" @tab-click="change_table">
@@ -25,45 +15,13 @@
                         <el-tab-pane label="持有者" name="holder">
                             <div class="account-content">
                                 <div
-                                    class="accounts-list-wrap"
+                                    class="accounts-main-wrap"
                                     v-loading="loadingSwitch"
                                 >
-                                    <template v-if="IS_GET_INFO">
-                                        <el-table
-                                            :data="trans_token"
-                                            style="width: 100%"
-                                        >
-                                            <el-table-column
-                                                label="地址"
-                                                width="500"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <router-link
-                                                        :to="{
-                                                            path:
-                                                                '/account/' +
-                                                                scope.row
-                                                                    .account
-                                                        }"
-                                                        >{{
-                                                            scope.row.account
-                                                        }}</router-link
-                                                    >
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column
-                                                label="数量"
-                                                align="right"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <span>{{
-                                                        scope.row.balance
-                                                            | toCZRVal
-                                                    }}</span>
-                                                </template>
-                                            </el-table-column>
-                                        </el-table>
-
+                                    <template v-if="IS_GET_TOKEN">
+                                        <token-holder-list
+                                            :database="trans_token"
+                                        ></token-holder-list>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -140,6 +98,7 @@
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
 import TokenInfo from "@/components/Token/TokenInfo";
+import TokenHolderList from "@/components/Token/TokenHolderList";
 
 let self = null;
 
@@ -148,22 +107,16 @@ export default {
     components: {
         CzrHeader,
         CzrFooter,
-        TokenInfo
+        TokenInfo,
+        TokenHolderList
     },
     data() {
         return {
             loadingSwitch: true,
+            address: this.$route.params.id,
+            activeName: "holder",
             IS_GET_TOKEN: false,
-            IS_GET_INFO: false,
-            accountInfo: {
-                contract_account: this.$route.params.id,
-                token_name: "",
-                token_symbol: "",
-                token_precision: "",
-                token_total: "",
-                transaction_count: "",
-                account_count: ""
-            },
+
             btnSwitch: {
                 header: false,
                 left: false,
@@ -183,9 +136,6 @@ export default {
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 balance: 99999999999999
             },
-
-            // change
-            activeName: "holder",
             trans_token: []
         };
     },
@@ -196,32 +146,9 @@ export default {
             self.url_parm.position = queryInfo.position;
             self.url_parm.balance = queryInfo.balance;
         }
-        self.getTokenInfo();
         self.getFlagTransactions();
     },
     methods: {
-        async getTokenInfo() {
-            let opt = {
-                account: self.accountInfo.contract_account
-            };
-            let response = await self.$api.get("/api/get_token_info", opt);
-
-            if (response.success) {
-                let tokenInfo = response.data;
-                self.accountInfo.token_name = tokenInfo.token_name;
-                self.accountInfo.token_symbol = tokenInfo.token_symbol;
-                self.accountInfo.token_precision = tokenInfo.token_precision;
-                self.accountInfo.token_total = tokenInfo.token_total;
-
-                self.accountInfo.transaction_count =
-                    tokenInfo.transaction_count;
-                self.accountInfo.account_count = tokenInfo.account_count;
-            } else {
-                console.error("/api/get_account Error");
-            }
-            self.IS_GET_INFO = true;
-            self.loadingSwitch = false;
-        },
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
             // 想取最后一页
@@ -257,7 +184,6 @@ export default {
                 return;
             }
         },
-
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
@@ -324,7 +250,7 @@ export default {
                     self.pageFirstItem = response.data[0];
                     self.pageLastItem = response.data[response.data.length - 1];
                 } else {
-                    self.IS_GET_INFO = true;
+                    self.IS_GET_TOKEN = true;
                     self.loadingSwitch = false;
                     return;
                 }
@@ -350,17 +276,14 @@ export default {
                     self.btnSwitch.footer = true;
                 }
             }
-            self.IS_GET_INFO = true;
+            self.IS_GET_TOKEN = true;
             self.loadingSwitch = false;
         },
-
         // 合约相关的
         change_table(tab, event) {
             switch (tab.name) {
                 case "transaction":
-                    this.$router.push(
-                        `/token/${self.accountInfo.contract_account}`
-                    );
+                    this.$router.push(`/token/${self.address}`);
                     break;
                 case "holder":
                     break;

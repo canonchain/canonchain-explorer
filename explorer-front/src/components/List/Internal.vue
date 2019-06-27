@@ -101,7 +101,7 @@
                 无数据
             </template>
         </el-table-column>
-        <el-table-column label="数额" align="right">
+        <el-table-column label="数额" align="right" min-width="170">
             <template slot-scope="scope">
                 <span>{{ scope.row.value | toCZRVal }}</span>
             </template>

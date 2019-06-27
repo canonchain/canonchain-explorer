@@ -1,14 +1,13 @@
 <template>
     <div class="page-home">
         <czr-header></czr-header>
-        <placard></placard>
         <div class="container">
             <div class="card-wrap">
                 <card :mci="mci"></card>
             </div>
-            <div class="charts-wrap">
+            <!-- <div class="charts-wrap">
                 <echarts></echarts>
-            </div>
+            </div> -->
             <div class="trans-wrap" v-loading="loadingSwitch">
                 <h2 class="list-title">最新交易</h2>
                 <nomal-list :database="database"></nomal-list>
@@ -22,8 +21,8 @@
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
 import NomalList from "@/components/List/Nomal";
-import Placard from "@/components/Home/Placard";
-import Echarts from "@/components/Home/Echarts";
+// import Placard from "@/components/Home/Placard";
+// import Echarts from "@/components/Home/Echarts";
 import Card from "@/components/Home/Card";
 
 let self;
@@ -33,8 +32,7 @@ export default {
         CzrHeader,
         CzrFooter,
         NomalList,
-        Echarts,
-        Placard,
+        // Echarts,
         Card
     },
     data() {

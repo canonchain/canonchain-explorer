@@ -15,63 +15,7 @@
                     <el-tab-pane label="事件日志" name="event_log">
                         <template v-loading="loadingSwitch">
                             <template v-if="IS_GET_INFO">
-                                <div
-                                    class="event-log-content"
-                                    v-loading="loadingSwitch"
-                                >
-                                    <template v-if="IS_GET_INFO">
-                                        <!-- start -->
-                                        <div v-for="item in event_log">
-                                            <div class="bui-dlist token-item">
-                                                <div class="block-item-des">
-                                                    <strong
-                                                        class="bui-dlist-tit"
-                                                    >
-                                                        Address
-                                                    </strong>
-                                                    <div class="bui-dlist-det">
-                                                        {{
-                                                            item.contract_account
-                                                        }}
-                                                    </div>
-                                                </div>
-                                                <div class="block-item-des">
-                                                    <strong
-                                                        class="bui-dlist-tit"
-                                                    >
-                                                        Topic
-                                                    </strong>
-                                                    <div class="bui-dlist-det">
-                                                        <template
-                                                            v-for="(child_item,
-                                                            index) in item.topics"
-                                                        >
-                                                            [{{ index }}]
-                                                            {{ child_item }}
-                                                            <br />
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                                <div class="block-item-des">
-                                                    <strong
-                                                        class="bui-dlist-tit"
-                                                    >
-                                                        Data
-                                                    </strong>
-                                                    <div class="bui-dlist-det">
-                                                        {{ item.data }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- End -->
-                                        <template v-if="event_log.length === 0">
-                                            <div class="data-null">
-                                                --- 无数据 ---
-                                            </div>
-                                        </template>
-                                    </template>
-                                </div>
+                                <event-logs :database="event_log"></event-logs>
                             </template>
                         </template>
                     </el-tab-pane>
@@ -87,6 +31,7 @@
 <script>
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
+import EventLogs from "@/components/List/EventLogs";
 
 let self = null;
 let trsns_info;
@@ -95,7 +40,8 @@ export default {
     name: "Block",
     components: {
         CzrHeader,
-        CzrFooter
+        CzrFooter,
+        EventLogs
     },
     data() {
         return {

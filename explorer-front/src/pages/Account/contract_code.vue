@@ -3,19 +3,11 @@
         <czr-header></czr-header>
         <div class="page-account-wrap">
             <div class="container">
-                <div class="account-panel" v-loading="loadingSwitch">
-                    <template v-if="IS_GET_ACC">
-                        <account-info
-                            :address="accountInfo.address"
-                            :type="accountInfo.type"
-                            :is_token="accountInfo.is_token_account"
-                            :balance="accountInfo.balance"
-                            :total="accountInfo.total"
-                            :own_account="accountInfo.own_account"
-                            :born_unit="accountInfo.born_unit"
-                            :symbol="accountInfo.symbol"
-                        ></account-info>
-                    </template>
+                <div class="account-panel">
+                    <account-info
+                        :address="address"
+                        v-on:address_props="handlerAddressProps"
+                    ></account-info>
                 </div>
                 <div class="account-main">
                     <template>
@@ -24,41 +16,46 @@
                                 label="交易记录"
                                 name="transaction"
                             ></el-tab-pane>
-                            <el-tab-pane
-                                label="Token转账"
-                                name="trans_token"
-                            ></el-tab-pane>
-                            <el-tab-pane
-                                label="合约内交易"
-                                name="trans_internal"
-                            ></el-tab-pane>
-                            <el-tab-pane
-                                label="事件日志"
-                                name="event_logs"
-                            ></el-tab-pane>
-                            <template v-if="accountInfo.type === 2">
+
+                            <template v-if="account_props.is_token_account">
+                                <!-- is_token_account 应该为 is_has_token -->
+                                <el-tab-pane
+                                    label="代币余额"
+                                    name="token_balances"
+                                >
+                                </el-tab-pane>
+                            </template>
+                            <template v-if="account_props.is_has_token_trans">
+                                <el-tab-pane
+                                    label="代币转账"
+                                    name="trans_token"
+                                ></el-tab-pane
+                            ></template>
+                            <template v-if="account_props.is_has_intel_trans">
+                                <el-tab-pane
+                                    label="合约内交易"
+                                    name="trans_internal"
+                                ></el-tab-pane>
+                            </template>
+                            <template v-if="account_props.is_has_event_logs">
+                                <el-tab-pane
+                                    label="事件日志"
+                                    name="event_logs"
+                                ></el-tab-pane>
+                            </template>
+                            <template v-if="account_props.account_type === 2">
                                 <el-tab-pane
                                     label="合约创建代码"
                                     name="contract_code"
                                 >
-                                    <div
-                                        class="account-content"
-                                        v-loading="loadingSwitch"
-                                    >
-                                        <template v-if="IS_GET_INFO">
-                                            <el-row>
-                                                <el-col :span="24">
-                                                    <h2 class="transfer-tit">
-                                                        合约创建的代码
-                                                    </h2>
-                                                </el-col>
-                                            </el-row>
-                                            <div class="accounts-list-wrap">
+                                    <div class="accounts-main-wrap">
+                                        <div v-loading="loadingSwitch">
+                                            <template v-if="IS_GET_INFO">
                                                 <pre class="contract-code">{{
                                                     contract_code
                                                 }}</pre>
-                                            </div>
-                                        </template>
+                                            </template>
+                                        </div>
                                     </div>
                                 </el-tab-pane>
                             </template>
@@ -74,7 +71,7 @@
 <script>
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
-import AccountInfo from "@/components/Account/account-info";
+import AccountInfo from "@/components/Account/Info";
 
 let self = null;
 
@@ -88,78 +85,36 @@ export default {
     data() {
         return {
             loadingSwitch: true,
-            IS_GET_ACC: false,
-            IS_GET_INFO: false,
-
-            accountInfo: {
-                address: this.$route.params.id,
-                total: 0,
-                balance: 0,
-                type: 1,
+            address: this.$route.params.id,
+            activeName: "contract_code",
+            account_props: {
+                account_type: 2,
                 is_witness: false,
-                transaction_count: 0,
                 is_token_account: false,
                 is_has_token_trans: false,
                 is_has_intel_trans: false,
-                is_has_event_logs: false,
-                own_account: "",
-                born_unit: "",
-                symbol: ""
+                is_has_event_logs: false
             },
 
-            // change
-            activeName: "contract_code",
+            IS_GET_ACC: false,
+            IS_GET_INFO: false,
+
             // 合约代码
             contract_code: ""
         };
     },
     created() {
         self = this;
-        self.initDatabase();
         self.getContractCode();
     },
     methods: {
-        async initDatabase() {
-            let opt = {
-                account: self.accountInfo.address
-            };
-            let response = await self.$api.get("/api/get_account", opt);
-
-            if (response.success) {
-                let accInfo = response.account;
-                self.accountInfo.total = Number(accInfo.transaction_count);
-                self.accountInfo.balance = accInfo.balance;
-                self.accountInfo.type = accInfo.type;
-
-                //是否为Token合约
-                self.accountInfo.is_token_account = accInfo.is_token_account;
-                //是否有Token交易
-                self.accountInfo.is_has_token_trans =
-                    accInfo.is_has_token_trans;
-                //是否有是否有内部交易
-                self.accountInfo.is_has_intel_trans =
-                    accInfo.is_has_intel_trans;
-                //是否有事件日志
-                self.accountInfo.is_has_event_logs = accInfo.is_has_event_logs;
-            } else {
-                console.error("/api/get_account Error");
-            }
-            //如果是合约账户，要获取对应信息
-            if (self.accountInfo.type === 2) {
-                let responseToken = await self.$api.get(
-                    "/api/get_contract",
-                    opt
-                );
-                if (response.success) {
-                    let tokenInfo = responseToken.data; //token
-                    self.accountInfo.own_account = tokenInfo.own_account;
-                    self.accountInfo.born_unit = tokenInfo.born_unit;
-                    self.accountInfo.symbol = tokenInfo.token_symbol;
-                } else {
-                    console.error("/api/get_contract Error");
-                }
-            }
-            self.IS_GET_ACC = true;
+        handlerAddressProps: function(props) {
+            self.account_props.account_type = props.account_type;
+            self.account_props.is_witness = props.is_witness;
+            self.account_props.is_token_account = props.is_token_account;
+            self.account_props.is_has_token_trans = props.is_has_token_trans;
+            self.account_props.is_has_intel_trans = props.is_has_intel_trans;
+            self.account_props.is_has_event_logs = props.is_has_event_logs;
         },
 
         // 合约相关的
@@ -175,22 +130,21 @@ export default {
             self.loadingSwitch = true;
             switch (tab.name) {
                 case "transaction":
-                    this.$router.push(`/account/${self.accountInfo.address}`);
+                    this.$router.push(`/account/${self.address}`);
+                    break;
+                case "token_balances":
+                    this.$router.push(`/account/${self.address}/token_balances`);
                     break;
                 case "trans_token":
-                    this.$router.push(
-                        `/account/${self.accountInfo.address}/trans_token`
-                    );
+                    this.$router.push(`/account/${self.address}/trans_token`);
                     break;
                 case "trans_internal":
                     this.$router.push(
-                        `/account/${self.accountInfo.address}/trans_internal`
+                        `/account/${self.address}/trans_internal`
                     );
                     break;
                 case "event_logs":
-                    this.$router.push(
-                        `/account/${self.accountInfo.address}/event_logs`
-                    );
+                    this.$router.push(`/account/${self.address}/event_logs`);
                     break;
                 case "contract_code":
                     self.IS_GET_INFO = true;
@@ -200,9 +154,11 @@ export default {
         },
         async getContractCode() {
             let opt = {
-                account: self.accountInfo.address
+                account: self.address
             };
             let response = await self.$api.get("/api/get_contract_code", opt);
+
+            response = {"data":{"contract_account":"czr_48EWGWUwG8mD5GbNevPbAKHbiAVT1NBsmv9k8FJqSDhnDuV1No","code":"608060405233600055610966806100176000396000F3FE608060405234801561001057600080FD5B50600436106100975760003560E060020A900480634BE775451161006A5780634BE77545146100D05780635DAB2420146100D8578063A6A2D286146100E0578063CE518F0A146100E8578063D78CA67F146100F057610097565B8063059422361461009C57806312065FE0146100A657806319A278B9146100C05780633284F168146100C8575B600080FD5B6100A46100F8565B005B6100AE6101B4565B60408051918252519081900360200190F35B6100AE6101B9565B6100A46101BF565B6100A4610228565B6100AE61027B565B6100A4610281565B6100AE61031A565B6100A4610320565B600154604080517F0B6F48A50000000000000000000000000000000000000000000000000000000081529051630B6F48A59160048082019260009290919082900301818387803B15801561014B57600080FD5B505AF115801561015F573D6000803E3D6000FD5B50505050600154630B6F48A56040518163FFFFFFFF1660E060020A028152600401600060405180830381600087803B15801561019A57600080FD5B505AF11580156101AE573D6000803E3D6000FD5B50505050565B303190565B60015490565B6000546040516101CE906103C2565B90815260405190819003602001906000F0801580156101F1573D6000803E3D6000FD5B506002819055604051600090670429D069189E00009082818181858883F19350505050158015610225573D6000803E3D6000FD5B50565B600154604080517FAC461DBD000000000000000000000000000000000000000000000000000000008152905163AC461DBD9160048082019260009290919082900301818387803B15801561014B57600080FD5B60005481565B6000805460405190916108FC9181818181818888F193505050501580156102AC573D6000803E3D6000FD5B506000546002546040516102BF906103CF565B9182526020820152604080519182900301906000F0801580156102E6573D6000803E3D6000FD5B5060018190556040516000906710A741A4627800009082818181858883F19350505050158015610225573D6000803E3D6000FD5B60025490565B600154604080517F3E424FD70000000000000000000000000000000000000000000000000000000081529051633E424FD79160048082019260009290919082900301818387803B15801561037357600080FD5B505AF1158015610387573D6000803E3D6000FD5B50505050600154630B6F48A56040518163FFFFFFFF1660E060020A028152600401600060405180830381600087803B15801561014B57600080FD5B6101CB806103DD83390190565B610393806105A88339019056FE60806040526040516020806101CB8339810180604052602081101561002357600080FD5B5051600055610194806100376000396000F3FE60806040526004361061005B577C010000000000000000000000000000000000000000000000000000000060003504630B6F48A5811461005D57806312065FE0146100725780633E424FD7146100995780635DAB2420146100AE575B005B34801561006957600080FD5B5061005B6100C3565B34801561007E57600080FD5B5061008761012B565B60408051918252519081900360200190F35B3480156100A557600080FD5B5061005B610130565B3480156100BA57600080FD5B50610087610162565B6000805460405190919067016345785D8A00009082818181858883F193505050501580156100F5573D6000803E3D6000FD5B506000805460405190919067016345785D8A00009082818181858883F19350505050158015610128573D6000803E3D6000FD5B50565B303190565B6000805460405190919067016345785D8A00009082818181858883F19350505050158015610128573D6000803E3D6000FD5B6000548156FEA165627A7A72305820624F9D2E0AD8999D3A31AF501A4A882E0BF342B771F0BCA0A1DD8ACFED4A8CF4002960806040818152806103938339810180604052604081101561002057600080FD5B508051602090910151600091909155600155610352806100416000396000F3FE60806040526004361061008A5760003560E060020A900480633E424FD71161005D5780633E424FD7146100F257806341C0E1B5146101075780635DAB24201461011C578063AC461DBD14610131578063FF2D6C52146101465761008A565B80630B6F48A51461008C5780630DBE671F146100A157806312065FE0146100C85780631FC376F7146100DD575B005B34801561009857600080FD5B5061008A61015B565B3480156100AD57600080FD5B506100B6610190565B60408051918252519081900360200190F35B3480156100D457600080FD5B506100B6610196565B3480156100E957600080FD5B5061008A61019B565B3480156100FE57600080FD5B5061008A6101A6565B34801561011357600080FD5B5061008A61023E565B34801561012857600080FD5B506100B6610241565B34801561013D57600080FD5B5061008A610247565B34801561015257600080FD5B506100B6610320565B6000805460405190919067016345785D8A00009082818181858883F1935050505015801561018D573D6000803E3D6000FD5B50565B60025481565B303190565B600280546001019055565B6000805460405190919067016345785D8A00009082818181858883F193505050501580156101D8573D6000803E3D6000FD5B506000805460405190919067016345785D8A00009082818181858883F1935050505015801561020B573D6000803E3D6000FD5B506000805460405190919067016345785D8A00009082818181858883F1935050505015801561018D573D6000803E3D6000FD5B33FF5B60005481565B6001546003556000805460405190919067016345785D8A00009082818181858883F1935050505015801561027F573D6000803E3D6000FD5B50600354630B6F48A56040518163FFFFFFFF1660E060020A028152600401600060405180830381600087803B1580156102B757600080FD5B505AF11580156102CB573D6000803E3D6000FD5B50505050600354633E424FD76040518163FFFFFFFF1660E060020A028152600401600060405180830381600087803B15801561030657600080FD5B505AF115801561031A573D6000803E3D6000FD5B50505050565B6001548156FEA165627A7A72305820725E4BE5F857802E4B2E3AE196321E09A774C83F7062F292657CF8C3C041BFDD0029A165627A7A7230582085E854D18DCC005D156683C1DDC4FD7DE880E92E7ED7B0861212C717ECD98DF40029"},"code":200,"success":true,"message":"success"}
 
             if (response.success) {
                 self.contract_code = response.data.code;
@@ -215,239 +171,3 @@ export default {
     }
 };
 </script>
-
-<style   scoped>
-.page-block {
-    width: 100%;
-    position: relative;
-}
-#header {
-    color: #fff;
-    background: #5a59a0;
-}
-.sub_header-tit {
-    display: inline-block;
-    padding-right: 10px;
-    margin: 0;
-}
-.sub_header-des {
-    text-align: left;
-    margin: 0;
-    table-layout: fixed;
-    word-break: break-all;
-    overflow: hidden;
-}
-.block-info-wrap {
-    position: relative;
-    width: 100%;
-    margin: 0 auto;
-    color: black;
-    text-align: left;
-    padding-top: 20px;
-    padding-bottom: 80px;
-}
-.block-item-des {
-    padding: 10px 0;
-    border-bottom: 1px dashed #f6f6f6;
-}
-.account-panel {
-    min-height: 150px;
-}
-@media (max-width: 1199px) {
-    .bui-dlist {
-        color: #3f3f3f;
-        font-size: 16px;
-        line-height: 2.4;
-    }
-    .block-item-des {
-        display: block;
-    }
-    .bui-dlist-tit {
-        display: block;
-        width: 100%; /* 默认值, 具体根据视觉可改 */
-        margin: 0;
-        text-align: left;
-    }
-    .bui-dlist-det {
-        display: block;
-        color: #5f5f5f;
-        text-align: left;
-        margin: 0;
-        table-layout: fixed;
-        word-break: break-all;
-        overflow: hidden;
-    }
-}
-
-@media (min-width: 1200px) {
-    .bui-dlist {
-        color: #3f3f3f;
-        font-size: 16px;
-        line-height: 2.4;
-        margin-top: 20px;
-        border-top: 1px dashed #f6f6f6;
-    }
-    .block-item-des {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: -webkit-flex;
-        display: flex;
-    }
-    .bui-dlist-tit {
-        float: left;
-        width: 15%; /* 默认值, 具体根据视觉可改 */
-        text-align: left;
-        margin: 0;
-    }
-    .bui-dlist-det {
-        float: left;
-        color: #5f5f5f;
-        width: 80%; /* 默认值，具体根据视觉可改 */
-        text-align: left;
-        margin: 0;
-        table-layout: fixed;
-        word-break: break-all;
-        overflow: hidden;
-    }
-}
-
-.bui-dlist-tit .space-des {
-    display: inline-block;
-    width: 10px;
-}
-
-/*  记录 */
-.account-main {
-    padding: 30px 0;
-}
-.account-content {
-    min-height: 300px;
-    text-align: left;
-    margin-top: 10px;
-}
-.account-content .transfer-tit {
-    font-size: 18px;
-    font-weight: 400;
-}
-
-/* Transaction Record */
-.account-content .no-transfer-log {
-    text-align: center;
-    color: #9b9b9b;
-}
-.account-content .no-transfer-log .iconfont {
-    font-size: 128px;
-}
-.account-content .transfer-log {
-    padding: 22px 0;
-}
-
-.transfer-log .transfer-item {
-    background-color: #fff;
-    padding: 10px 0;
-    cursor: pointer;
-    border-bottom: 1px dashed #f0f0f0;
-    -webkit-user-select: none;
-}
-.transfer-log .transfer-item:hover {
-    text-decoration: none;
-    background-color: #f5f5f5;
-}
-
-@media (max-width: 1199px) {
-    .transfer-log .transfer-item {
-        display: block;
-    }
-    .transfer-time {
-        padding: 10px 0;
-    }
-}
-
-@media (min-width: 1200px) {
-    .transfer-log .transfer-item {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: -webkit-flex;
-        display: flex;
-    }
-    .account-content .transfer-log .transfer-info {
-        width: 800px;
-        padding-left: 10px;
-        text-align: left;
-    }
-    .transfer-log .transfer-assets .assets {
-        font-size: 18px;
-        height: 42px;
-        line-height: 42px;
-        width: 300px;
-        text-align: right;
-    }
-}
-
-.transfer-log .icon-wrap {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-}
-.transfer-log .icon-wrap .icon-transfer {
-    color: #fff;
-    position: relative;
-    left: 11px;
-    top: 4px;
-    font-size: 20px;
-}
-.transfer-log .plus-assets .icon-wrap {
-    background-color: rgba(0, 128, 0, 0.555);
-}
-.transfer-log .less-assets .icon-wrap {
-    background-color: rgba(255, 153, 0, 0.555);
-}
-.transfer-log .by-address {
-    width: 100%;
-    color: #9a9c9d;
-    table-layout: fixed;
-    word-break: break-all;
-    overflow: hidden;
-    color: rgb(54, 54, 54);
-}
-.transfer-log .transfer-time {
-    color: rgb(161, 161, 161);
-}
-
-.plus-assets .assets {
-    color: green;
-}
-.less-assets .assets {
-    color: rgb(255, 51, 0);
-}
-.iconfont {
-    font-size: 18px;
-    color: #bfbef8;
-}
-.no-list {
-    padding-top: 20px;
-}
-.pagin-wrap {
-    padding: 15px 0;
-}
-.pagin-block {
-    display: block;
-    margin: 20px 0;
-    text-align: right;
-}
-.table-long-item {
-    max-width: 150px;
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.trans-to-self {
-    transform: rotate(90deg);
-    -ms-transform: rotate(90deg); /* IE 9 */
-    -moz-transform: rotate(90deg); /* Firefox */
-    -webkit-transform: rotate(90deg); /* Safari 和 Chrome */
-    -o-transform: rotate(90deg); /* Opera */
-    padding: 0 6px;
-}
-</style>

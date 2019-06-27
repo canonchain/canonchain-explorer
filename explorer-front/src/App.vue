@@ -104,7 +104,7 @@ a {
 }
 
 /* flex End */
-.accounts-list-wrap {
+.accounts-main-wrap {
     min-height: 300px;
 }
 .table-long-item {
@@ -127,6 +127,9 @@ a {
     word-wrap: break-word;
     border: 1px solid #e7eaf3;
     padding: 12px;
+}
+.page-account .contract-code {
+    width: 100%;
 }
 @media (max-width: 900px) {
     .contract-code {
@@ -269,11 +272,6 @@ a {
     color: #333;
     line-height: 31px;
 }
-.event-log-content {
-    position: relative;
-    overflow: hidden;
-    margin-top: -1px;
-}
 .token-item {
     padding: 30px 0;
     margin-top: 0;
@@ -289,7 +287,7 @@ a {
 
 /* 账户详情 开始 */
 .page-account .table-long-item {
-    line-height: 10px;
+    line-height: 12px;
 }
 @media (max-width: 900px) {
     .page-account .table-long-item {
@@ -323,15 +321,6 @@ a {
     margin-top: 10px;
     padding: 5px 15px;
     background-color: #fff;
-}
-.account-content {
-    min-height: 300px;
-    text-align: left;
-    margin-top: 10px;
-}
-.account-content .transfer-tit {
-    font-size: 18px;
-    font-weight: 400;
 }
 .trans-to-self {
     transform: rotate(90deg);

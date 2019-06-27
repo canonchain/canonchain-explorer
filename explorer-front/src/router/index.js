@@ -15,6 +15,7 @@ import Internals from '@/pages/internals'
 
 // account
 import AccountTransaction from '@/pages/Account/transaction'
+import AccountTokenBalances from '@/pages/Account/token_balances'
 import AccountTransToken from '@/pages/Account/trans_token'
 import AccountTransInternal from '@/pages/Account/trans_internal'
 import AccountEventLogs from '@/pages/Account/event_logs'
@@ -99,6 +100,11 @@ export default new Router({
       path: '/account/:id',
       name: 'AccountTransaction',
       component: AccountTransaction
+    },
+    {
+      path: '/account/:id/token_balances',
+      name: 'AccountTokenBalances',
+      component: AccountTokenBalances
     },
     {
       path: '/account/:id/trans_token',

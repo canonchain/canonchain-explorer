@@ -3,114 +3,21 @@
         <czr-header></czr-header>
         <div class="page-account-wrap">
             <div class="container">
-                <div class="account-panel" v-loading="loadingSwitch">
-                    <template v-if="IS_GET_INFO">
-                        <token-info
-                            :name="accountInfo.token_name"
-                            :symbol="accountInfo.token_symbol"
-                            :total="accountInfo.token_total"
-                            :precision="accountInfo.token_precision"
-                            :account_count="accountInfo.account_count"
-                            :transaction_count="accountInfo.transaction_count"
-                            :contract_account="accountInfo.contract_account"
-                        ></token-info>
-                    </template>
+                <div class="account-panel">
+                    <token-info :address="address"></token-info>
                 </div>
                 <div class="account-main">
                     <el-tabs v-model="activeName" @tab-click="change_table">
                         <el-tab-pane label="代币转账" name="transaction">
                             <div class="account-content">
                                 <div
-                                    class="accounts-list-wrap"
+                                    class="accounts-main-wrap"
                                     v-loading="loadingSwitch"
                                 >
                                     <template v-if="IS_GET_INFO">
-                                        <el-table
-                                            :data="trans_token"
-                                            style="width: 100%"
-                                        >
-                                            <el-table-column
-                                                label="时间"
-                                                width="180"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <span
-                                                        class="table-long-item"
-                                                        >{{
-                                                            scope.row
-                                                                .mc_timestamp
-                                                                | toDate
-                                                        }}</span
-                                                    >
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column
-                                                label="交易号"
-                                                width="180"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <router-link
-                                                        class="table-long-item"
-                                                        :to="{
-                                                            path:
-                                                                '/block/' +
-                                                                scope.row.hash
-                                                        }"
-                                                        >{{
-                                                            scope.row.hash
-                                                        }}</router-link
-                                                    >
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column
-                                                label="发款方"
-                                                width="180"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <router-link
-                                                        class="table-long-item"
-                                                        :to="{
-                                                            path:
-                                                                '/account/' +
-                                                                scope.row.from
-                                                        }"
-                                                        >{{
-                                                            scope.row.from
-                                                        }}</router-link
-                                                    >
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column
-                                                label="收款方"
-                                                width="180"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <router-link
-                                                        class="table-long-item"
-                                                        :to="{
-                                                            path:
-                                                                '/account/' +
-                                                                scope.row.to
-                                                        }"
-                                                        >{{
-                                                            scope.row.to
-                                                        }}</router-link
-                                                    >
-                                                </template>
-                                            </el-table-column>
-                                            <el-table-column
-                                                label="数量"
-                                                align="right"
-                                            >
-                                                <template slot-scope="scope">
-                                                    <span>{{
-                                                        scope.row.amount
-                                                            | toCZRVal
-                                                    }}</span>
-                                                </template>
-                                            </el-table-column>
-                                        </el-table>
-
+                                        <token-trans-list
+                                            :database="trans_token"
+                                        ></token-trans-list>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -188,6 +95,7 @@
 import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
 import TokenInfo from "@/components/Token/TokenInfo";
+import TokenTransList from "@/components/Token/TokenTransList";
 
 let self = null;
 
@@ -196,22 +104,16 @@ export default {
     components: {
         CzrHeader,
         CzrFooter,
+        TokenTransList,
         TokenInfo
     },
     data() {
         return {
             loadingSwitch: true,
-            IS_GET_TOKEN: false,
+            address: this.$route.params.id,
+            activeName: "transaction",
+
             IS_GET_INFO: false,
-            accountInfo: {
-                contract_account: this.$route.params.id,
-                token_name: "",
-                token_symbol: "",
-                token_precision: "",
-                token_total: "",
-                transaction_count: "",
-                account_count: ""
-            },
             btnSwitch: {
                 header: false,
                 left: false,
@@ -231,9 +133,7 @@ export default {
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
                 stable_index: 999999999999
             },
-
             // change
-            activeName: "transaction",
             trans_token: []
         };
     },
@@ -244,32 +144,9 @@ export default {
             self.url_parm.position = queryInfo.position;
             self.url_parm.stable_index = queryInfo.stable_index;
         }
-        self.getTokenInfo();
         self.getFlagTransactions();
     },
     methods: {
-        async getTokenInfo() {
-            let opt = {
-                account: self.accountInfo.contract_account
-            };
-            let response = await self.$api.get("/api/get_token_info", opt);
-
-            if (response.success) {
-                let tokenInfo = response.data;
-                self.accountInfo.token_name = tokenInfo.token_name;
-                self.accountInfo.token_symbol = tokenInfo.token_symbol;
-                self.accountInfo.token_precision = tokenInfo.token_precision;
-                self.accountInfo.token_total = tokenInfo.token_total;
-
-                self.accountInfo.transaction_count =
-                    tokenInfo.transaction_count;
-                self.accountInfo.account_count = tokenInfo.account_count;
-            } else {
-                console.error("/api/get_account Error");
-            }
-            self.IS_GET_INFO = true;
-            self.loadingSwitch = false;
-        },
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
             // 想取最后一页
@@ -334,6 +211,70 @@ export default {
             };
             let response = await self.$api.get("/api/get_token_trans", opt);
 
+            response = {
+                data: [
+                    {
+                        stable_index: "1550",
+                        hash:
+                            "D754E6877A0690485E9CA88FDB8C69E2B3A979387E77EF7B55E407427555D993",
+                        mc_timestamp: "1560935736",
+                        from:
+                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
+                        to:
+                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        token_symbol: "CZR",
+                        amount: "1000"
+                    },
+                    {
+                        stable_index: "1541",
+                        hash:
+                            "905F0056C2E35700FAB7AE9022F31BE058121576E1BDCD25D6754D32D02AC6D3",
+                        mc_timestamp: "1560935720",
+                        from:
+                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
+                        to:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        token_symbol: "CZR",
+                        amount: "10"
+                    },
+                    {
+                        stable_index: "1536",
+                        hash:
+                            "264B401418285D437E820E496204DCA70FD01499B1B20F63491EE79DEC3DAD85",
+                        mc_timestamp: "1560935712",
+                        from:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        to:
+                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        token_symbol: "CZR",
+                        amount: "10"
+                    },
+                    {
+                        stable_index: "1528",
+                        hash:
+                            "04963AF05A93DC30B2B452E454904DEDEBDE2B87EE189DF57D9A472A6A97B0D4",
+                        mc_timestamp: "1560935698",
+                        from:
+                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
+                        to:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        contract_account:
+                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
+                        token_symbol: "CZR",
+                        amount: "1000"
+                    }
+                ],
+                code: 200,
+                success: true,
+                message: "success"
+            };
+
             if (response.success) {
                 self.trans_token = response.data;
                 if (response.data.length) {
@@ -381,9 +322,7 @@ export default {
                 case "transaction":
                     break;
                 case "holder":
-                    this.$router.push(
-                        `/token/${self.accountInfo.contract_account}/holder`
-                    );
+                    this.$router.push(`/token/${self.address}/holder`);
                     break;
             }
         }

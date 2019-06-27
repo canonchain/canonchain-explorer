@@ -8,7 +8,7 @@
                 }}</router-link>
             </template>
         </el-table-column>
-        <el-table-column label="余额(CZR)" align="right">
+        <el-table-column label="余额(CZR)" align="right" width="300">
             <template slot-scope="scope">{{
                 scope.row.balance | toCZRVal
             }}</template>
@@ -17,7 +17,7 @@
             prop="proportion"
             label="占比"
             align="right"
-            min-width="60"
+            min-width="160"
         ></el-table-column>
     </el-table>
 </template>
