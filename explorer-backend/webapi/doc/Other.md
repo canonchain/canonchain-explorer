@@ -1,6 +1,6 @@
 
 ## 其它API列表
-- [estimate_gas （获取 CZR Gas）](#获取CZRGas)
+- [gas_price （获取 CZR Gas）](#获取CZRGas)
 - [estimate_gas （ 获得估算Gas）](#获得估算Gas)
 - [to_hex （字符串转16进制）](#字符串转16进制)
 

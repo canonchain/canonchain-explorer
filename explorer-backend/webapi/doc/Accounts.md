@@ -1,7 +1,7 @@
 ## 账户API列表
-- [czr_account （获取 单个账户 的余额）](#获取单个账户的余额)
+- [balance （获取 单个账户 的余额）](#获取单个账户的余额)
 - [balance_multi （获取 多个账户 的余额）](#获取多个账户的余额)
-- [czr_account （获取 单个账户 的交易列表 [Normal]）](#获取单个账户的交易列表Normal)
+- [txlist （获取 单个账户 的交易列表 [Normal]）](#获取单个账户的交易列表Normal)
 - [txlist_internal （获取 单个账户 的交易列表 [Internal]）](#获取单个账户的交易列表Internal)
 - [txlist_count （获取 单个账户 的交易数 [Normal]）](#获取单个账户的交易数量)
 - [balance_crc （获取 单个账户 的 CRC20 Token 余额）](#获取单个账户的CRC20余额)

@@ -7,9 +7,9 @@
 
 <!-- TOC -->
 
-- [czr_account （获取 单个账户 的余额）](./doc/Accounts.md/#获取单个账户的余额)
+- [balance （获取 单个账户 的余额）](./doc/Accounts.md/#获取单个账户的余额)
 - [balance_multi （获取 多个账户 的余额）](./doc/Accounts.md/#获取多个账户的余额)
-- [czr_account （获取 单个账户 的交易列表 [Normal]）](./doc/Accounts.md/#获取单个账户的交易列表Normal)
+- [txlist （获取 单个账户 的交易列表 [Normal]）](./doc/Accounts.md/#获取单个账户的交易列表Normal)
 - [txlist_internal （获取 单个账户 的交易列表 [Internal]）](./doc/Accounts.md/#获取单个账户的交易列表Internal)
 - [txlist_count （获取 单个账户 的交易数 [Normal]）](./doc/Accounts.md/#获取单个账户的CRC20余额)
 - [balance_crc （获取 单个账户 的 CRC20 Token 余额）](./doc/Accounts.md/#获取单个账户的CRC20交易)
@@ -35,7 +35,7 @@
 <summary>其它</summary>
 <!-- TOC -->
 
-- [estimate_gas （获取 CZR Gas）](./doc/Other.md/#获取CZRGas)
+- [gas_price （获取 CZR Gas）](./doc/Other.md/#获取CZRGas)
 - [estimate_gas （ 获得估算Gas）](./doc/Other.md/#获得估算Gas)
 - [to_hex （字符串转16进制）](./doc/Other.md/#字符串转16进制)
 
