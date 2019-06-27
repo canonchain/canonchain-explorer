@@ -1,8 +1,8 @@
 
 ## 其它API列表
-- [获取 CZR Gas](#获取CZRGas)
-- [获得估算Gas](#获得估算Gas)
-- [字符串转16进制](#字符串转16进制)
+- [estimate_gas （获取 CZR Gas）](#获取CZRGas)
+- [estimate_gas （ 获得估算Gas）](#获得估算Gas)
+- [to_hex （字符串转16进制）](#字符串转16进制)
 
 
 金额的单位请参考：[API结果说明](../doc/README.md/#接口返回结果)

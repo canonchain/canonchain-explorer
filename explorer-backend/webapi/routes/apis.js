@@ -806,7 +806,7 @@ async function CZRGas(query) {
     FROM 
         gas_price 
     order by
-      timestamp asc
+      timestamp desc
     limit
         1
     `

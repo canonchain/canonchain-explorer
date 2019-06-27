@@ -1,7 +1,7 @@
 
 ## 统计API列表
-- [获取 CZR 最新价格](#获取CZR最新价格) 
-- [获取 CRC Token 最新价格](#获取Token最新价格)
+- [czr_price （获取 CZR 最新价格）](#获取CZR最新价格) 
+- [token_price （获取 CRC20 Token 最新价格）](#获取Token最新价格)
 
 ### 获取CZR最新价格
 
