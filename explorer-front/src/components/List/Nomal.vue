@@ -3,7 +3,7 @@
         <el-table-column label="时间" width="160">
             <template slot-scope="scope">
                 <span class="table-long-item">{{
-                    scope.row.exec_timestamp | toDate
+                    scope.row.mc_timestamp | toDate
                 }}</span>
             </template>
         </el-table-column>

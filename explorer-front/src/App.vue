@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <router-view />
+        <router-view/>
     </div>
 </template>
 
@@ -197,7 +197,9 @@ a {
     position: relative;
 }
 .page-block .table-long-item {
-    line-height: 10px;
+    line-height: 12px;
+    position: relative;
+    top: 2px;
 }
 .block-wrap {
     position: relative;
@@ -288,6 +290,8 @@ a {
 /* 账户详情 开始 */
 .page-account .table-long-item {
     line-height: 12px;
+    position: relative;
+    top: 2px;
 }
 @media (max-width: 900px) {
     .page-account .table-long-item {

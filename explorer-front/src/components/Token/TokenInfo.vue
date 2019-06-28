@@ -108,22 +108,6 @@ export default {
                 account: this.address
             };
             let response = await self.$api.get("/api/get_token_info", opt);
-            // response = {
-            //     data: {
-            //         contract_account:
-            //             "czr_3juP4ekGuk66hA78XJb9XcJxCAaPff5a1K5W2eiehvmucjwotk",
-            //         token_name: "canonChain",
-            //         token_symbol: "CZR",
-            //         token_precision: 18,
-            //         token_total:
-            //             "1000000000000000000000000000000000000000000000",
-            //         transaction_count: "1",
-            //         account_count: "2"
-            //     },
-            //     code: 200,
-            //     success: true,
-            //     message: "success"
-            // };
             if (response.success) {
                 let tokenInfo = response.data;
                 self.account_info.name = tokenInfo.token_name || "CRC Token";

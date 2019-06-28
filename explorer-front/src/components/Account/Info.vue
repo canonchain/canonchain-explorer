@@ -137,24 +137,6 @@ export default {
             };
             console.log(this.address);
             let response = await self.$api.get("/api/get_account", opt);
-            console.log(response);
-            response = {
-                account: {
-                    account:
-                        "czr_3juP4ekGuk66hA78XJb9XcJxCAaPff5a1K5W2eiehvmucjwotk",
-                    type: 2,
-                    balance: "0",
-                    transaction_count: "3",
-                    is_token_account: true,
-                    is_has_token_trans: null,
-                    is_has_intel_trans: null,
-                    is_has_event_logs: null,
-                    is_witness: false
-                },
-                code: 200,
-                success: true,
-                message: "success"
-            };
             if (response.success) {
                 let accInfo = response.account;
                 self.account_info.total = Number(accInfo.transaction_count);
@@ -180,21 +162,6 @@ export default {
                     "/api/get_contract",
                     opt
                 );
-                responseToken = {
-                    data: {
-                        contract_account:
-                            "czr_3juP4ekGuk66hA78XJb9XcJxCAaPff5a1K5W2eiehvmucjwotk",
-                        own_account:
-                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
-                        born_unit:
-                            "F87413941210355BD7F5CD1F59CBC0D9AE568FE3E318C345B7797D2568160294",
-                        token_name: "canonChain",
-                        token_symbol: "CZR"
-                    },
-                    code: 200,
-                    success: true,
-                    message: "success"
-                };
                 if (response.success) {
                     let tokenInfo = responseToken.data; //token
                     self.account_info.own_account = tokenInfo.own_account;

@@ -211,39 +211,6 @@ export default {
                 balance: parm.balance
             };
             let response = await self.$api.get("/api/get_token_holder", opt);
-
-            response = {
-                data: [
-                    {
-                        balance:
-                            "999999999999999999999999999999999999999996000",
-                        account:
-                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        symbol: "CZR"
-                    },
-                    {
-                        balance: "1000",
-                        account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        symbol: "CZR"
-                    },
-                    {
-                        balance: "1000",
-                        account:
-                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        symbol: "CZR"
-                    }
-                ],
-                code: 200,
-                success: true,
-                message: "success"
-            };
             if (response.success) {
                 self.trans_token = response.data;
                 if (response.data.length) {

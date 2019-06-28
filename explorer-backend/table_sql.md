@@ -552,7 +552,7 @@ CREATE TABLE public.event_log
     "method_function" text,
     "topics" text,
 
-    CONSTRAINT event_log_hash_pkey PRIMARY KEY (hash)
+    CONSTRAINT event_log_id_pkey PRIMARY KEY (event_log_id)
 )
 WITH (
     OIDS = FALSE

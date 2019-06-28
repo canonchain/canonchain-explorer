@@ -4,46 +4,36 @@
         <div class="block-wrap">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
-                    <el-tab-pane
-                        label="交易详情"
-                        name="trans_info"
-                    ></el-tab-pane>
+                    <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                     <el-tab-pane label="内部交易" name="intel_trans">
                         <div v-loading="loadingSwitch">
                             <template v-if="IS_GET_INFO">
-                                <el-table
-                                    :data="intel_trans"
-                                    style="width: 100%"
-                                >
+                                <el-table :data="intel_trans" style="width: 100%">
                                     <el-table-column label="类型" width="220">
                                         <template slot-scope="scope">
-                                            <template
-                                                v-if="scope.row.type === '0'"
-                                            >
-                                                <span class="beautify-color">{{
+                                            <template v-if="scope.row.type === '0'">
+                                                <span class="beautify-color">
+                                                    {{
                                                     scope.row.type_before
-                                                }}</span>
+                                                    }}
+                                                </span>
                                                 {{ scope.row.type_str }}
                                             </template>
                                             <template
                                                 v-else-if="
                                                     scope.row.type === '1'
                                                 "
-                                                >create</template
-                                            >
+                                            >create</template>
                                             <template
                                                 v-else-if="
                                                     scope.row.type === '2'
                                                 "
-                                                >suicide</template
-                                            >
+                                            >suicide</template>
                                         </template>
                                     </el-table-column>
                                     <el-table-column label="发送方" width="220">
                                         <template slot-scope="scope">
-                                            <template
-                                                v-if="scope.row.type === '2'"
-                                            >
+                                            <template v-if="scope.row.type === '2'">
                                                 <router-link
                                                     class="table-long-item"
                                                     :to="{
@@ -52,11 +42,12 @@
                                                             scope.row
                                                                 .contract_address_suicide
                                                     }"
-                                                    >{{
-                                                        scope.row
-                                                            .contract_address_suicide
-                                                    }}</router-link
                                                 >
+                                                    {{
+                                                    scope.row
+                                                    .contract_address_suicide
+                                                    }}
+                                                </router-link>
                                             </template>
                                             <template v-else>
                                                 <router-link
@@ -66,18 +57,17 @@
                                                             '/account/' +
                                                             scope.row.from
                                                     }"
-                                                    >{{
-                                                        scope.row.from
-                                                    }}</router-link
                                                 >
+                                                    {{
+                                                    scope.row.from
+                                                    }}
+                                                </router-link>
                                             </template>
                                         </template>
                                     </el-table-column>
                                     <el-table-column label="接收方" width="220">
                                         <template slot-scope="scope">
-                                            <template
-                                                v-if="scope.row.type === '2'"
-                                            >
+                                            <template v-if="scope.row.type === '2'">
                                                 <router-link
                                                     class="table-long-item"
                                                     :to="{
@@ -86,10 +76,11 @@
                                                             scope.row
                                                                 .refund_adderss
                                                     }"
-                                                    >{{
-                                                        scope.row.refund_adderss
-                                                    }}</router-link
                                                 >
+                                                    {{
+                                                    scope.row.refund_adderss
+                                                    }}
+                                                </router-link>
                                             </template>
                                             <template
                                                 v-else-if="
@@ -104,11 +95,12 @@
                                                             scope.row
                                                                 .contract_address_create
                                                     }"
-                                                    >{{
-                                                        scope.row
-                                                            .contract_address_create
-                                                    }}</router-link
                                                 >
+                                                    {{
+                                                    scope.row
+                                                    .contract_address_create
+                                                    }}
+                                                </router-link>
                                             </template>
                                             <template v-else>
                                                 <template v-if="scope.row.to">
@@ -120,10 +112,11 @@
                                                                     '/account/' +
                                                                     scope.row.to
                                                             }"
-                                                            >{{
-                                                                scope.row.to
-                                                            }}</router-link
                                                         >
+                                                            {{
+                                                            scope.row.to
+                                                            }}
+                                                        </router-link>
                                                     </template>
                                                 </template>
                                                 <template v-else>
@@ -134,34 +127,31 @@
                                     </el-table-column>
                                     <el-table-column label="价值" width="180">
                                         <template slot-scope="scope">
-                                            <span
-                                                >{{
-                                                    scope.row.amount | toCZRVal
+                                            <template
+                                                v-if="scope.row.type === '2'"
+                                            >{{scope.row.balance | toCZRVal}}</template>
+                                            <template v-else>
+                                                {{
+                                                (scope.row.value) | toCZRVal
                                                 }}
-                                                CZR</span
-                                            >
+                                            </template>CZR
                                         </template>
                                     </el-table-column>
-                                    <el-table-column
-                                        label="Gas Limit"
-                                        align="right"
-                                    >
+                                    <el-table-column label="Gas Limit" align="right">
                                         <template slot-scope="scope">
-                                            <span>{{
+                                            <span>
+                                                {{
                                                 scope.row.gas || 0
-                                            }}</span>
+                                                }}
+                                            </span>
                                         </template>
                                     </el-table-column>
                                 </el-table>
                             </template>
                         </div>
                     </el-tab-pane>
-                    <el-tab-pane
-                        label="事件日志"
-                        name="event_log"
-                    ></el-tab-pane>
-                    <el-tab-pane label="高级信息" name="advanced_info">
-                    </el-tab-pane>
+                    <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                    <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
                 </el-tabs>
             </div>
         </div>
@@ -188,47 +178,6 @@ export default {
             isSuccess: false,
             loadingSwitch: true,
             IS_GET_INFO: false,
-            blockInfo: {
-                //所有类型共有的
-                hash: "",
-                type: 0,
-                from: "",
-                handling_fee: 0,
-                previous: "",
-                exec_timestamp: "",
-                work: "",
-                signature: "",
-                level: "",
-                is_stable: "",
-                stable_index: "",
-                status: "",
-                mci: "",
-                mc_timestamp: "",
-                stable_timestamp: "",
-                //普通交易和创始交易私有的
-                to: "",
-                amount: "",
-                data: "",
-                data_hash: "",
-                // 普通交易私有的
-                gas: "",
-                gas_used: "",
-                gas_price: "",
-                contract_address: "",
-                log: "",
-                log_bloom: "",
-                // 见证交易
-                last_stable_block: "",
-                last_summary_block: "",
-                last_summary: "",
-                witnessed_level: "",
-                best_parent: "",
-                is_free: "",
-                is_on_mc: "",
-                is_event_log: "",
-                is_token_trans: "",
-                is_intel_trans: ""
-            },
             intel_trans: [],
             // change
             activeName: "intel_trans"
@@ -236,32 +185,9 @@ export default {
     },
     created() {
         self = this;
-        this.initDatabase();
         this.getTransactions();
     },
     methods: {
-        async initDatabase() {
-            let opt = {
-                transaction: self.blockHash
-            };
-            let response = await self.$api.get(
-                "/api/get_transaction_short",
-                opt
-            );
-            if (response.success) {
-                self.isSuccess = true;
-                trsns_info = response.transaction;
-                if (trsns_info) {
-                    //所有类型共有的
-                    self.blockInfo = trsns_info;
-                }
-            } else {
-                console.error("/api/get_transaction_short Error");
-            }
-            self.IS_GET_INFO = true;
-            self.loadingSwitch = false;
-        },
-
         async getTransactions() {
             //TODO 没有搜见证交易
             self.loadingSwitch = true;
@@ -298,8 +224,8 @@ export default {
                 self.intel_trans = [];
             }
 
-            // self.IS_GET_INFO = true;
-            // self.loadingSwitch = false;
+            self.IS_GET_INFO = true;
+            self.loadingSwitch = false;
         },
         change_table(tab, event) {
             switch (tab.name) {

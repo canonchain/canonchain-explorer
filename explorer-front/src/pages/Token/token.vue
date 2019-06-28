@@ -10,14 +10,9 @@
                     <el-tabs v-model="activeName" @tab-click="change_table">
                         <el-tab-pane label="代币转账" name="transaction">
                             <div class="account-content">
-                                <div
-                                    class="accounts-main-wrap"
-                                    v-loading="loadingSwitch"
-                                >
+                                <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_INFO">
-                                        <token-trans-list
-                                            :database="trans_token"
-                                        ></token-trans-list>
+                                        <token-trans-list :database="trans_token"></token-trans-list>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -32,8 +27,7 @@
                                                                 'header'
                                                             )
                                                         "
-                                                        >首页</el-button
-                                                    >
+                                                    >首页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
@@ -45,8 +39,7 @@
                                                                 'left'
                                                             )
                                                         "
-                                                        >上一页</el-button
-                                                    >
+                                                    >上一页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         :disabled="
@@ -73,8 +66,7 @@
                                                                 'footer'
                                                             )
                                                         "
-                                                        >尾页</el-button
-                                                    >
+                                                    >尾页</el-button>
                                                 </el-button-group>
                                             </div>
                                         </template>
@@ -210,70 +202,6 @@ export default {
                 stable_index: parm.stable_index
             };
             let response = await self.$api.get("/api/get_token_trans", opt);
-
-            response = {
-                data: [
-                    {
-                        stable_index: "1550",
-                        hash:
-                            "D754E6877A0690485E9CA88FDB8C69E2B3A979387E77EF7B55E407427555D993",
-                        mc_timestamp: "1560935736",
-                        from:
-                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
-                        to:
-                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        token_symbol: "CZR",
-                        amount: "1000"
-                    },
-                    {
-                        stable_index: "1541",
-                        hash:
-                            "905F0056C2E35700FAB7AE9022F31BE058121576E1BDCD25D6754D32D02AC6D3",
-                        mc_timestamp: "1560935720",
-                        from:
-                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
-                        to:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        token_symbol: "CZR",
-                        amount: "10"
-                    },
-                    {
-                        stable_index: "1536",
-                        hash:
-                            "264B401418285D437E820E496204DCA70FD01499B1B20F63491EE79DEC3DAD85",
-                        mc_timestamp: "1560935712",
-                        from:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        to:
-                            "czr_4TNETbF8uHhc9EUeVgmYZ2hK2anMeR97fDqktcKrqw2pTCc3mh",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        token_symbol: "CZR",
-                        amount: "10"
-                    },
-                    {
-                        stable_index: "1528",
-                        hash:
-                            "04963AF05A93DC30B2B452E454904DEDEBDE2B87EE189DF57D9A472A6A97B0D4",
-                        mc_timestamp: "1560935698",
-                        from:
-                            "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
-                        to:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        contract_account:
-                            "czr_39MpJnk99DGQ1CBbykBsLrTM3gFvhecPnddTSRS9UPvZW2sGex",
-                        token_symbol: "CZR",
-                        amount: "1000"
-                    }
-                ],
-                code: 200,
-                success: true,
-                message: "success"
-            };
 
             if (response.success) {
                 self.trans_token = response.data;

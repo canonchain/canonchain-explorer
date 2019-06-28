@@ -1288,7 +1288,7 @@ router.get("/get_trans", async function (req, res, next) {
         columnName = '"mc_timestamp", "level", "hash", "from", "to", "is_stable", "status", "amount", "stable_index"'
     } else {
         tableName = 'trans_witness';
-        columnName = '"exec_timestamp", "stable_timestamp", "hash", "from", "is_stable", "status", "stable_index"'
+        columnName = '"timestamp", "stable_timestamp", "hash", "from", "is_stable", "status", "stable_index"'
     }
 
     let opt;
@@ -1518,11 +1518,7 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
         TABLE_NAME = "trans_witness";
     }
 
-    let errorInfo = {
-        "exec_timestamp": "0",
-        "level": "0",
-        "pkid": "0"
-    }
+    let errorInfo = {}
 
     let start_sql = {
         text: `
@@ -1626,7 +1622,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             opt = {
                 text: `
                     Select 
-                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                        "timestamp","hash","from","is_stable","status","stable_index"
                     FROM
                         trans_witness
                     WHERE
@@ -1662,7 +1658,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             opt = {
                 text: `
                     Select 
-                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                        "timestamp","hash","from","is_stable","status","stable_index"
                     FROM
                         trans_witness
                     WHERE
@@ -1679,7 +1675,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             opt = {
                 text: `
                     Select 
-                        "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
                     FROM
                         trans_normal
                     WHERE
@@ -1708,7 +1704,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             opt = {
                 text: `
                     Select 
-                        "exec_timestamp","hash","from","is_stable","status","stable_index"
+                        "timestamp","hash","from","is_stable","status","stable_index"
                     FROM
                         trans_witness
                     WHERE
@@ -1726,7 +1722,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             opt = {
                 text: `
                     Select 
-                        "exec_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
                     FROM 
                         trans_normal 
                     WHERE 
@@ -2408,7 +2404,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
     //             "to": "",
     //             "amount": "0",
     //             "data": "",
-    //             "exec_timestamp": "1534146836",
+    //             "mc_timestamp": "1534146836",
     //             "status": "0",
     //             "is_stable": "0"
     //         },
@@ -2448,7 +2444,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
     if (typeValue === '0') {
         tableName = 'trans_genesis';
         tableCol = `
-        "hash","type","from","exec_timestamp","work","signature",
+        "hash","type","from","timestamp","signature",
         "to","amount","data_hash","data",
 
         "is_stable",
@@ -2459,7 +2455,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
     } else if (typeValue === '1') {
         tableName = 'trans_witness';
         tableCol = `
-        "hash","type","from","exec_timestamp","work","signature",
+        "hash","type","from","timestamp","signature",
         "previous","links","last_stable_block","last_summary_block","last_summary",
 
         "is_stable",
@@ -2470,7 +2466,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
     } else {
         tableName = 'trans_normal'
         tableCol = `
-        "hash","type","from","exec_timestamp","work","signature",
+        "hash","type","from","mc_timestamp","signature",
         "to","amount","previous","gas","gas_price","data_hash","data",
 
         "is_stable",
@@ -2504,7 +2500,6 @@ router.get("/get_transaction_short", async function (req, res, next) {
         "to": "",
         "amount": "0",
         "data": "",
-        "exec_timestamp": "1534146836",
         "status": "0",
         "is_stable": "0"
     }
@@ -2685,7 +2680,7 @@ router.get("/get_transaction", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "hash","type","from","previous","exec_timestamp","work","signature","level","is_stable",
+                "hash","type","from","previous","timestamp","signature","level","is_stable",
                 "stable_index","status","mci","mc_timestamp","stable_timestamp",
                 "last_stable_block","last_summary_block",
                 "last_summary","is_free","witnessed_level","best_parent","is_on_mc"
@@ -2714,7 +2709,7 @@ router.get("/get_transaction", async function (req, res, next) {
                 "last_summary": "",
                 "last_summary_block": "",
                 "data": "",
-                "exec_timestamp": "1534146836",
+                "timestamp": "",
                 "signature": "",
                 "is_free": false,
                 "level": "0",
@@ -2783,16 +2778,6 @@ router.get("/get_previous_units", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
     var searchParameter = req.query;
-    /*
-        parameters={
-            direction:"",
-            is_free:"",
-            exec_timestamp:"",
-            level:"",
-            pkid:"",
-            is_prototype:""
-        }
-    */
     var sqlOptions;
 
     // console.log(searchParameter);
@@ -3020,7 +3005,7 @@ router.get("/get_latest_transactions", async function (req, res, next) {
     let sql = {
         text: `
             Select 
-                exec_timestamp,hash,"from","to",is_stable,"status",amount 
+                hash,"from","to",is_stable,"status",amount 
             FROM 
                 trans_normal
             order by 
@@ -3037,7 +3022,7 @@ router.get("/get_latest_transactions", async function (req, res, next) {
             transactions: [],
             code: 500,
             success: false,
-            message: 'select exec_timestamp,level,hash,"from","to",is_stable,"status",amount from trans_normal error'
+            message: 'select level,hash,"from","to",is_stable,"status",amount from trans_normal error'
         }
     } else {
         responseData = {

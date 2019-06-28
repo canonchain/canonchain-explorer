@@ -101,6 +101,8 @@
     let tokenUpdateAry = [];        //更新 token信息表   [Db]       /done
     let tokenUpdateAryHelpObj = {}
     let tokenInsertAryHelpObj = {}
+    let tempTokenInfo = {}
+    let allTokens = {};
 
     let transTokenInsertAry = [];   //插入 token交易表   [Db]       /done
     let transInternalInsertAry = [];//插入 内部交易表    [Db]       /done
@@ -436,21 +438,35 @@
                 genesisTransInsertAry.forEach(blockInfo => {
                     //DO 写创世块的金额
 
+                    accountsTotal[blockInfo.to] = {
+                        account: blockInfo.to,
+                        type: 1,
+                        balance: blockInfo.amount,
+                        is_token_account: false,//针对合约
+                        is_has_token_trans: false,
+                        is_has_intel_trans: false,
+                        is_has_event_logs: false
+                    };
 
-                    if (accountsTotal.hasOwnProperty(blockInfo.to)) {
-                        accountsTotal[blockInfo.to] = {
-                            account: blockInfo.to,
-                            type: 1,
-                            balance: blockInfo.amount
-                        };
-                    }
-                    if (accountsTotal.hasOwnProperty(blockInfo.from)) {
-                        accountsTotal[blockInfo.from] = {
-                            account: blockInfo.from,
-                            type: 1,
-                            balance: "0"
-                        };
-                    }
+
+                    // if (accountsTotal.hasOwnProperty(blockInfo.to)) {
+                    //     accountsTotal[blockInfo.to] = {
+                    //         account: blockInfo.to,
+                    //         type: 1,
+                    //         balance: blockInfo.amount,
+                    //         is_token_account: false,//针对合约
+                    //         is_has_token_trans: false,
+                    //         is_has_intel_trans: false,
+                    //         is_has_event_logs: false
+                    //     };
+                    // }
+                    // if (accountsTotal.hasOwnProperty(blockInfo.from)) {
+                    //     accountsTotal[blockInfo.from] = {
+                    //         account: blockInfo.from,
+                    //         type: 1,
+                    //         balance: "0"
+                    //     };
+                    // }
                 });
             }
 
@@ -480,32 +496,24 @@
                 //账户余额 只有是成功的交易才操作账户余额
                 unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                 if (!unitIsFail) {
+                    //如果To为false，则为部署合约交易
+                    if (!blockInfo.to) {
+                        blockInfo.to = blockInfo.contract_address
+                    }
                     //处理收款方余额
                     if (accountsTotal.hasOwnProperty(blockInfo.to)) {
                         //有,收款方地址已存在cache中：更新数据
                         accountsTotal[blockInfo.to].balance = BigNumber(accountsTotal[blockInfo.to].balance).plus(blockInfo.amount).toString(10);
                     } else {
                         //无，收款方地址不存在cache中：写入数据
-                        if (blockInfo.to) {
-                            accountsTotal[blockInfo.to] = {
-                                account: blockInfo.to,
-                                type: 1,
-                                balance: blockInfo.amount
-                            }
-                        } else {
-                            //合约账户
-                            if (blockInfo.contract_address) {
-                                accountsTotal[blockInfo.contract_address] = {
-                                    account: blockInfo.contract_address,
-                                    type: 2,
-                                    balance: "0",
-                                    is_token_account: false,
-                                    is_has_token_trans: false,
-                                    is_has_intel_trans: false,
-                                    is_has_event_logs: false
-                                }
-                            }
-
+                        accountsTotal[blockInfo.to] = {
+                            account: blockInfo.to,
+                            type: 1,
+                            balance: blockInfo.amount,
+                            is_token_account: false,//针对合约
+                            is_has_token_trans: false,
+                            is_has_intel_trans: false,
+                            is_has_event_logs: false
                         }
                     }
                     //处理发款方余额
@@ -564,7 +572,8 @@
                     logger.info('解析log信息');
                     blockInfo.is_event_log = true;
                     let tempTransTokenInsertInfo = {};
-                    blockInfo.log.forEach(async (log_item, index) => {
+
+                    await Promise.all(blockInfo.log.map(async (log_item) => {
                         let contractAccount = czr.utils.encode_account(log_item.address);
                         let transData = parseInt(log_item.data, 16);
                         eventLogInsertAry.push(
@@ -585,22 +594,25 @@
                             blockInfo.is_token_trans = true;
                             //解析出对应的Token信息
                             logger.info('有Token转账', contractAccount);
+                            if (!(allTokens.hasOwnProperty(contractAccount))) {
+                                tempTokenInfo = {
+                                    token_name: await pageUtility.call(contractAccount, "name"),
+                                    token_symbol: await pageUtility.call(contractAccount, "symbol"),
+                                    token_precision: await pageUtility.call(contractAccount, "decimals"),
+                                    token_total: await pageUtility.call(contractAccount, "totalSupply"),
+                                    owner: await pageUtility.call(contractAccount, "owner"),
+                                };
+                                console.log("查询了合约内信息", contractAccount);//allTokens.hasOwnProperty(contractAccount)
+                                console.log(!(allTokens.hasOwnProperty(contractAccount)));
+                                console.log(tempTokenInfo);
 
-                            // let TokenInfo = {
-                            //     token_name: await pageUtility.call(contractAccount, "name"),
-                            //     token_symbol: await pageUtility.call(contractAccount, "symbol"),
-                            //     token_precision: await pageUtility.call(contractAccount, "decimals"),
-                            //     token_total: await pageUtility.call(contractAccount, "totalSupply"),
-                            //     owner: await pageUtility.call(contractAccount, "owner"),
-                            // };
-                            let TokenInfo = {}
-                            await Promise.all([
-                                TokenInfo.token_name = await pageUtility.call(contractAccount, "name"),
-                                TokenInfo.token_symbol = await pageUtility.call(contractAccount, "symbol"),
-                                TokenInfo.token_precision = await pageUtility.call(contractAccount, "decimals"),
-                                TokenInfo.token_total = await pageUtility.call(contractAccount, "totalSupply"),
-                                TokenInfo.owner = await pageUtility.call(contractAccount, "owner")
-                            ]);
+                                allTokens[contractAccount] = tempTokenInfo;
+
+                            } else {
+                                tempTokenInfo = allTokens[contractAccount];
+                            }
+                            console.log("找到合约", contractAccount);
+
 
                             //双方账户
                             let contractFromAcc = czr.utils.encode_account(log_item.topics[1]);
@@ -618,11 +630,11 @@
                                 tokenInsertAryHelpObj[contractAccount] = {
                                     contract_account: contractAccount,
                                     mc_timestamp: blockInfo.mc_timestamp,
-                                    token_name: TokenInfo.token_name,//Cannot read property 'value' of undefined
-                                    token_symbol: TokenInfo.token_symbol,
-                                    token_precision: TokenInfo.token_precision,
-                                    token_total: TokenInfo.token_total,
-                                    owner: TokenInfo.owner,
+                                    token_name: tempTokenInfo.token_name,//Cannot read property 'value' of undefined
+                                    token_symbol: tempTokenInfo.token_symbol,
+                                    token_precision: tempTokenInfo.token_precision,
+                                    token_total: tempTokenInfo.token_total,
+                                    owner: tempTokenInfo.owner,
                                     transaction_count: 0,
                                     account_count: 0
                                 }
@@ -631,8 +643,8 @@
                                 //更新 合约表 相关的Token信息 使用，
                                 contractUpdateAryHelpObj[contractAccount] = {
                                     contract_account: contractAccount,
-                                    token_name: TokenInfo.token_name,
-                                    token_symbol: TokenInfo.token_symbol
+                                    token_name: tempTokenInfo.token_name,
+                                    token_symbol: tempTokenInfo.token_symbol
                                 }
 
                                 //to账户为合约账户 is_token_account
@@ -641,15 +653,15 @@
                                 }
 
                                 //写初始账户金额
-                                if (!tokenAccountsTotal.hasOwnProperty(TokenInfo.owner)) {
-                                    tokenAccountsTotal[TokenInfo.owner + contractAccount] = {
-                                        account: TokenInfo.owner,
+                                if (!tokenAccountsTotal.hasOwnProperty(tempTokenInfo.owner)) {
+                                    tokenAccountsTotal[tempTokenInfo.owner + contractAccount] = {
+                                        account: tempTokenInfo.owner,
                                         contract_account: contractAccount,
-                                        account_contract_merger: TokenInfo.owner + contractAccount,
-                                        name: TokenInfo.token_name,
-                                        symbol: TokenInfo.token_symbol,
-                                        precision: TokenInfo.token_precision,
-                                        balance: TokenInfo.token_total
+                                        account_contract_merger: tempTokenInfo.owner + contractAccount,
+                                        name: tempTokenInfo.token_name,
+                                        symbol: tempTokenInfo.token_symbol,
+                                        precision: tempTokenInfo.token_precision,
+                                        balance: tempTokenInfo.token_total
                                     }
                                 }
                             }
@@ -681,11 +693,11 @@
                                 from: contractFromAcc,
                                 to: contractToAcc,
                                 contract_account: contractAccount,
-                                token_symbol: TokenInfo.token_symbol,
-                                token_name: TokenInfo.token_name,
+                                token_symbol: tempTokenInfo.token_symbol,
+                                token_name: tempTokenInfo.token_name,
                                 amount: transData,
 
-                                token_precision: TokenInfo.token_precision,
+                                token_precision: tempTokenInfo.token_precision,
                                 gas: blockInfo.gas,
                                 gas_price: blockInfo.gas_price,
                                 gas_used: blockInfo.gas_used,
@@ -693,8 +705,7 @@
 
                             }
                             transTokenInsertAry.push(tempTransTokenInsertInfo);
-                            console.log(transTokenInsertAry)
-                            console.log(testIndex, "初始 tempTransTokenInsertInfo length", transTokenInsertAry.length);
+                            console.log(testIndex, "开始的，Token交易的数量", transTokenInsertAry.length);
 
                             //更新Token资产表
                             //DO 处理账户，发款方不在当前 tokenAccountsTotal 时 （以前已经储存在数据库了）
@@ -703,9 +714,9 @@
                                     account: contractFromAcc,
                                     contract_account: contractAccount,
                                     account_contract_merger: fromAccAndcontract,
-                                    name: TokenInfo.token_name,
-                                    symbol: TokenInfo.token_symbol,
-                                    precision: TokenInfo.token_precision,
+                                    name: tempTokenInfo.token_name,
+                                    symbol: tempTokenInfo.token_symbol,
+                                    precision: tempTokenInfo.token_precision,
                                     balance: 0
                                 }
                             }
@@ -721,71 +732,141 @@
                                     account: contractToAcc,
                                     contract_account: contractAccount,
                                     account_contract_merger: toAccAndcontract,
-                                    name: TokenInfo.token_name,
-                                    symbol: TokenInfo.token_symbol,
-                                    precision: TokenInfo.token_precision,
+                                    name: tempTokenInfo.token_name,
+                                    symbol: tempTokenInfo.token_symbol,
+                                    precision: tempTokenInfo.token_precision,
                                     balance: transData
                                 }
                             }
                             //处理发款方余额
                             tokenAccountsTotal[fromAccAndcontract].balance = BigNumber(tokenAccountsTotal[fromAccAndcontract].balance).minus(transData).toString(10);
 
+                            console.log(testIndex, "处理余额后", transTokenInsertAry.length);
                             // unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                             // if (!unitIsFail) {}
                         } else {
                             blockInfo.is_token_trans = false;//无Token转账
                         }
-                    })
+                    }));
+
                 } else {
                     blockInfo.is_event_log = false;//无事件日志
                     blockInfo.is_token_trans = false;//无Token转账
                 }
 
-                // console.log(testIndex, "001", transTokenInsertAry.length);
 
                 //内部交易表
                 if ((blockInfo.data) && (blockInfo.block_traces.length > 1)) {
                     blockInfo.is_intel_trans = true;
+                    let tempTracesInfo;
                     blockInfo.block_traces.forEach((traces_item, index) => {
                         if (index > 0) {
-                            transInternalInsertAry.push(
-                                {
-                                    hash: blockInfo.hash,
-                                    mci: blockInfo.mci,
-                                    mc_timestamp: blockInfo.mc_timestamp,
-                                    stable_index: blockInfo.stable_index,
+                            //共有属性
+                            tempTracesInfo = {
+                                hash: blockInfo.hash,
+                                mci: blockInfo.mci,
+                                mc_timestamp: blockInfo.mc_timestamp,
+                                stable_index: blockInfo.stable_index,
+                                type: traces_item.type,
 
-                                    type: traces_item.type,
+                                call_type: "",
+                                from: "",
+                                to: "",
+                                gas: 0,
+                                input: "",
+                                value: 0,
+                                init: "",
+                                contract_address_suicide: "",
+                                refund_adderss: "",
+                                balance: 0,
 
-                                    call_type: traces_item.action.call_type || "",
-                                    from: traces_item.action.from || "",
-                                    to: traces_item.action.to || "",
-                                    gas: traces_item.action.gas || 0,
-                                    input: traces_item.action.input || "",
-                                    value: traces_item.action.value || 0,
+                                gas_used: 0,
+                                output: "",
+                                contract_address_create: "",
+                                contract_address_create_code: "",
 
-                                    init: traces_item.action.init || "",
+                                is_error: traces_item.error ? true : false,
+                                error_msg: traces_item.error || "",
 
-                                    contract_address_suicide: traces_item.action.contract_address || "",
-                                    refund_adderss: traces_item.action.refund_adderss || "",
-                                    balance: traces_item.action.balance || 0,
+                                subtraces: traces_item.subtraces,
+                                trace_address: traces_item.trace_address.join("_")
+                            }
+                            //call类型
+                            if (tempTracesInfo.type === 0) {
+                                tempTracesInfo.call_type = traces_item.action.call_type;
+                                tempTracesInfo.from = traces_item.action.from;
+                                tempTracesInfo.to = traces_item.action.to;
+                                tempTracesInfo.gas = traces_item.action.gas;
+                                tempTracesInfo.input = traces_item.action.input;
+                                tempTracesInfo.value = traces_item.action.value;
 
-                                    gas_used: traces_item.result ? traces_item.result.gas_used : 0,
-                                    output: traces_item.result ? (traces_item.result.output || "") : "",
-                                    contract_address_create: traces_item.result ? (traces_item.result.contract_address || "") : "",
-                                    contract_address_create_code: traces_item.result ? (traces_item.result.code || "") : "",
+                                tempTracesInfo.gas_used = traces_item.result.gas_used;
+                                tempTracesInfo.output = traces_item.result.output;
+                            }
+                            //create
+                            if (tempTracesInfo.type === 1) {
+                                tempTracesInfo.from = traces_item.action.from;
+                                tempTracesInfo.gas = traces_item.action.gas;
+                                tempTracesInfo.init = traces_item.action.init;
+                                tempTracesInfo.value = traces_item.action.value;
 
-                                    is_error: traces_item.error ? true : false,
-                                    error_msg: traces_item.error || "",
+                                tempTracesInfo.gas_used = traces_item.result.gas_used;
+                                tempTracesInfo.contract_address_create = traces_item.result.contract_address;
+                                tempTracesInfo.contract_address_create_code = traces_item.result.code;
+                            }
+                            //suicide
+                            if (tempTracesInfo.type === 2) {
+                                tempTracesInfo.contract_address_suicide = traces_item.action.contract_address;
+                                tempTracesInfo.refund_adderss = traces_item.action.refund_adderss;
+                                tempTracesInfo.balance = traces_item.action.balance;
+                            }
 
-                                    subtraces: traces_item.subtraces,
-                                    trace_address: traces_item.trace_address.join("_")
+                            //这里交易可以转CZR/CRCToken
+                            if (!tempTracesInfo.is_error) {
+                                if (tempTracesInfo.type === 2) {
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.contract_address, tempTracesInfo.refund_adderss, 2, tempTracesInfo.balance)
+                                } else {
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, (tempTracesInfo.to || tempTracesInfo.contract_address_create), 1, tempTracesInfo.value)
                                 }
-                            );
+                            }
+
+                            //如果是create保存合约代码
+                            if (tempTracesInfo.type === 1) {
+                                //contract
+                                contractInsertAry.push({
+                                    contract_account: tempTracesInfo.contract_address_create,
+                                    own_account: tempTracesInfo.from,
+                                    born_unit: blockInfo.hash,
+                                    token_name: "",
+                                    token_symbol: ""
+                                });
+
+
+                                // code
+                                contractCodeInsertAry.push({
+                                    contract_account: tempTracesInfo.contract_address_create,
+                                    code: tempTracesInfo.contract_address_create_code
+                                });
+
+                                if (!accountsTotal.hasOwnProperty(tempTracesInfo.contract_address_create)) {
+                                    accountsTotal[tempTracesInfo.contract_address_create] = {
+                                        account: tempTracesInfo.contract_address_create,
+                                        type: 2,
+                                        balance: "0",
+                                        is_token_account: false,//针对合约
+                                        is_has_token_trans: false,
+                                        is_has_intel_trans: false,
+                                        is_has_event_logs: false
+                                    }
+                                } else {
+                                    accountsTotal[tempTracesInfo.contract_address_create].type = 2;
+                                }
+                            }
+
+                            transInternalInsertAry.push(tempTracesInfo);
 
                         }
                     });
-
                 } else {
                     blockInfo.is_intel_trans = false;
                 }
@@ -799,8 +880,6 @@
              * */
 
             logger.info(`数据分装 结束`);
-
-            console.log(testIndex, "002 tempTransTokenInsertInfo length", transTokenInsertAry.length);
             await Promise.all([
                 pageUtility.searchAccountBaseDb(),
                 pageUtility.searchTimestampBaseDb(),
@@ -899,7 +978,6 @@
                 `,
                 values: [tempContractAllAry]
             };
-
             let contractRes = await client.query(upsertSql);
             if (!contractRes.code) {
                 contractRes.rows.forEach(item => {
@@ -1145,8 +1223,6 @@
 
             } catch (e) {
                 let err = await client.query('ROLLBACK')
-                console.log("err-----------------------------")
-                console.log(err)
                 throw e
             }
         },
@@ -1194,7 +1270,6 @@
             if (!isStableDone) {
                 db_LSBI++;
                 pageUtility.getUnitByLSBI();
-                // console.log("OKle")
             } else {
                 //写完了
                 pageUtility.init();
@@ -1959,7 +2034,7 @@
                         '${item.to}',
                         ${Number(item.gas)},
                         '${item.input}',
-                        '${item.value}',
+                        ${Number(item.value)},
 
                         '${item.init}',
 
@@ -2219,6 +2294,37 @@
                 var value2 = obj2[property];
                 return value1 - value2;// 升序
             }
+        },
+        handlerAccountAssets(accountsTotal, from, to, account_type, balance) {
+            if (!accountsTotal.hasOwnProperty(from)) {
+                accountsTotal[from] = {
+                    account: from,
+                    type: account_type,
+                    balance: "0",
+                    is_token_account: false,//针对合约
+                    is_has_token_trans: false,
+                    is_has_intel_trans: false,
+                    is_has_event_logs: false
+                }
+            }
+            //处理收款方余额
+            if (accountsTotal.hasOwnProperty(to)) {
+                //有,收款方地址已存在cache中：更新数据
+                accountsTotal[to].balance = BigNumber(accountsTotal[to].balance).plus(balance).toString(10);
+            } else {
+                //无，收款方地址不存在cache中：写入数据
+                accountsTotal[to] = {
+                    account: to,
+                    type: 1,
+                    balance: balance,
+                    is_token_account: false,//针对合约
+                    is_has_token_trans: false,
+                    is_has_intel_trans: false,
+                    is_has_event_logs: false
+                }
+            }
+            //处理发款方余额
+            accountsTotal[from].balance = BigNumber(accountsTotal[from].balance).minus(balance).toString(10);
         },
         setAccountProps(accountsTotal, acc) {
             if (!accountsTotal.hasOwnProperty(acc)) {

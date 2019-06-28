@@ -229,7 +229,6 @@ export default {
     data() {
         return {
             blockHash: this.$route.params.id,
-            isSuccess: false,
             loadingSwitch: true,
             IS_GET_INFO: false,
             blockInfo: {
@@ -291,7 +290,6 @@ export default {
                 opt
             );
             if (response.success) {
-                self.isSuccess = true;
                 trsns_info = response.transaction;
                 if (trsns_info) {
                     //所有类型共有的
