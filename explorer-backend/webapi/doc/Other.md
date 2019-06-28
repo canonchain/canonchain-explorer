@@ -61,14 +61,14 @@
     - 返回格式：string
     - 返回值：预估所需消耗的Gas
 
-### 字符串转16进制
+### czr 58base地址转16进制
 
 - 方式 ：GET
 - 参数
     ```
     module      : other
     action      : to_hex
-    source      : czr_account
+    source      : czr_4KsqkcZCs6i9VU2WUsiqTU8M6i3WYpVPFMcMXSkKmB92GJvYt1
     apikey      : YourApiKeyToken
     ```
 - 结果
@@ -76,8 +76,8 @@
     {
         "code": "100",
         "msg": "OK",
-        "result": "637a725f6163636f756e74"
+        "result": "b5f327e3f07f2c94dadcdb6d122addafd3aa3ac9507e8f8368f9ad3e6a378798"
     }
     ```
 - 结果说明
-    - 传入文本对应的十六进制数据
+    - 传入地址对应的十六进制数据
