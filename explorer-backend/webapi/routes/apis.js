@@ -1,7 +1,7 @@
 const router = require('koa-router')()
+var bs58check = require('bs58check')
 //czr start 
 let Czr = require("czr");
-// let Czr = require('../../czr');
 let czr = new Czr();
 
 // db start
@@ -25,26 +25,16 @@ async function updtAPikeys() {
 }
 
 //判断字符串是不是一个address 
-function  invalidAddress(address,flag_multi){
-  if(flag_multi === 'balance_multi'){
-    let addressAry = address.split(',');
-    if(addressAry.length > 20) {return 2}
-    addressAry.forEach(item => {
-       if(invalidAddress(item,'any')){
-         return 1
-       }
-    });
-    return 0
-  }else{
-    let pat = /czr_[0-9a-z]{50}/i;
-    return address.length == 54 && pat.test(address)?  0:1   
-  }
+function  invalidAcct(acct){
+  let pat = /czr_[0-9a-z]{50,}/i;
+  return pat.test(acct)?  false:true 
 }
+
 
 //判断字符串是不是一个交易hash
 function invalidTxHash(hash){
-  let pat = /[0-9a-f]{64}/i
-  return hash.length == 64 && pat.test(hash)? false:true
+  let pat = /[0-9a-f]{64,}/i
+  return  pat.test(hash)? false:true
 }
 
 // db end
@@ -568,8 +558,6 @@ async function tx_list_account(query) {
         "gas": "21000",
         "gas_price": "1000000000000",
         "data": "496E204D617468205765205472757374",
-        "exec_timestamp": 1526568538,
-        "work": "7EC0F899B3EB6CC7"
     }
 */
 //生成离线交易
@@ -602,10 +590,7 @@ async function generate_offline_block(query){
       gas: "21000"
       gas_price: "1000000000000"
       data: "A2A98215E8DB2953"
-      exec_timestamp: 1547709428
-      work: "8B82FE2B4DAB7807"    工作量证明。
       signature: "4AB..."         交易签名
-      id："123"                   可选 | 外部交易id，防止交易重复发送，同一个id交易只会发送一次。默认为空。
       gen_next_work："1"          可选 | 是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
       apikey  : YourApiKeyToken
     }
@@ -630,28 +615,23 @@ async function send_offline_block(query) {
   //     "gas": 1000,
   //     "data": "A2A98215E8DB2953",
   //     "previous": "0826EC6DDA9F818044BF66256D475DDC27C6862CDD80BB178380E80BE8C2314C",
-  //     "exec_timestamp": 1547709428,
-  //     "work": "8B82FE2B4DAB7807",
   //     "signature": "4ABC0440DEC29AA49B6C1EEAE1D5C263B9856C218ACA4E9EDA0292FF3CBB6E85404F5266CD0B58CEF825E24EDF9C7F9A5B6FDCE415EF384C5AAF403D187ABF03",
-  //     "id":"",//可选 外部交易id，防止交易重复发送，同一个id交易只会发送一次。默认为空
   //     "gen_next_work":""//可选,是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
   // }
   let options = {
-    "hash": query.hash,
+    // "hash": query.hash,
+    "previous": query.previous,
     "from": query.from,
     "to": query.to,
     "amount": query.amount,
     "gas": query.gas,
+    "gas_price":query.gas_price,
     "data": query.data || '',
-    "previous": query.previous,
-    "exec_timestamp": query.exec_timestamp,
-    "work": query.work,
     "signature": query.signature,
-    "id": query.id,
     "gen_next_work": query.gen_next_work || 1,
-    "gas_price":query.gas_price
   }
   let res = await czr.request.sendOfflineBlock(options);
+  res.code = res.code || '100'
   return res;
 }
 
@@ -680,7 +660,6 @@ async function send_offline_block(query) {
         "data": "1FC376F7",
         "is_stable": "1",
         "status": "0",
-        "exec_timestamp": "1560946860",
         "mc_timestamp": "1560946863",
         "stable_timestamp": "1560946868"
     }
@@ -715,7 +694,7 @@ async function get_transaction_by_hash(query) {
   if (transType.rows[0].type == "0"){
     console.log('trans_genesis')
     listOptions =`select 
-                      "hash", "type","from","to","amount","gas_used","data","is_stable","status","exec_timestamp","mc_timestamp","stable_timestamp"
+                      "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_timestamp"
                   from
                     trans_genesis
                   where
@@ -727,7 +706,7 @@ async function get_transaction_by_hash(query) {
   }else if(transType.rows[0].type == "1"){
     console.log('trans_witness')
     listOptions =`select 
-                      "hash", "type","from","is_stable","status","exec_timestamp","mc_timestamp","stable_timestamp"
+                      "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_timestamp"
                   from
                     trans_witness
                   where
@@ -744,7 +723,7 @@ async function get_transaction_by_hash(query) {
   }else{
     console.log('trans_normal')
     listOptions =`select 
-                      "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","exec_timestamp","mc_timestamp","stable_timestamp"
+                      "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_timestamp"
                   from
                     trans_normal
                   where
@@ -757,26 +736,6 @@ async function get_transaction_by_hash(query) {
     "msg":"ok",
     "result":transDetail.rows
   }
-  // let listOptions = {
-  //   text: `
-  //       Select 
-  //         hash,"from","to",amount,previous,witness_list_block,last_summary,last_summary_block,data,exec_timestamp,signature,is_free,level,witnessed_level,best_parent,is_stable,
-  //         "status",is_on_mc,mci,latest_included_mci,mc_timestamp,
-  //         is_witness,stable_timestamp
-  //       FROM
-  //         transaction 
-  //       WHERE 
-  //         hash = $1
-  //     `,
-  //   values: [query.txhash]
-  // };
-
-  // const resList = await pgPromise.query(listOptions);
-  // return {
-  //   "status": 100,
-  //   "message": "OK",
-  //   "result": (resList.rows.length > 0) ? resList.rows[0] : {}
-  // }
 }
 
 
@@ -866,8 +825,8 @@ async function get_estimate_gas(query){
   let rlt = await czr.request.estimateGas(call_obj)
   return {
     "code": "100",
-    "msg": "ok",
-    "result": rlt
+    "msg": rlt.msg,
+    "result": rlt.gas
   }
 
 }
@@ -889,7 +848,7 @@ async function get_estimate_gas(query){
     }
 */
 //字符串转16进制
-function string2hex(query){
+function bs582hex(query){
   if(!query.source){
     return{
       "code": "400",
@@ -897,7 +856,15 @@ function string2hex(query){
       "result": query
     }
   }
-  buf = Buffer.from(query.source,'ascii')
+  if(invalidAcct(query.source)){
+    return{
+      "code": "400",
+      "msg": "parameter source is not a czr address",
+      "result": query.source
+    }
+  }
+  let buf = bs58check.decode(query.source.split('_')[1])
+  buf = buf.slice(1,)
   return {
     "code": "100",
     "msg": "ok",
@@ -958,15 +925,37 @@ router.get('/', async function (ctx, next) {
         "msg": "Parameter missing account",
         "result": query
       }
-    }
-    let invalidAcct = invalidAddress(query.account,query.action);
-    if(invalidAcct){
-      ctx.body =  {
-        "code":"400",
-        "msg":invalidAcct==1? "invalid account":"the number of account must be less than 20",
-        "result":query
-      }
       return ;
+    }
+    if(query.action === 'balance_multi'){
+      acctAry = query.account.split(',');
+      if(acctAry.length>20){
+        ctx.body = {
+          "code":"400",
+          "msg":"the number of account must be less than 20",
+          "result":query.account
+        }
+        return ;
+      }
+      for(let i=0;i<acctAry.length;i++){
+        if(invalidAcct(acctAry[i])){
+          ctx.body = {
+            "code":"400",
+            "msg":"invalid account",
+            "result":acctAry[i]
+          }
+          return ;
+        }
+      }
+    }else{
+      if(invalidAcct(query.account)){
+        ctx.body = {
+          "code":"400",
+          "msg":"invalid account",
+          "result":query.account
+        }
+        return ;
+      }
     }
     switch (query.action) {
       case 'balance':
@@ -1001,7 +990,7 @@ router.get('/', async function (ctx, next) {
 
   //交易部分
   else if(query.module == 'transaction'){
-    if((query.from&&invalidAddress(query.from))||(query.to&&invalidAddress(query.to))){
+    if((query.from&&invalidAcct(query.from))||(query.to&&invalidAcct(query.to))){
       ctx.body = {
         "code":400,
         "msg":"invalid from or to",
@@ -1038,7 +1027,7 @@ router.get('/', async function (ctx, next) {
         ctx.body = await get_estimate_gas(query);
         break;
       case 'to_hex':
-        ctx.body = string2hex(query);
+        ctx.body = bs582hex(query);
         break;
       default:
         ctx.body = {

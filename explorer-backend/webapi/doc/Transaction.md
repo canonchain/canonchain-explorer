@@ -40,8 +40,6 @@
             "gas": "21000",
             "gas_price": "1000000000000",
             "data": "496E204D617468205765205472757374",
-            "exec_timestamp": 1526568538,
-            "work": "7EC0F899B3EB6CC7"
         }
     ```
 - 结果说明
@@ -54,8 +52,6 @@
     gas：             string, 执行交易使用的gas上限。未使用完的部分会返回源账户。
     gas_price：       string, gas价格
     data：            string, 参见输入参数。
-    exec_timestamp：  string, 交易发送时间。
-    work：            string, 工作量证明。
     ```
     - 其它说明
         - amount: 金额，单位：10<sup>-18</sup>CZR。
@@ -79,15 +75,12 @@
     gas: "21000"
     gas_price: "1000000000000"
     data: "A2A98215E8DB2953"
-    exec_timestamp: 1547709428
-    work: "8B82FE2B4DAB7807"    工作量证明。
     signature: "4AB..."         交易签名
-    id："123"                   可选 | 外部交易id，防止交易重复发送，同一个id交易只会发送一次。默认为空。
     gen_next_work："1"          可选 | 是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
     apikey  : YourApiKeyToken
     ```
 - 参数说明
-    - 其中from，to，amout，gas，data，previous，exec_timestamp，work来自接口 generate_offline_block 。
+    - 其中from，to，amout，gas，data，previous来自接口 generate_offline_block 。
     - amount：金额，单位：10<sup>-18</sup>CZR。
 - 结果
     ```
@@ -97,6 +90,7 @@
         "result": "E8441A74FD40465006CC078C860323A0DFF32F23AC7E7F81A153F8ECE304439A"
     ```
 - 结果说明
+    
     - result：string , 交易hash
 
 [返回交易API列表](#交易API列表)
@@ -130,7 +124,6 @@
             "data": "1FC376F7",
             "is_stable": "1",
             "status": "0",
-            "exec_timestamp": "1560946860",
             "mc_timestamp": "1560946863",
             "stable_timestamp": "1560946868"
         }
@@ -150,7 +143,7 @@
     "data"              string, data
     "is_stable"         string, is_stable
     "status"            string, status
-    "exec_timestamp"    string, 执行时间
+    “timestamp"         string, 只有创世交易或者见证交易才有该字段
     "mc_timestamp"      string, MC时间
     "stable_timestamp"  string, 稳定时间
     ```
