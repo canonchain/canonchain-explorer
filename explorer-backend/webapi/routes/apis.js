@@ -14,7 +14,7 @@ let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
 async function updtAPikeys() {
-  let sql = `select * from api_keys where create_timestamp > ${lastTimestamp}`
+  let sql = `select apikey from api_keys where create_timestamp > ${lastTimestamp}`
   rlt = await pgPromise.query(sql);
   rlt.rows.forEach(item => {
     allApikeys.push(item.apikey);
@@ -25,18 +25,19 @@ async function updtAPikeys() {
 }
 
 //判断字符串是不是一个address 
-function  invalidAddress(address,flag){
-  if(flag === 'balance_multi'){
-    addressAry = address.split(',');
+function  invalidAddress(address,flag_multi){
+  if(flag_multi === 'balance_multi'){
+    let addressAry = address.split(',');
+    if(addressAry.length > 20) {return 2}
     addressAry.forEach(item => {
        if(invalidAddress(item,'any')){
-         return true
+         return 1
        }
     });
-    return false
+    return 0
   }else{
     let pat = /czr_[0-9a-z]{50}/i;
-    return address.length == 54 && pat.test(address)?  false:true   
+    return address.length == 54 && pat.test(address)?  0:1   
   }
 }
 
@@ -80,7 +81,7 @@ async function get_balance(query) {
   return {
     "code": 100,
     "msg": "OK",
-    "result": resList.rows[0].balance || ""
+    "result": resList.rowCount? resList.rows[0].balance : "0"
   }
 }
 
@@ -112,16 +113,32 @@ async function get_balance(query) {
 */
 //获取多个账户的余额
 async function get_balance_multi(query) {
-
+  let addressAry = query.account.split(',')
+  let account_multi_rlt = {}
+  addressAry.forEach(item =>{
+    account_multi_rlt[item] = "0"
+  })
   let listOptions = {
     text: "select account,balance from accounts where account = ANY ($1)",
     values: [addressAry]
   };
   const resList = await pgPromise.query(listOptions);
+  if(resList.rowCount){
+    resList.rows.forEach(item => {
+      account_multi_rlt[item.account] = item.balance
+    })
+  }
+  let account_multi_rlt_ary = [];
+    Object.keys(account_multi_rlt).forEach(item=>{
+      account_multi_rlt_ary.push({
+        "account":item,
+        "balance":account_multi_rlt[item]
+      })
+    })
   return {
     "code": 100,
     "msg": "OK", 
-    "result": resList.rows || []
+    "result": account_multi_rlt_ary
   }
 }
 
@@ -310,7 +327,7 @@ async function tx_list_internal(query) {
 //获取单个账户的交易数量
 async function txlist_count(query){  
   
-  let sql = `select count(*) from trans_normal where "from" = '${query.account}' or "to" = '${query.account}'` ;
+  let sql = `select count("from") from trans_normal where "from" = '${query.account}' or "to" = '${query.account}'` ;
   let res = await pgPromise.query(sql);
   return {
     "code": 100,
@@ -836,17 +853,16 @@ async function CZRGas(query) {
     }
 */
 //获得估算Gas
-async function get_estimate_gas(){
+async function get_estimate_gas(query){
   let call_obj = {
-    "action": "estimate_gas",
-    "from": "czr_4qwoBUYAvxgoVq5FHsXCCCkLCVuJ1z4224ZUVZRGhyawuzbWyh",
-    "to": "czr_3gustGDwMtuUTn1iJHBwRYXCBNF51dRixXNeumWDwZLvH43J3d",
-    "amount": "1000000000000000000", //1CZR
-    "gas": "25000",
-    "gas_price": "1000000000000",
-    "data": "496E204D617468205765205472757374",
-    "mci": "1352"
-}
+    "from": query.from || '',
+    "to": query.to || '',
+    "amount": query.amount || '', //1CZR
+    "gas": query.gas || '',
+    "gas_price": query.gas_price || '',
+    "data": query.data || '',
+    "mci": query.mci || ''
+  }
   let rlt = await czr.request.estimateGas(call_obj)
   return {
     "code": "100",
@@ -943,10 +959,11 @@ router.get('/', async function (ctx, next) {
         "result": query
       }
     }
-    if(invalidAddress(query.account,query.action)){
+    let invalidAcct = invalidAddress(query.account,query.action);
+    if(invalidAcct){
       ctx.body =  {
         "code":"400",
-        "msg":"invalid account",
+        "msg":invalidAcct==1? "invalid account":"the number of account must be less than 20",
         "result":query
       }
       return ;

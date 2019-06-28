@@ -611,6 +611,8 @@ TABLESPACE pg_default;
 ```
 CREATE TABLE public.api_keys
 (
+	email text,
+	app_name text,
     apikey text ,
     create_timestamp bigint,
     constraint apikeys_pkey primary key (apikey)

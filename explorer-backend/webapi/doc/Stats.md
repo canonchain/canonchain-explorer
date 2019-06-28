@@ -11,7 +11,6 @@
     ```
     module      : stats
     action      : czr_price
-    tag         : latest
     apikey      : YourApiKeyToken
     ```
 - 结果
@@ -41,7 +40,6 @@
     module          : stats
     action          : token_price
     contract_account:"czr_account,czr_account"
-    tag             : latest
     apikey          : YourApiKeyToken
     ```
 - 结果
