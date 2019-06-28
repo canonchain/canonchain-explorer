@@ -334,6 +334,7 @@
                     data.blocks.forEach((item, index) => {
                         if (item.type === 0) {
                             //创世交易
+                            data.blocks[index].timestamp = item.content.timestamp;
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
                             data.blocks[index].data_hash = item.content.data_hash;//++新增属性
@@ -347,6 +348,7 @@
                         }
                         if (item.type === 1) {
                             //见证交易
+                            data.blocks[index].timestamp = item.content.timestamp;
                             data.blocks[index].previous = item.content.previous;
                             data.blocks[index].parents = item.content.parents || [];
                             data.blocks[index].links = item.content.links.toString();//++新增属性
@@ -1316,8 +1318,7 @@
                     '${item.hash}',
                     ${Number(item.type)},
                     '${item.from}',
-                    ${Number(item.exec_timestamp)},
-                    '${item.work}',
+                    ${Number(item.timestamp)},
                     '${item.signature}',
 
                     '${item.previous || ""}',
@@ -1348,7 +1349,7 @@
                 text: `
                 INSERT INTO 
                     trans_witness(
-                        "hash","type","from","exec_timestamp","work","signature",
+                        "hash","type","from","timestamp","signature",
                         "previous","links","last_stable_block","last_summary_block","last_summary",
 
                         "is_stable",
@@ -1381,8 +1382,7 @@
                     '${item.hash}',
                     ${Number(item.type)},
                     '${item.from}',
-                    ${Number(item.exec_timestamp)},
-                    '${item.work}',
+                    ${Number(item.timestamp)},
                     '${item.signature}',
 
                     '${item.to}',
@@ -1416,7 +1416,7 @@
                 text: `
                 INSERT INTO 
                     trans_genesis(
-                        "hash","type","from","exec_timestamp","work","signature",
+                        "hash","type","from","timestamp","signature",
                         "to","amount","data_hash","data",
 
                         "is_stable",
@@ -1455,8 +1455,6 @@
                     '${item.hash}',
                     ${Number(item.type)},
                     '${item.from}',
-                    ${Number(item.exec_timestamp)},
-                    '${item.work}',
                     '${item.signature}',
 
                     '${item.to}',
@@ -1496,7 +1494,7 @@
                 text: `
                 INSERT INTO 
                     trans_normal(
-                        "hash","type","from","exec_timestamp","work","signature",
+                        "hash","type","from","signature",
                         "to","amount","previous","gas","gas_price","data_hash","data",
 
                         "is_stable",
