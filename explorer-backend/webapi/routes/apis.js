@@ -1,7 +1,7 @@
 const router = require('koa-router')()
+var bs58check = require('bs58check')
 //czr start 
 let Czr = require("czr");
-// let Czr = require('../../czr');
 let czr = new Czr();
 
 // db start
@@ -27,14 +27,14 @@ async function updtAPikeys() {
 //判断字符串是不是一个address 
 function  invalidAcct(acct){
   let pat = /czr_[0-9a-z]{50,}/i;
-  return acct.length >= 54 && pat.test(acct)?  false:true 
+  return pat.test(acct)?  false:true 
 }
 
 
 //判断字符串是不是一个交易hash
 function invalidTxHash(hash){
   let pat = /[0-9a-f]{64,}/i
-  return hash.length >= 64 && pat.test(hash)? false:true
+  return  pat.test(hash)? false:true
 }
 
 // db end
@@ -631,6 +631,7 @@ async function send_offline_block(query) {
     "gen_next_work": query.gen_next_work || 1,
   }
   let res = await czr.request.sendOfflineBlock(options);
+  res.code = res.code || '100'
   return res;
 }
 
@@ -847,7 +848,7 @@ async function get_estimate_gas(query){
     }
 */
 //字符串转16进制
-function string2hex(query){
+function bs582hex(query){
   if(!query.source){
     return{
       "code": "400",
@@ -855,7 +856,15 @@ function string2hex(query){
       "result": query
     }
   }
-  buf = Buffer.from(query.source,'ascii')
+  if(invalidAcct(query.source)){
+    return{
+      "code": "400",
+      "msg": "parameter source is not a czr address",
+      "result": query.source
+    }
+  }
+  let buf = bs58check.decode(query.source.split('_')[1])
+  buf = buf.slice(1,)
   return {
     "code": "100",
     "msg": "ok",
@@ -1018,7 +1027,7 @@ router.get('/', async function (ctx, next) {
         ctx.body = await get_estimate_gas(query);
         break;
       case 'to_hex':
-        ctx.body = string2hex(query);
+        ctx.body = bs582hex(query);
         break;
       default:
         ctx.body = {
