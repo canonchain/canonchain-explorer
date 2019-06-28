@@ -17,7 +17,7 @@
                                 name="transaction"
                             ></el-tab-pane>
 
-                            <template v-if="account_props.is_token_account">
+                            <template v-if="account_props.is_has_token_assets">
                                 <el-tab-pane
                                     label="代币余额"
                                     name="token_balances"
@@ -154,7 +154,7 @@ export default {
             account_props: {
                 account_type: 1,
                 is_witness: false,
-                is_token_account: false,
+                is_has_token_assets: false,
                 is_has_token_trans: false,
                 is_has_intel_trans: false,
                 is_has_event_logs: false
@@ -213,7 +213,7 @@ export default {
         handlerAddressProps: function(props) {
             self.account_props.account_type = props.account_type;
             self.account_props.is_witness = props.is_witness;
-            self.account_props.is_token_account = props.is_token_account;
+            self.account_props.is_has_token_assets = props.is_has_token_assets;
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;

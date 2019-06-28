@@ -4,56 +4,32 @@
         <div class="page-account-wrap">
             <div class="container">
                 <div class="account-panel">
-                    <account-info
-                        :address="address"
-                        v-on:address_props="handlerAddressProps"
-                    ></account-info>
+                    <account-info :address="address" v-on:address_props="handlerAddressProps"></account-info>
                 </div>
                 <div class="account-main">
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
-                            <el-tab-pane
-                                label="交易记录"
-                                name="transaction"
-                            ></el-tab-pane>
+                            <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
 
-                            <template v-if="account_props.is_token_account">
-                                <!-- is_token_account 应该为 is_has_token -->
-                                <el-tab-pane
-                                    label="代币余额"
-                                    name="token_balances"
-                                >
-                                </el-tab-pane>
+                            <template v-if="account_props.is_has_token_assets">
+                                <!-- is_has_token_assets 应该为 is_has_token -->
+                                <el-tab-pane label="代币余额" name="token_balances"></el-tab-pane>
                             </template>
                             <template v-if="account_props.is_has_token_trans">
-                                <el-tab-pane
-                                    label="代币转账"
-                                    name="trans_token"
-                                ></el-tab-pane
-                            ></template>
+                                <el-tab-pane label="代币转账" name="trans_token"></el-tab-pane>
+                            </template>
                             <template v-if="account_props.is_has_intel_trans">
-                                <el-tab-pane
-                                    label="合约内交易"
-                                    name="trans_internal"
-                                ></el-tab-pane>
+                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
                             </template>
                             <el-tab-pane label="事件日志" name="event_logs">
-                                <div
-                                    class="accounts-main-wrap"
-                                    v-loading="loadingSwitch"
-                                >
+                                <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_INFO">
-                                        <event-logs
-                                            :database="event_logs"
-                                        ></event-logs>
+                                        <event-logs :database="event_logs"></event-logs>
                                     </template>
                                 </div>
                             </el-tab-pane>
                             <template v-if="account_props.account_type === 2">
-                                <el-tab-pane
-                                    label="合约创建代码"
-                                    name="contract_code"
-                                ></el-tab-pane>
+                                <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>
                         </el-tabs>
                     </template>
@@ -88,7 +64,7 @@ export default {
             account_props: {
                 account_type: 1,
                 is_witness: false,
-                is_token_account: false,
+                is_has_token_assets: false,
                 is_has_token_trans: false,
                 is_has_intel_trans: false,
                 is_has_event_logs: false
@@ -96,22 +72,6 @@ export default {
 
             IS_GET_ACC: false,
             IS_GET_INFO: false,
-
-            accountInfo: {
-                address: this.$route.params.id,
-                total: 0,
-                balance: 0,
-                type: 1,
-                is_witness: false,
-                transaction_count: 0,
-                is_token_account: false,
-                is_has_token_trans: false,
-                is_has_intel_trans: false,
-                is_has_event_logs: false,
-                own_account: "",
-                born_unit: "",
-                symbol: ""
-            },
 
             // 合约代码
             event_logs: []
@@ -126,7 +86,7 @@ export default {
         handlerAddressProps: function(props) {
             self.account_props.account_type = props.account_type;
             self.account_props.is_witness = props.is_witness;
-            self.account_props.is_token_account = props.is_token_account;
+            self.account_props.is_has_token_assets = props.is_has_token_assets;
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;
@@ -147,7 +107,9 @@ export default {
                     this.$router.push(`/account/${self.address}`);
                     break;
                 case "token_balances":
-                    this.$router.push(`/account/${self.address}/token_balances`);
+                    this.$router.push(
+                        `/account/${self.address}/token_balances`
+                    );
                     break;
                 case "trans_token":
                     this.$router.push(`/account/${self.address}/trans_token`);

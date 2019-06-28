@@ -2,9 +2,11 @@
     <el-table :data="database" style="width: 100%">
         <el-table-column label="时间" width="160">
             <template slot-scope="scope">
-                <span class="table-long-item">{{
+                <span class="table-long-item">
+                    {{
                     scope.row.mc_timestamp | toDate
-                }}</span>
+                    }}
+                </span>
             </template>
         </el-table-column>
         <el-table-column label="交易号" width="180">
@@ -12,8 +14,7 @@
                 <router-link
                     class="table-long-item"
                     :to="{ path: '/block/' + scope.row.hash }"
-                    >{{ scope.row.hash }}</router-link
-                >
+                >{{ scope.row.hash }}</router-link>
             </template>
         </el-table-column>
         <el-table-column label="发款方" width="180">
@@ -25,18 +26,19 @@
                     <router-link
                         class="table-long-item"
                         :to="{ path: '/account/' + scope.row.from }"
-                        >{{ scope.row.from }}</router-link
-                    >
+                    >{{ scope.row.from }}</router-link>
                 </template>
             </template>
         </el-table-column>
         <el-table-column label="收款方" width="180">
             <template slot-scope="scope">
-                <router-link
-                    class="table-long-item"
-                    :to="{ path: '/account/' + scope.row.to }"
-                    >{{ scope.row.to }}</router-link
-                >
+                <template v-if="scope.row.to">
+                    <router-link
+                        class="table-long-item"
+                        :to="{ path: '/account/' + scope.row.to }"
+                    >{{ scope.row.to }}</router-link>
+                </template>
+                <template v-else>-</template>
             </template>
         </el-table-column>
         <el-table-column label="状态" min-width="60" align="center">

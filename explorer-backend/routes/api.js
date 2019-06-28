@@ -869,7 +869,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "token_asset_id","balance","account","contract_account","symbol","balance"
+                    "token_asset_id","account","contract_account","name","symbol","precision","balance"
                 FROM 
                     "token_asset"
                 WHERE
@@ -886,7 +886,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                "token_asset_id","balance","account","contract_account","symbol","balance"
+                    "token_asset_id","account","contract_account","name","symbol","precision","balance"
                 FROM
                     "token_asset"
                 WHERE
@@ -910,7 +910,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                "token_asset_id","balance","account","contract_account","symbol","balance"
+                    "token_asset_id","account","contract_account","name","symbol","precision","balance"
                 FROM 
                     "token_asset"
                 WHERE 
@@ -2353,7 +2353,7 @@ router.get("/get_account_token_list", async function (req, res, next) {
     let token_list_sql = {
         text: `
             Select 
-                "token_asset_id","balance","account","contract_account","symbol","balance"
+                "token_asset_id","account","contract_account","name","symbol","precision","balance"
             FROM 
                 "token_asset"
             WHERE
@@ -3005,7 +3005,7 @@ router.get("/get_latest_transactions", async function (req, res, next) {
     let sql = {
         text: `
             Select 
-                hash,"from","to",is_stable,"status",amount 
+                "mc_timestamp",hash,"from","to",is_stable,"status",amount 
             FROM 
                 trans_normal
             order by 

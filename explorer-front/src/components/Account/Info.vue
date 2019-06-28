@@ -10,47 +10,31 @@
                 <el-row>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                交易类型
-                            </strong>
+                            <strong class="bui-dlist-tit">交易类型</strong>
                             <div class="bui-dlist-det">
-                                <template v-if="account_info.type == 2">
-                                    合约账户
-                                </template>
-                                <template v-else>
-                                    普通账户
-                                </template>
+                                <template v-if="account_info.type == 2">合约账户</template>
+                                <template v-else>普通账户</template>
                             </div>
                         </div>
                     </el-col>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                交易数
-                            </strong>
-                            <div class="bui-dlist-det">
-                                {{ account_info.total }} 次
-                            </div>
+                            <strong class="bui-dlist-tit">交易数</strong>
+                            <div class="bui-dlist-det">{{ account_info.total }} 次</div>
                         </div>
                     </el-col>
                 </el-row>
                 <el-row>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">
-                                余额
-                            </strong>
-                            <div class="bui-dlist-det">
-                                {{ account_info.balance | toCZRVal }} CZR
-                            </div>
+                            <strong class="bui-dlist-tit">余额</strong>
+                            <div class="bui-dlist-det">{{ account_info.balance | toCZRVal }} CZR</div>
                         </div>
                     </el-col>
                     <template v-if="account_info.type == 2">
                         <el-col :span="12">
                             <div class="block-item-des">
-                                <strong class="bui-dlist-tit">
-                                    合约创建
-                                </strong>
+                                <strong class="bui-dlist-tit">合约创建</strong>
                                 <div class="bui-dlist-det">
                                     <router-link
                                         class="table-long-item"
@@ -58,18 +42,19 @@
                                             '/account/' +
                                                 account_info.own_account
                                         "
-                                        >{{
-                                            account_info.own_account
-                                        }}</router-link
                                     >
-                                    创建于
+                                        {{
+                                        account_info.own_account
+                                        }}
+                                    </router-link>创建于
                                     <router-link
                                         class="table-long-item"
                                         :to="'/block/' + account_info.born_unit"
-                                        >{{
-                                            account_info.born_unit
-                                        }}</router-link
                                     >
+                                        {{
+                                        account_info.born_unit
+                                        }}
+                                    </router-link>
                                 </div>
                             </div>
                         </el-col>
@@ -80,17 +65,16 @@
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        对应代币
-                                    </strong>
+                                    <strong class="bui-dlist-tit">对应代币</strong>
                                     <div class="bui-dlist-det">
                                         <router-link
                                             class="table-long-item"
                                             :to="'/token/' + address"
-                                            >{{
-                                                account_info.symbol
-                                            }}</router-link
                                         >
+                                            {{
+                                            account_info.symbol
+                                            }}
+                                        </router-link>
                                     </div>
                                 </div>
                             </el-col>
@@ -114,12 +98,7 @@ export default {
                 total: 0,
                 balance: 0,
                 type: 1,
-                is_witness: false,
-                transaction_count: 0,
                 is_token_account: false,
-                is_has_token_trans: false,
-                is_has_intel_trans: false,
-                is_has_event_logs: false,
                 own_account: "",
                 born_unit: "",
                 symbol: ""
@@ -142,17 +121,17 @@ export default {
                 self.account_info.total = Number(accInfo.transaction_count);
                 self.account_info.balance = accInfo.balance;
                 self.account_info.type = accInfo.type;
+                self.account_info.type = accInfo.is_token_account;
 
-                //是否为Token合约
-                self.account_info.is_token_account = accInfo.is_token_account;
-                //是否有Token交易
-                self.account_info.is_has_token_trans =
-                    accInfo.is_has_token_trans;
-                //是否有是否有内部交易
-                self.account_info.is_has_intel_trans =
-                    accInfo.is_has_intel_trans;
-                //是否有事件日志
-                self.account_info.is_has_event_logs = accInfo.is_has_event_logs;
+                let addrsss_props = {
+                    account_type: accInfo.type,
+                    is_token_account: accInfo.is_token_account,
+                    is_has_token_assets: true,
+                    is_has_intel_trans: accInfo.is_has_intel_trans,
+                    is_has_event_logs: accInfo.is_has_event_logs,
+                    is_witness: accInfo.is_witness
+                };
+                self.$emit("address_props", addrsss_props);
             } else {
                 console.error("/api/get_account Error");
             }
@@ -171,16 +150,6 @@ export default {
                     console.error("/api/get_contract Error");
                 }
             }
-
-            let addrsss_props = {
-                account_type: 2,
-                is_token_account: true,
-                is_has_token_trans: true,
-                is_has_intel_trans: true,
-                is_has_event_logs: true,
-                is_witness: true
-            };
-            self.$emit("address_props", addrsss_props);
             self.loadingSwitch = false;
             self.IS_GET_ACC = true;
         }
