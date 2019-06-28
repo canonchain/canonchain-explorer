@@ -25,26 +25,16 @@ async function updtAPikeys() {
 }
 
 //判断字符串是不是一个address 
-function  invalidAddress(address,flag_multi){
-  if(flag_multi === 'balance_multi'){
-    let addressAry = address.split(',');
-    if(addressAry.length > 20) {return 2}
-    addressAry.forEach(item => {
-       if(invalidAddress(item,'any')){
-         return 1
-       }
-    });
-    return 0
-  }else{
-    let pat = /czr_[0-9a-z]{50}/i;
-    return address.length == 54 && pat.test(address)?  0:1   
-  }
+function  invalidAcct(acct){
+  let pat = /czr_[0-9a-z]{50,}/i;
+  return acct.length >= 54 && pat.test(acct)?  false:true 
 }
+
 
 //判断字符串是不是一个交易hash
 function invalidTxHash(hash){
-  let pat = /[0-9a-f]{64}/i
-  return hash.length == 64 && pat.test(hash)? false:true
+  let pat = /[0-9a-f]{64,}/i
+  return hash.length >= 64 && pat.test(hash)? false:true
 }
 
 // db end
@@ -958,15 +948,37 @@ router.get('/', async function (ctx, next) {
         "msg": "Parameter missing account",
         "result": query
       }
-    }
-    let invalidAcct = invalidAddress(query.account,query.action);
-    if(invalidAcct){
-      ctx.body =  {
-        "code":"400",
-        "msg":invalidAcct==1? "invalid account":"the number of account must be less than 20",
-        "result":query
-      }
       return ;
+    }
+    if(query.action === 'balance_multi'){
+      acctAry = query.account.split(',');
+      if(acctAry.length>20){
+        ctx.body = {
+          "code":"400",
+          "msg":"the number of account must be less than 20",
+          "result":query.account
+        }
+        return ;
+      }
+      for(let i=0;i<acctAry.length;i++){
+        if(invalidAcct(acctAry[i])){
+          ctx.body = {
+            "code":"400",
+            "msg":"invalid account",
+            "result":acctAry[i]
+          }
+          return ;
+        }
+      }
+    }else{
+      if(invalidAcct(query.account)){
+        ctx.body = {
+          "code":"400",
+          "msg":"invalid account",
+          "result":query.account
+        }
+        return ;
+      }
     }
     switch (query.action) {
       case 'balance':
