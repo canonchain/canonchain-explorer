@@ -869,7 +869,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "balance","account","contract_account","symbol","balance"
+                    "token_asset_id","balance","account","contract_account","symbol","balance"
                 FROM 
                     "token_asset"
                 WHERE
@@ -886,7 +886,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "balance","account","contract_account","symbol","balance"
+                "token_asset_id","balance","account","contract_account","symbol","balance"
                 FROM
                     "token_asset"
                 WHERE
@@ -910,7 +910,7 @@ router.get("/get_token_holder", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "balance","account","contract_account","symbol","balance"
+                "token_asset_id","balance","account","contract_account","symbol","balance"
                 FROM 
                     "token_asset"
                 WHERE 
@@ -2006,7 +2006,7 @@ router.get("/get_trans_token", async function (req, res, next) {
     res.json(responseData);
 })
 
-//TODO 获取内部交易的Flag
+//获取内部交易的Flag
 router.get("/get_trans_internal_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
@@ -2092,7 +2092,7 @@ router.get("/get_trans_internal_flag", async function (req, res, next) {
     }
     res.json(responseData);
 })
-//TODO 获取内部交易[未完成]
+//获取内部交易[未完成]
 router.get("/get_trans_internal", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//account | source | trans_internal_id
@@ -2348,6 +2348,48 @@ router.get("/get_contract_code", async function (req, res, next) {
     }
     res.json(responseData);
 })
+
+//获取代币列表
+router.get("/get_account_token_list", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    var queryInfo = req.query;
+
+    let token_list_sql = {
+        text: `
+            Select 
+                "token_asset_id","balance","account","contract_account","symbol","balance"
+            FROM 
+                "token_asset"
+            WHERE
+                "account" = $1
+            order by 
+                "token_asset_id" asc
+        `,
+        values: [queryInfo.account]
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT token_list_sql Before')
+    let tokenListInfo = await pgPromise.query(token_list_sql)
+    PageUtility.timeLog(req, '[1] SELECT token_list_sql After')
+    if (tokenListInfo.code) {
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: "select get_account_token_list Error"
+        }
+    } else {
+        responseData = {
+            data: tokenListInfo.rows,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+
 //************************** 账号详情 结束
 
 //************************** 交易详情页 开始
