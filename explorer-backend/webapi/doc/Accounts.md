@@ -18,7 +18,6 @@
     module  : account
     action  : balance
     account : czr_account
-    tag     : latest
     apikey  : YourApiKeyToken
     ```
 - 结果
@@ -45,7 +44,6 @@
     module  : account
     action  : balance_multi
     account : czr_account1,czr_account2
-    tag     : latest
     apikey  : YourApiKeyToken
     ```
 - 结果

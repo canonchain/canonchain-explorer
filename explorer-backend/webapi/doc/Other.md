@@ -15,7 +15,6 @@
     ```
     module      : other
     action      : gas_price
-    tag         : latest
     apikey      : YourApiKeyToken
     ```
 - 结果
@@ -48,7 +47,6 @@
     ```
     module      : other
     action      : estimate_gas
-    tag         : latest
     apikey      : YourApiKeyToken
     ```
 - 结果
