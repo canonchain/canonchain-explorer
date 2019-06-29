@@ -11,12 +11,13 @@
                         <el-tab-pane label="交易记录" name="transaction">
                             <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                 <template v-if="IS_GET_INFO">
-                                    <template v-if="url_parm.source === '3'">
+                                    <!-- <template v-if="url_parm.source === '3'">
                                         <witness-list :database="database" :address="address"></witness-list>
-                                    </template>
-                                    <template v-else>
-                                        <nomal-list :database="database" :address="address"></nomal-list>
-                                    </template>
+                                    </template>-->
+                                    <!-- <template v-else>
+                                    </template>-->
+
+                                    <nomal-list :database="database" :address="address"></nomal-list>
                                     <!-- page -->
                                     <template v-if="database.length">
                                         <div class="pagin-block">
@@ -97,7 +98,7 @@ import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
 import AccountInfo from "@/components/Account/Info";
 import NomalList from "@/components/List/Nomal";
-import WitnessList from "@/components/List/Witness";
+// import WitnessList from "@/components/List/Witness";
 
 let self = null;
 export default {
@@ -106,8 +107,8 @@ export default {
         CzrHeader,
         AccountInfo,
         CzrFooter,
-        NomalList,
-        WitnessList
+        NomalList
+        // WitnessList
     },
     data() {
         return {
@@ -133,13 +134,13 @@ export default {
             database: [],
             IS_GET_INFO: false,
             pageFirstItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 9999999999999,
+                index_trans_id: 9999999999999,
+                pkid: 9999999999999
             },
             pageLastItem: {
-                exec_timestamp: 0,
-                level: 0,
+                stable_index: 0,
+                index_trans_id: 0,
                 pkid: 0
             },
             first_stable_index: "",
@@ -147,8 +148,9 @@ export default {
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                stable_index: 999999999999,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方 3见证交易
+                stable_index: 9999999999999,
+                index_trans_id: 9999999999999,
+                pkid: 9999999999999
             }
             // Table内容 结束
         };
@@ -159,7 +161,8 @@ export default {
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
             self.url_parm.stable_index = queryInfo.stable_index;
-            self.url_parm.source = queryInfo.source;
+            self.url_parm.index_trans_id = queryInfo.index_trans_id;
+            self.url_parm.pkid = queryInfo.pkid;
         }
         self.getFlagTransactions(self.url_parm);
     },
@@ -171,26 +174,22 @@ export default {
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;
-            console.log(self.account_props)
+            console.log(self.account_props);
         },
         async getPaginationFlag(val) {
             self.loadingSwitch = true;
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/account/${self.url_parm.account}?stable_index=0&source=${
-                        self.url_parm.source
-                    }&position=4`
+                    `/account/${
+                        self.url_parm.account
+                    }?stable_index=0&index_trans_id=0&pkid=0&position=4`
                 );
                 return;
             }
             // 想取第一页
             if (val === "header") {
-                self.$router.push(
-                    `/account/${self.url_parm.account}?source=${
-                        self.url_parm.source
-                    }`
-                );
+                self.$router.push(`/account/${self.url_parm.account}`);
                 return;
             }
 
@@ -199,7 +198,9 @@ export default {
                 self.$router.push(
                     `/account/${self.url_parm.account}?stable_index=${
                         self.pageFirstItem.stable_index
-                    }&source=${self.url_parm.source}&position=2`
+                    }&index_trans_id=${
+                        self.pageFirstItem.index_trans_id
+                    }&pkid=${self.pageFirstItem.pkid}&position=2`
                 );
                 return;
             }
@@ -209,20 +210,17 @@ export default {
                 self.$router.push(
                     `/account/${self.url_parm.account}?stable_index=${
                         self.pageLastItem.stable_index
-                    }&source=${self.url_parm.source}&position=3`
+                    }&index_trans_id=${self.pageLastItem.index_trans_id}&pkid=${
+                        self.pageLastItem.pkid
+                    }&position=3`
                 );
+
                 return;
             }
-        },
-        handlerChange(val) {
-            self.$router.push(
-                `/account/${self.url_parm.account}?source=${val}`
-            );
         },
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
-                source: self.url_parm.source,
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
@@ -242,10 +240,11 @@ export default {
             //TODO 没有搜见证交易
             self.loadingSwitch = true;
             let opt = {
-                position: parm.position,
-                source: parm.source,
                 account: parm.account,
-                stable_index: parm.stable_index
+                position: parm.position,
+                stable_index: parm.stable_index,
+                index_trans_id: parm.index_trans_id,
+                pkid: parm.pkid
             };
             let response = await self.$api.get(
                 "/api/get_account_transactions",
@@ -255,9 +254,17 @@ export default {
             if (response.success) {
                 self.database = response.transactions;
                 if (response.transactions.length) {
-                    self.pageFirstItem = response.transactions[0];
-                    self.pageLastItem =
+                    let firstTrans = response.transactions[0];
+                    let lastTrans =
                         response.transactions[response.transactions.length - 1];
+                    self.pageFirstItem.stable_index = firstTrans.stable_index;
+                    self.pageFirstItem.index_trans_id =
+                        firstTrans.index_trans_id;
+                    self.pageFirstItem.pkid = firstTrans.pkid;
+
+                    self.pageLastItem.stable_index = lastTrans.stable_index;
+                    self.pageLastItem.index_trans_id = lastTrans.index_trans_id;
+                    self.pageLastItem.pkid = lastTrans.pkid;
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;

@@ -112,6 +112,12 @@
     let tokenAccountsTotal = {};
     //合约相关的结束
 
+    // account index table
+    let accountIndexTransAry = [];
+    let accountIndexTransTokenAry = [];
+    let accountIndexTransInternalAry = [];
+    let accountIndexTransLogAry = [];
+
     let pageUtility = {
         async init() {
             self = this;
@@ -408,6 +414,29 @@
                         if (item.type === 2) {
                             //普通交易
                             normalTransInsertAry.push(item);
+
+                            //把账户对应的Hash存到索引表
+                            accountIndexTransAry.push({
+                                account: item.from,
+                                hash: item.hash,
+                                stable_index: item.stable_index,
+                            })
+                            if (item.from !== item.to) {
+                                if (item.to) {
+                                    accountIndexTransAry.push({
+                                        account: item.to,
+                                        hash: item.hash,
+                                        stable_index: item.stable_index,
+                                    })
+                                } else {
+                                    accountIndexTransAry.push({
+                                        account: item.contract_address,
+                                        hash: item.hash,
+                                        stable_index: item.stable_index,
+                                    })
+                                }
+                            }
+
                         } else {
                             //见证 / 创世交易
                             //其中创世的简要信息 写到 见证表中
@@ -567,27 +596,43 @@
                     logger.info('解析log信息');
                     blockInfo.is_event_log = true;
                     let tempTransTokenInsertInfo = {};
+                    let tempEventLogItem = {};
 
                     await Promise.all(blockInfo.log.map(async (log_item) => {
                         let contractAccount = czr.utils.encode_account(log_item.address);
                         let transData = parseInt(log_item.data, 16);
-                        eventLogInsertAry.push(
-                            {
+                        tempEventLogItem = {
+                            hash: blockInfo.hash,
+                            mci: blockInfo.mci,
+                            mc_timestamp: blockInfo.mc_timestamp,
+                            stable_index: blockInfo.stable_index,
+
+                            contract_address: contractAccount,
+                            from: log_item.topics[1] ? czr.utils.encode_account(log_item.topics[1]) : "",
+                            to: log_item.topics[2] ? czr.utils.encode_account(log_item.topics[2]) : "",
+                            method: blockInfo.data.toString().substring(0, 8),//A9059CBB
+
+                            address: log_item.address,
+                            data: log_item.data,
+                            topics: log_item.topics.join(",")
+                        }
+                        eventLogInsertAry.push(tempEventLogItem);
+                        //把账户对应的Hash存到索引表
+                        if (tempEventLogItem.from) {
+                            accountIndexTransLogAry.push({
+                                account: tempEventLogItem.from,
                                 hash: blockInfo.hash,
-                                mci: blockInfo.mci,
-                                mc_timestamp: blockInfo.mc_timestamp,
                                 stable_index: blockInfo.stable_index,
+                            })
+                        }
+                        if ((tempEventLogItem.from !== tempEventLogItem.to) && tempEventLogItem.to) {
+                            accountIndexTransLogAry.push({
+                                account: tempEventLogItem.to,
+                                hash: blockInfo.hash,
+                                stable_index: blockInfo.stable_index,
+                            })
+                        }
 
-                                contract_address: contractAccount,
-                                from: log_item.topics[1] ? czr.utils.encode_account(log_item.topics[1]) : "",
-                                to: log_item.topics[2] ? czr.utils.encode_account(log_item.topics[2]) : "",
-                                method: blockInfo.data.toString().substring(0, 8),//A9059CBB
-
-                                address: log_item.address,
-                                data: log_item.data,
-                                topics: log_item.topics.join(",")
-                            }
-                        );
                         //是否Token转账
                         if (log_item.topics.length === 3 && (log_item.topics[0].toLowerCase() === "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")) {
                             blockInfo.is_token_trans = true;
@@ -692,6 +737,20 @@
 
                             }
                             transTokenInsertAry.push(tempTransTokenInsertInfo);
+                            //把账户对应的Hash存到索引表
+                            accountIndexTransTokenAry.push({
+                                account: contractFromAcc,
+                                hash: blockInfo.hash,
+                                stable_index: blockInfo.stable_index,
+                            })
+                            if ((contractFromAcc !== contractToAcc) && contractToAcc) {
+                                accountIndexTransTokenAry.push({
+                                    account: contractToAcc,
+                                    hash: blockInfo.hash,
+                                    stable_index: blockInfo.stable_index,
+                                })
+                            }
+
                             console.log(testIndex, "开始的，Token交易的数量", transTokenInsertAry.length);
 
                             //更新Token资产表
@@ -857,6 +916,19 @@
                                 }
                             }
                             transInternalInsertAry.push(tempTracesInfo);
+                            //把账户对应的Hash存到索引表
+                            accountIndexTransInternalAry.push({
+                                account: tempTracesInfo.from,
+                                hash: blockInfo.hash,
+                                stable_index: blockInfo.stable_index,
+                            })
+                            if ((tempTracesInfo.from !== tempTracesInfo.to) && tempTracesInfo.to) {
+                                accountIndexTransInternalAry.push({
+                                    account: tempTracesInfo.to,
+                                    hash: blockInfo.hash,
+                                    stable_index: blockInfo.stable_index,
+                                })
+                            }
 
                         }
                     });
@@ -1092,6 +1164,8 @@
                  * 批量插入 见证交易    witnessTransInsertAry
                  * 批量插入 创世交易    genesisTransInsertAry
                  * 批量插入 交易类型    allTransTypeAry
+                 * 
+                 * accountIndexTransAry
                  * */
                 if (accountsInsertAry.length) {
                     pageUtility.batchInsertAccount(accountsInsertAry);
@@ -1117,6 +1191,21 @@
                 if (allTransTypeAry.length) {
                     pageUtility.batchInsertTransType(allTransTypeAry);
                 }
+
+                // batchInsertAccountIndexTrans 批量处理索引表
+                if (accountIndexTransAry.length) {
+                    pageUtility.batchInsertAccountIndexTrans(accountIndexTransAry);
+                }
+                if (accountIndexTransTokenAry.length) {
+                    pageUtility.batchInsertAccountIndexTransToken(accountIndexTransTokenAry);
+                }
+                if (accountIndexTransInternalAry.length) {
+                    pageUtility.batchInsertAccountIndexTransInternal(accountIndexTransInternalAry);
+                }
+                if (accountIndexTransLogAry.length) {
+                    pageUtility.batchInsertAccountIndexTransLog(accountIndexTransLogAry);
+                }
+
 
                 /* 
                 批量更新账户、       accountsUpdateAry
@@ -1256,6 +1345,12 @@
             tokenAssetInsertAry = [];//插入[Db]
             tokenAssetUpdateAry = [];//更新[Db]
             tokenAccountsTotal = {};
+
+            //归零index tabel
+            accountIndexTransAry = [];
+            accountIndexTransTokenAry = [];
+            accountIndexTransInternalAry = [];
+            accountIndexTransLogAry = [];
 
             //Other
             isStableDone = db_LSBI < rpc_LSBI ? false : true;
@@ -2253,8 +2348,6 @@
         //查询Token资产表 并插入/更新对应资产
         async updateAndInsertTokenAssert(tokenAccountsTotal) {
 
-
-
         },
 
         async call(con_ads, con_name) {
@@ -2292,6 +2385,144 @@
             return resString[0].value.toString(10);
         },
         // ***************************************** 合约相关插入 结束
+
+        // **************************** 账户相关索引表插入 开始
+        async batchInsertAccountIndexTrans(ary) {
+            // ary = [
+            //     {
+            //         account: "account",
+            //         hash: "hash",
+            //         stable_index: 12,
+            //     }
+            // ]
+            // format = {
+            //     account: "String",
+            //     hash: "String",
+            //     stable_index: "Number",
+            // }
+            // let tempAry = [];
+            // let insertStr = ``;
+            // let keyAry = Object.keys(format);
+            // keyAry.forEach(item => {
+            //     insertStr += item;
+            // })
+            let tempAry = [];
+            ary.forEach((item) => {
+                tempAry.push(`
+                (
+                    '${item.account}',
+                    '${item.hash}',
+                    ${Number(item.stable_index)}
+                )
+                `)
+            })
+            let batchInsertSql = {
+                text: `
+                INSERT INTO 
+                    account_index_trans (
+                        "account",
+                        "hash",
+                        "stable_index"
+                    ) 
+                VALUES` + tempAry.toString()
+            };
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertAccountIndexTrans")
+                logger.info(e)
+            }
+
+        },
+        async batchInsertAccountIndexTransToken(ary) {
+            let tempAry = [];
+            ary.forEach((item) => {
+                tempAry.push(`
+                (
+                    '${item.account}',
+                    '${item.hash}',
+                    ${Number(item.stable_index)}
+                )
+                `)
+            })
+            let batchInsertSql = {
+                text: `
+                INSERT INTO 
+                    account_index_transtoken (
+                        "account",
+                        "hash",
+                        "stable_index"
+                    ) 
+                VALUES` + tempAry.toString()
+            };
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertAccountIndexTransToken")
+                logger.info(e)
+            }
+        },
+        async batchInsertAccountIndexTransInternal(ary) {
+            let tempAry = [];
+            ary.forEach((item) => {
+                tempAry.push(`
+                (
+                    '${item.account}',
+                    '${item.hash}',
+                    ${Number(item.stable_index)}
+                )
+                `)
+            })
+            let batchInsertSql = {
+                text: `
+                INSERT INTO 
+                    account_index_transinternal (
+                        "account",
+                        "hash",
+                        "stable_index"
+                    ) 
+                VALUES` + tempAry.toString()
+            };
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertAccountIndexTransInternal")
+                logger.info(e)
+            }
+        },
+        async batchInsertAccountIndexTransLog(ary) {
+            let tempAry = [];
+            ary.forEach((item) => {
+                tempAry.push(`
+                (
+                    '${item.account}',
+                    '${item.hash}',
+                    ${Number(item.stable_index)}
+                )
+                `)
+            })
+            let batchInsertSql = {
+                text: `
+                INSERT INTO 
+                    account_index_translog (
+                        "account",
+                        "hash",
+                        "stable_index"
+                    ) 
+                VALUES` + tempAry.toString()
+            };
+            try {
+                await client.query(batchInsertSql);
+            }
+            catch (e) {
+                logger.info("batchInsertAccountIndexTransLog")
+                logger.info(e)
+            }
+        },
+        // **************************** 账户相关索引表插入 结束
         compareSort(property) {
             return function (obj1, obj2) {
                 var value1 = obj1[property];

@@ -59,12 +59,17 @@
         <el-table-column label="接收方" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.type === '2'">
-                    <router-link
-                        class="table-long-item"
-                        :to="{
+                    <template v-if="scope.row.refund_adderss===address">
+                        <span class="table-long-item">{{ scope.row.refund_adderss }}</span>
+                    </template>
+                    <template v-else>
+                        <router-link
+                            class="table-long-item"
+                            :to="{
                             path: '/account/' + scope.row.refund_adderss
                         }"
-                    >{{ scope.row.refund_adderss }}</router-link>
+                        >{{ scope.row.refund_adderss }}</router-link>
+                    </template>
                 </template>
                 <template v-else-if="scope.row.type === '1'">
                     <router-link

@@ -143,22 +143,23 @@ export default {
             IS_GET_ACC: false,
             IS_WITNESS: false,
             pageFirstItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 9999999999999,
+                index_transinternal_id: 9999999999999,
+                trans_internal_id: 9999999999999
             },
             pageLastItem: {
-                exec_timestamp: 0,
-                level: 0,
-                pkid: 0
+                stable_index: 0,
+                index_transinternal_id: 0,
+                trans_internal_id: 0
             },
             first_stable_index: "",
             end_stable_index: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                stable_index: 999999999999,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方 3见证交易
+                stable_index: 9999999999999,
+                index_transinternal_id: 9999999999999,
+                trans_internal_id: 9999999999999
             },
             currentPage: 1,
 
@@ -178,7 +179,9 @@ export default {
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
             self.url_parm.stable_index = queryInfo.stable_index;
-            self.url_parm.source = queryInfo.source;
+            self.url_parm.index_transinternal_id =
+                queryInfo.index_transinternal_id;
+            self.url_parm.trans_internal_id = queryInfo.trans_internal_id;
         }
         self.getFlagTransactions(self.url_parm);
     },
@@ -198,9 +201,7 @@ export default {
                 self.$router.push(
                     `/account/${
                         self.url_parm.account
-                    }/trans_internal?stable_index=0&source=${
-                        self.url_parm.source
-                    }&position=4`
+                    }/trans_internal?stable_index=0&index_transinternal_id=0&trans_internal_id=0&position=4`
                 );
                 return;
             }
@@ -221,7 +222,11 @@ export default {
                         self.url_parm.account
                     }/trans_internal?stable_index=${
                         self.pageFirstItem.stable_index
-                    }&source=${self.url_parm.source}&position=2`
+                    }&index_transinternal_id=${
+                        self.pageFirstItem.index_transinternal_id
+                    }&trans_internal_id=${
+                        self.pageFirstItem.trans_internal_id
+                    }&position=2`
                 );
                 return;
             }
@@ -233,17 +238,16 @@ export default {
                         self.url_parm.account
                     }/trans_internal?stable_index=${
                         self.pageLastItem.stable_index
-                    }&source=${self.url_parm.source}&position=3`
+                    }&index_transinternal_id=${
+                        self.pageLastItem.index_transinternal_id
+                    }&trans_internal_id=${
+                        self.pageLastItem.trans_internal_id
+                    }&position=3`
                 );
                 return;
             }
         },
 
-        handlerChange(val) {
-            self.$router.push(
-                `/account/${self.url_parm.account}/trans_internal?source=${val}`
-            );
-        },
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
@@ -251,7 +255,7 @@ export default {
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
-                "/api/get_account_trans_flag",
+                "/api/get_trans_internal_flag",
                 opt
             );
 
@@ -267,18 +271,31 @@ export default {
             //TODO 没有搜见证交易
             self.loadingSwitch = true;
             let opt = {
-                position: parm.position,
-                source: parm.source,
                 account: parm.account,
-                stable_index: parm.stable_index
+                position: parm.position,
+                stable_index: parm.stable_index,
+                index_transinternal_id: parm.index_transinternal_id,
+                trans_internal_id: parm.trans_internal_id
             };
             let response = await self.$api.get("/api/get_trans_internal", opt);
 
             if (response.success) {
-                self.trans_internal = response.data;
-                if (response.data.length) {
-                    self.pageFirstItem = response.data[0];
-                    self.pageLastItem = response.data[response.data.length - 1];
+                self.trans_internal = response.transactions;
+                if (response.transactions.length) {
+                    let firstTrans = response.transactions[0];
+                    let lastTrans =
+                        response.transactions[response.transactions.length - 1];
+                    self.pageFirstItem.stable_index = firstTrans.stable_index;
+                    self.pageFirstItem.index_transinternal_id =
+                        firstTrans.index_transinternal_id;
+                    self.pageFirstItem.trans_internal_id =
+                        firstTrans.trans_internal_id;
+
+                    self.pageLastItem.stable_index = lastTrans.stable_index;
+                    self.pageLastItem.index_transinternal_id =
+                        lastTrans.index_transinternal_id;
+                    self.pageLastItem.trans_internal_id =
+                        lastTrans.trans_internal_id;
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;

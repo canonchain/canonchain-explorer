@@ -65,6 +65,107 @@ COMMENT ON INDEX public.balance_index
 
 ```
 
+ 
+## 账户的普通交易索引表
+
+优化账户详情中，普通交易 列表的检索速度
+
+```postgresql
+ 
+CREATE TABLE public.account_index_trans
+(
+    index_trans_id bigserial,
+    "account" text,
+    "hash" text,
+    "stable_index" bigint,
+
+    CONSTRAINT index_trans_id_key PRIMARY KEY(index_trans_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+CREATE INDEX index_trans_id_and_index
+    ON public.account_index_trans USING btree
+    (account, stable_index,index_trans_id)
+    TABLESPACE pg_default;
+```
+
+## 账户的代币转账索引表
+
+优化账户详情中，代币转账 列表的检索速度
+
+```postgresql
+ 
+CREATE TABLE public.account_index_transtoken
+(
+    index_transtoken_id bigserial,
+    "account" text,
+    "hash" text,
+    "stable_index" bigint,
+
+    CONSTRAINT index_transtoken_id_key PRIMARY KEY(index_transtoken_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+CREATE INDEX index_transtoken_id_and_index
+    ON public.account_index_transtoken USING btree
+    (account, stable_index,index_transtoken_id)
+    TABLESPACE pg_default;
+```
+
+## 账户的内部交易索引表
+
+优化账户详情中，内部交易 列表的检索速度
+
+```postgresql
+ 
+CREATE TABLE public.account_index_transinternal
+(
+    index_transinternal_id bigserial,
+    "account" text,
+    "hash" text,
+    "stable_index" bigint,
+
+    CONSTRAINT index_transinternal_id_key PRIMARY KEY(index_transinternal_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+CREATE INDEX index_transinternal_id_and_index
+    ON public.account_index_transinternal USING btree
+    (account, stable_index,index_transinternal_id)
+    TABLESPACE pg_default;
+```
+
+## 账户的事件日志索引表
+
+优化账户详情中，事件日志 列表的检索速度
+
+```postgresql
+ 
+CREATE TABLE public.account_index_translog
+(
+    index_translog_id bigserial,
+    "account" text,
+    "hash" text,
+    "stable_index" bigint,
+
+    CONSTRAINT index_translog_id_key PRIMARY KEY(index_translog_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+CREATE INDEX index_translog_id_and_index
+    ON public.account_index_translog USING btree
+    (account, stable_index,index_translog_id)
+    TABLESPACE pg_default;
+```
+
 ## 普通交易表
 
 ```postgresql
@@ -480,7 +581,7 @@ CREATE TABLE public.trans_token
     "gas_price" numeric,
     "gas_used" numeric,
     "input" text,
-    CONSTRAINT trans_token_hash_pkey PRIMARY KEY (hash)
+    CONSTRAINT trans_token_id_pkey PRIMARY KEY (trans_token_id)
 )
 WITH (
     OIDS = FALSE
@@ -525,7 +626,8 @@ CREATE TABLE public.trans_internal
     "error_msg" text,
 
     "subtraces" numeric,
-    "trace_address" text
+    "trace_address" text,
+    CONSTRAINT trans_internal_id_key PRIMARY KEY(trans_internal_id)
 )
 WITH (
     OIDS = FALSE

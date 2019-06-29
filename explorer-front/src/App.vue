@@ -294,9 +294,9 @@ a {
     top: 2px;
 }
 @media (max-width: 900px) {
-    .page-account .table-long-item {
+    /* .page-account .table-long-item {
         max-width: 60px;
-    }
+    } */
 }
 
 .page-account {

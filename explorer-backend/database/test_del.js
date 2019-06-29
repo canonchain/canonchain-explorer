@@ -78,7 +78,7 @@
     } else {
         console.log("删除 event_log 成功")
     }
-    
+
     let dell_opt1 = {
         text: `truncate table accounts`
     };
@@ -197,6 +197,53 @@
     } else {
         console.log("删除 witness_list 成功")
     }
+
+
+    console.log("----- 删除索引表 ")
+    let dell_opt10 = {
+        text: `truncate table account_index_trans`
+    };
+    let dell_data10 = await pgPromise.query(dell_opt10)
+    if (dell_data10.code) {
+        console.log("删除 account_index_trans 失败")
+        console.log(dell_data10)
+    } else {
+        console.log("删除 account_index_trans 成功")
+    }
+
+    let dell_opt11 = {
+        text: `truncate table account_index_transtoken`
+    };
+    let dell_data11 = await pgPromise.query(dell_opt11)
+    if (dell_data11.code) {
+        console.log("删除 account_index_transtoken 失败")
+        console.log(dell_data11)
+    } else {
+        console.log("删除 account_index_transtoken 成功")
+    }
+
+    let dell_opt12 = {
+        text: `truncate table account_index_transinternal`
+    };
+    let dell_data12 = await pgPromise.query(dell_opt12)
+    if (dell_data12.code) {
+        console.log("删除 account_index_transinternal 失败")
+        console.log(dell_data12)
+    } else {
+        console.log("删除 account_index_transinternal 成功")
+    }
+
+    let dell_opt13 = {
+        text: `truncate table account_index_translog`
+    };
+    let dell_data13 = await pgPromise.query(dell_opt13)
+    if (dell_data13.code) {
+        console.log("删除 account_index_translog 失败")
+        console.log(dell_data13)
+    } else {
+        console.log("删除 account_index_translog 成功")
+    }
+
 
     console.log("************* 删除数据 结束 ************* ")
 

@@ -1258,12 +1258,13 @@ export default {
                     }
                     //开始写数据
                     self.loadingInfoSwitch = false;
+                    self.loadingSwitch = false;
                     self.activeUnitInfo = response.data.transaction;
                     $defaultInfo.hide();
                     $listInfo.show();
                 })
                 .catch(function(error) {
-                    self.loadingSwitch = false;
+                    self.loadingInfoSwitch = false;
                 });
         },
         //从服务器获取高亮节点【OK】
@@ -2502,7 +2503,7 @@ pre {
     border-left: 6px solid #868686;
 }
 .switch-show:after {
-    top: 16px;
+    top: 14px;
     border-top: 6px solid #363636;
     border-right: 6px solid transparent;
     border-bottom: 6px solid transparent;

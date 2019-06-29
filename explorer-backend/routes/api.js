@@ -1499,52 +1499,45 @@ router.get("/get_contract", async function (req, res, next) {
 
 
 //获取交易表中最近(LIMIT+1)项
-//参数： 
-//account
-//source 1:from     2:to
+//参数：account -----------------------------------------------
 router.get("/get_account_trans_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
-    var queryAccount = queryInfo.account;// ?account=2
-    var querySour = "";
-    var TABLE_NAME = "trans_normal";
-
-    if (queryInfo.source === '1') {
-        querySour = "from";
-    } else if (queryInfo.source === '2') {
-        querySour = "to";
-    } else if (queryInfo.source === '3') {
-        querySour = "from";
-        TABLE_NAME = "trans_witness";
-    }
-
-    let errorInfo = {}
-
-    let start_sql = {
+    let near_sql = {
         text: `
             Select 
-                "stable_index"
+                "stable_index","index_trans_id"
             FROM 
-                ${TABLE_NAME}
+                account_index_trans
             WHERE
-                ("${querySour}" = $1)
+                "account" = $1
             order by
-                "stable_index" desc
+                "stable_index" desc,
+                "index_trans_id" desc
             LIMIT
                 1
         `,
-        values: [queryAccount]
+        values: [queryInfo.account]
     }
-
-    // console.log(querySour);
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
-    // console.log(transStartInfo.rows);
+    let end_sql = {
+        text: `
+            Select 
+                "stable_index","index_trans_id"
+            FROM 
+                account_index_trans
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" asc,
+                "index_trans_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
         responseData = {
-            near_item: errorInfo,
+            near_item: {},
             code: 500,
             success: false,
             message: "select start_sql Error"
@@ -1552,38 +1545,19 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
         res.json(responseData);
         return;
     }
-
-    let opt = {
-        text: `
-            Select 
-                "stable_index"
-            FROM 
-                ${TABLE_NAME} 
-            WHERE
-                ("${querySour}" = $1)
-            order by 
-                "stable_index" asc
-            LIMIT
-                1
-        `,
-        values: [queryAccount]
-    }
-    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
-    let transEndInfo = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[2] SELECT end_sql After')
-
+    let transEndInfo = await pgPromise.query(end_sql)
     if (transEndInfo.code) {
         responseData = {
-            near_item: errorInfo,
-            end_item: errorInfo,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
             code: 500,
             success: false,
             message: "select end_sql Error"
         }
     } else {
         responseData = {
-            near_item: transStartInfo.rows[0] || errorInfo,
-            end_item: transEndInfo.rows[0] || errorInfo,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
             code: 200,
             success: true,
             message: "success"
@@ -1591,158 +1565,60 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
     }
     res.json(responseData);
 })
-
 //获取交易列表
-/**
- * 参数
-{
-    stable_index: '1',
-    account: '12',
-}
- */
+//参数:account/position/stable_index/index_trans_id/pkid
 router.get("/get_account_transactions", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;
-    var queryAccount = queryVal.account;// ?account=2
-    var querySour = "";
-    var IS_WITNESS = false;
-
-    if (queryVal.source === '1') {
-        querySour = "from";
-    } else if (queryVal.source === '2') {
-        querySour = "to";
-    } else if (queryVal.source === '3') {
-        //见证交易
-        IS_WITNESS = true;
-    }
-
-    if (queryVal.position === "1") {
-        if (IS_WITNESS) {
-            //见证交易
-            opt = {
-                text: `
-                    Select 
-                        "timestamp","hash","from","is_stable","status","stable_index"
-                    FROM
-                        trans_witness
-                    WHERE
-                        "from" = $1
-                    order by 
-                        "stable_index" desc
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [queryAccount]
-            }
-        } else {
-            //首页
-            opt = {
-                text: `
-                    Select 
-                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                    FROM
-                        trans_normal
-                    WHERE
-                        "${querySour}" = $1
-                    order by 
-                        "stable_index" desc
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [queryAccount]
-            }
-        }
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "",
+        moreSearchStrTransNormal = "";
+    if (queryVal.position === "2") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if (queryVal.position === "3") {
+        direction = "<";
+        sortInfo = "desc";
+    } else if (queryVal.position === "1") {
+        sortInfo = "desc";
     } else if (queryVal.position === "4") {
-        if (IS_WITNESS) {
-            //见证交易
-            opt = {
-                text: `
-                    Select 
-                        "timestamp","hash","from","is_stable","status","stable_index"
-                    FROM
-                        trans_witness
-                    WHERE
-                        "from" = $1
-                    order by 
-                        "stable_index" asc
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [queryAccount]
-            }
-        } else {
-            // 尾页
-            opt = {
-                text: `
-                    Select 
-                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                    FROM
-                        trans_normal
-                    WHERE
-                        "${querySour}" = $1
-                    order by 
-                        "stable_index" asc
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [queryAccount]
-            }
-        }
-    } else {
-        let direction, sortInfo;
-        if (queryVal.position === "2") {
-            direction = ">";
-            sortInfo = "asc";
-        } else {
-            direction = "<";
-            sortInfo = "desc";
-        }
-
-
-        if (IS_WITNESS) {
-            //见证交易
-            opt = {
-                text: `
-                    Select 
-                        "timestamp","hash","from","is_stable","status","stable_index"
-                    FROM
-                        trans_witness
-                    WHERE
-                        (stable_index ${direction} $1)
-                        and
-                        ("from" = $2)
-                    order by 
-                        "stable_index" ${sortInfo}
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [Number(queryVal.stable_index), queryAccount]
-            }
-        } else {
-            opt = {
-                text: `
-                    Select 
-                        "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
-                    FROM 
-                        trans_normal 
-                    WHERE 
-                        (stable_index ${direction} $1)
-                        and
-                        ("${querySour}" = $2)
-                    order by 
-                        "stable_index" ${sortInfo}
-                    LIMIT
-                        ${LIMIT_VAL}
-                `,
-                values: [Number(queryVal.stable_index), queryAccount]
-            }
-        }
-
+        sortInfo = "asc";
+    }
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (index_trans_id ${direction} ${Number(queryVal.index_trans_id)})
+            and
+        `;
+        moreSearchStrTransNormal = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (pkid ${direction}  ${Number(queryVal.pkid)})
+            and
+        `
     }
 
-    PageUtility.timeLog(req, '[1] SELECT acc trans_normal info Before')
+    let opt = {
+        text: `
+            Select 
+                "account","hash","stable_index","index_trans_id"
+            FROM
+                account_index_trans
+            WHERE
+                ${moreSearchStrIndexTrans}
+                ("account" = $1)
+            order by 
+                "stable_index" ${sortInfo},
+                "index_trans_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [queryVal.account]
+    }
+
+
     let data = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[1] SELECT acc trans_normal info After')
+    let dataResult = data.rows;
     if (data.code) {
         responseData = {
             transactions: [],
@@ -1750,70 +1626,95 @@ router.get("/get_account_transactions", async function (req, res, next) {
             success: false,
             message: 'Select trans list FROM acc trans_normal Error'
         }
-        // logger.info(data)
+        res.json(responseData);
+        return;
+    }
+
+    //上面搜出来的Hash可能相同的
+    let searchHash = [];
+    data.rows.forEach(item => {
+        if (searchHash.indexOf(item.hash) === -1) {
+            searchHash.push(item.hash)
+        }
+    });
+    let mainOpt = {
+        text: `
+            Select 
+                "mc_timestamp","level","pkid","hash","from","to","is_stable","status","amount","stable_index"
+            FROM
+                trans_normal
+            WHERE
+                ${moreSearchStrTransNormal}
+                ("hash" = ANY ($1))
+            order by 
+                "stable_index" ${sortInfo},
+                "pkid" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [searchHash]
+    }
+    let mainData = await pgPromise.query(mainOpt)
+    let mainResult = mainData.rows;
+    if (mainResult.length) {
+        mainResult[0].index_trans_id = dataResult[0].index_trans_id;
+        mainResult[mainResult.length - 1].index_trans_id = dataResult[dataResult.length - 1].index_trans_id;
+
+    }
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = mainData.rows.reverse()
     } else {
-        let formatInfo;
-        // console.log(data.rows);
-        // console.log(queryVal.position);
-        // console.log((queryVal.position === "4") || (queryVal.position === "2"));
-        if ((queryVal.position === "4") || (queryVal.position === "2")) {
-            formatInfo = data.rows.reverse()
-        } else {
-            formatInfo = data.rows;
-        }
-        responseData = {
-            transactions: formatInfo || [],
-            code: 200,
-            success: true,
-            message: "success"
-        }
+        formatInfo = mainData.rows;
+    }
+    responseData = {
+        transactions: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
     }
     res.json(responseData);
 })
 
-// 获取Token转账的flag
-//参数： 
-//account
-//source 1:from     2:to
+// 获取Token转账的flag -----------------------------------------------
 router.get("/get_trans_token_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
     var queryInfo = req.query;
-    var querySour = "from";
-
-    if (queryInfo.source === '1') {
-        querySour = "from";
-    } else if (queryInfo.source === '2') {
-        querySour = "to";
-    }
-    let errorInfo = {
-        "stable_index": "0"
-    }
-
-    let start_sql = {
+    let near_sql = {
         text: `
             Select 
-                "stable_index"
+                "stable_index","index_transtoken_id"
             FROM 
-                "trans_token"
+                account_index_transtoken
             WHERE
-                ("${querySour}" = $1)
+                "account" = $1
             order by
-                "stable_index" desc
+                "stable_index" desc,
+                "index_transtoken_id" desc
             LIMIT
                 1
         `,
         values: [queryInfo.account]
     }
-
-    // console.log(querySour);
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
-    // console.log(transStartInfo.rows);
+    let end_sql = {
+        text: `
+            Select 
+                "stable_index","index_transtoken_id"
+            FROM 
+                account_index_transtoken
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" asc,
+                "index_transtoken_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
         responseData = {
-            near_item: errorInfo,
+            near_item: {},
             code: 500,
             success: false,
             message: "select start_sql Error"
@@ -1821,38 +1722,19 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
         res.json(responseData);
         return;
     }
-
-    let opt = {
-        text: `
-            Select 
-                "stable_index"
-            FROM 
-                "trans_token"
-            WHERE
-                ("${querySour}" = $1)
-            order by 
-                "stable_index" asc
-            LIMIT
-                1
-        `,
-        values: [queryInfo.account]
-    }
-    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
-    let transEndInfo = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[2] SELECT end_sql After')
-
+    let transEndInfo = await pgPromise.query(end_sql)
     if (transEndInfo.code) {
         responseData = {
-            near_item: errorInfo,
-            end_item: errorInfo,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
             code: 500,
             success: false,
             message: "select end_sql Error"
         }
     } else {
         responseData = {
-            near_item: transStartInfo.rows[0] || errorInfo,
-            end_item: transEndInfo.rows[0] || errorInfo,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
             code: 200,
             success: true,
             message: "success"
@@ -1860,409 +1742,176 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
     }
     res.json(responseData);
 })
-//获取Token转账
+//获取交易列表
+//参数:account/position/stable_index/index_transtoken_id/trans_token_id
 router.get("/get_trans_token", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account | source | stable_index
-    var querySour = "";
-
-    if (queryVal.source === '1') {
-        querySour = "from";
-    } else if (queryVal.source === '2') {
-        querySour = "to";
-    }
-    let opt;
-
-    //根据position查询
-    if (queryVal.position === "1") {
-        //首页
-        opt = {
-            text: `
-                Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
-                FROM 
-                    "trans_token"
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "stable_index" desc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account]
-        }
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "",
+        moreSearchStrTransNormal = "";
+    if (queryVal.position === "2") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if (queryVal.position === "3") {
+        direction = "<";
+        sortInfo = "desc";
+    } else if (queryVal.position === "1") {
+        sortInfo = "desc";
     } else if (queryVal.position === "4") {
-        //尾页
-        opt = {
-            text: `
-                Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
-                FROM 
-                    "trans_token"
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "stable_index" asc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account]
-        }
-    } else {
-        let direction, sortInfo;
-        if (queryVal.position === "2") {
-            direction = ">";
-            sortInfo = "asc";
-        } else {
-            direction = "<";
-            sortInfo = "desc";
-        }
-        opt = {
-            text: `
-                Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
-                FROM 
-                    "trans_token"
-                WHERE 
-                    (stable_index ${direction} $2)
-                    and
-                    ("${querySour}" = $1)
-                order by 
-                    "stable_index" ${sortInfo}
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account, queryVal.stable_index]
-        };
+        sortInfo = "asc";
     }
-    let data = await pgPromise.query(opt);
-    if (data.code) {
-        // 查询出错
-        responseData = {
-            data: [],
-            code: 500,
-            success: false,
-            message: "Select FROM trans_token Error"
-        }
-    } else {
-        let formatInfo;
-        if ((queryVal.position === "4") || (queryVal.position === "2")) {
-            formatInfo = data.rows.reverse()
-        } else {
-            formatInfo = data.rows;
-        }
-
-        if (data.rows.length) {
-            responseData = {
-                data: formatInfo,
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: [],
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        }
-    }
-    res.json(responseData);
-})
-
-//获取内部交易的Flag
-router.get("/get_trans_internal_flag", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    var queryInfo = req.query;
-    var querySour = "from";
-
-    if (queryInfo.source === '1') {
-        querySour = "from";
-    } else if (queryInfo.source === '2') {
-        querySour = "to";
-    }
-    let errorInfo = {
-        "trans_internal_id": "0"
-    }
-
-    let start_sql = {
-        text: `
-            Select 
-                "trans_internal_id"
-            FROM 
-                "trans_internal"
-            WHERE
-                ("${querySour}" = $1)
-            order by
-                "trans_internal_id" desc
-            LIMIT
-                1
-        `,
-        values: [queryInfo.account]
-    }
-
-    // console.log(querySour);
-    PageUtility.timeLog(req, '[1] SELECT start_sql Before')
-    let transStartInfo = await pgPromise.query(start_sql)
-    PageUtility.timeLog(req, '[1] SELECT start_sql After')
-
-    // console.log(transStartInfo.rows);
-    if (transStartInfo.code) {
-        responseData = {
-            near_item: errorInfo,
-            code: 500,
-            success: false,
-            message: "select start_sql Error"
-        }
-        res.json(responseData);
-        return;
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (index_transtoken_id ${direction} ${Number(queryVal.index_transtoken_id)})
+            and
+        `;
+        moreSearchStrTransNormal = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (trans_token_id ${direction}  ${Number(queryVal.trans_token_id)})
+            and
+        `
     }
 
     let opt = {
         text: `
             Select 
-                "trans_internal_id"
-            FROM 
-                "trans_internal"
+                "account","hash","stable_index","index_transtoken_id"
+            FROM
+                account_index_transtoken
             WHERE
-                ("${querySour}" = $1)
+                ${moreSearchStrIndexTrans}
+                ("account" = $1)
             order by 
-                "trans_internal_id" asc
+                "stable_index" ${sortInfo},
+                "index_transtoken_id" ${sortInfo}
             LIMIT
-                1
-        `,
-        values: [queryInfo.account]
-    }
-    PageUtility.timeLog(req, '[2] SELECT end_sql Before')
-    let transEndInfo = await pgPromise.query(opt)
-    PageUtility.timeLog(req, '[2] SELECT end_sql After')
-
-    if (transEndInfo.code) {
-        responseData = {
-            near_item: errorInfo,
-            end_item: errorInfo,
-            code: 500,
-            success: false,
-            message: "select end_sql Error"
-        }
-    } else {
-        responseData = {
-            near_item: transStartInfo.rows[0] || errorInfo,
-            end_item: transEndInfo.rows[0] || errorInfo,
-            code: 200,
-            success: true,
-            message: "success"
-        }
-    }
-    res.json(responseData);
-})
-//获取内部交易[未完成]
-router.get("/get_trans_internal", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account | source | trans_internal_id
-    var querySour = "";
-
-    if (queryVal.source === '1') {
-        querySour = "from";
-    } else if (queryVal.source === '2') {
-        querySour = "to";
-    }
-    let opt;
-
-    //根据position查询
-    if (queryVal.position === "1") {
-        //首页
-        opt = {
-            text: `
-                Select 
-                    "hash",
-                    "mci",
-                    "mc_timestamp",
-                    "stable_index",
-
-                    "type",
-
-                    "call_type",
-                    "from",
-                    "to",
-                    "gas",
-                    "input",
-                    "value",
-
-                    "init",
-
-                    "contract_address_suicide",
-                    "refund_adderss",
-                    "balance",
-
-                    "gas_used",
-                    "output",
-                    "contract_address_create",
-                    "contract_address_create_code",
-
-                    "is_error",
-                    "error_msg",
-                    "subtraces",
-                    "trace_address"
-                FROM 
-                    "trans_internal"
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "trans_internal_id" desc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account]
-        }
-    } else if (queryVal.position === "4") {
-        //尾页
-        opt = {
-            text: `
-                Select 
-                    "hash",
-                    "mci",
-                    "mc_timestamp",
-                    "stable_index",
-
-                    "type",
-
-                    "call_type",
-                    "from",
-                    "to",
-                    "gas",
-                    "input",
-                    "value",
-
-                    "init",
-
-                    "contract_address_suicide",
-                    "refund_adderss",
-                    "balance",
-
-                    "gas_used",
-                    "output",
-                    "contract_address_create",
-                    "contract_address_create_code",
-
-                    "is_error",
-                    "error_msg",
-                    "subtraces",
-                    "trace_address"
-                FROM 
-                    "trans_internal"
-                WHERE
-                    "${querySour}" = $1
-                order by 
-                    "trans_internal_id" asc
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account]
-        }
-    } else {
-        let direction, sortInfo;
-        if (queryVal.position === "2") {
-            direction = ">";
-            sortInfo = "asc";
-        } else {
-            direction = "<";
-            sortInfo = "desc";
-        }
-        opt = {
-            text: `
-                Select 
-                    *
-                FROM 
-                    "trans_token"
-                WHERE 
-                    (trans_internal_id ${direction} $2)
-                    and
-                    ("${querySour}" = $1)
-                order by 
-                    "trans_internal_id" ${sortInfo}
-                LIMIT
-                    ${LIMIT_VAL}
-            `,
-            values: [queryVal.account, queryVal.trans_internal_id]
-        };
-    }
-    let data = await pgPromise.query(opt);
-    if (data.code) {
-        // 查询出错
-        responseData = {
-            data: [],
-            code: 500,
-            success: false,
-            message: "Select FROM trans_internal Error"
-        }
-    } else {
-        let formatInfo;
-        if ((queryVal.position === "4") || (queryVal.position === "2")) {
-            formatInfo = data.rows.reverse()
-        } else {
-            formatInfo = data.rows;
-        }
-
-        if (data.rows.length) {
-            responseData = {
-                data: formatInfo,
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        } else {
-            responseData = {
-                data: [],
-                code: 200,
-                success: true,
-                message: "success"
-            }
-        }
-    }
-    res.json(responseData);
-})
-//事件日志
-router.get("/get_event_log", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
-    let queryVal = req.query;//account
-
-    let opt = {
-        text: `
-            Select 
-                "hash","mc_timestamp","stable_index",
-                "contract_address","from","to","method",
-                "address","data","topics"
-            FROM 
-                "event_log"
-            WHERE 
-                "from" = $1
-                or
-                "to" = $1
-            LIMIT
-                20
+                ${LIMIT_VAL}
         `,
         values: [queryVal.account]
-    };
-    let data = await pgPromise.query(opt);
+    }
+
+
+    let data = await pgPromise.query(opt)
+    let dataResult = data.rows;
     if (data.code) {
-        // 查询出错
         responseData = {
-            data: '',
+            transactions: [],
             code: 500,
             success: false,
-            message: "Select FROM contract_code Error"
+            message: 'Select trans list FROM acc trans_token Error'
+        }
+        res.json(responseData);
+        return;
+    }
+
+    //上面搜出来的Hash可能相同的
+    let searchHash = [];
+    data.rows.forEach(item => {
+        if (searchHash.indexOf(item.hash) === -1) {
+            searchHash.push(item.hash)
+        }
+    });
+    let mainOpt = {
+        text: `
+            Select 
+                "stable_index","trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+            FROM
+                trans_token
+            WHERE
+                ${moreSearchStrTransNormal}
+                ("hash" = ANY ($1))
+            order by 
+                "stable_index" ${sortInfo},
+                "trans_token_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [searchHash]
+    }
+    let mainData = await pgPromise.query(mainOpt)
+    let mainResult = mainData.rows;
+    if (mainResult.length) {
+        mainResult[0].index_transtoken_id = dataResult[0].index_transtoken_id;
+        mainResult[mainResult.length - 1].index_transtoken_id = dataResult[dataResult.length - 1].index_transtoken_id;
+
+    }
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = mainData.rows.reverse()
+    } else {
+        formatInfo = mainData.rows;
+    }
+    responseData = {
+        transactions: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
+})
+
+//获取内部交易的Flag -----------------------------------------------
+router.get("/get_trans_internal_flag", async function (req, res, next) {
+    var queryInfo = req.query;
+    let near_sql = {
+        text: `
+            Select 
+                "stable_index","index_transinternal_id"
+            FROM 
+                account_index_transinternal
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" desc,
+                "index_transinternal_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let end_sql = {
+        text: `
+            Select 
+                "stable_index","index_transinternal_id"
+            FROM 
+                account_index_transinternal
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" asc,
+                "index_transinternal_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: {},
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+    let transEndInfo = await pgPromise.query(end_sql)
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
         }
     } else {
-        let tempTopics;
-        data.rows.forEach(element => {
-            tempTopics = element.topics.split(",");
-            element.topics = tempTopics;
-        });
-
         responseData = {
-            data: data.rows,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
             code: 200,
             success: true,
             message: "success"
@@ -2270,6 +1919,306 @@ router.get("/get_event_log", async function (req, res, next) {
     }
     res.json(responseData);
 })
+//获取交易列表
+//参数:account/position/stable_index/index_transinternal_id/trans_internal_id
+router.get("/get_trans_internal", async function (req, res, next) {
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "",
+        moreSearchStrTransNormal = "";
+    if (queryVal.position === "2") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if (queryVal.position === "3") {
+        direction = "<";
+        sortInfo = "desc";
+    } else if (queryVal.position === "1") {
+        sortInfo = "desc";
+    } else if (queryVal.position === "4") {
+        sortInfo = "asc";
+    }
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (index_transinternal_id ${direction} ${Number(queryVal.index_transinternal_id)})
+            and
+        `;
+        moreSearchStrTransNormal = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (trans_internal_id ${direction}  ${Number(queryVal.trans_internal_id)})
+            and
+        `
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "account","hash","stable_index","index_transinternal_id"
+            FROM
+                account_index_transinternal
+            WHERE
+                ${moreSearchStrIndexTrans}
+                ("account" = $1)
+            order by 
+                "stable_index" ${sortInfo},
+                "index_transinternal_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [queryVal.account]
+    }
+
+
+    let data = await pgPromise.query(opt)
+    let dataResult = data.rows;
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'Select trans list FROM acc trans_internal Error'
+        }
+        res.json(responseData);
+        return;
+    }
+
+    //上面搜出来的Hash可能相同的
+    let searchHash = [];
+    data.rows.forEach(item => {
+        if (searchHash.indexOf(item.hash) === -1) {
+            searchHash.push(item.hash)
+        }
+    });
+    let mainOpt = {
+        text: `
+            Select 
+                "stable_index","trans_internal_id",
+                "hash","mc_timestamp",
+                "type","contract_address_suicide","refund_adderss",
+                "contract_address_create",
+                "from","to","is_error","value"
+            FROM
+                trans_internal
+            WHERE
+                ${moreSearchStrTransNormal}
+                ("hash" = ANY ($1))
+            order by 
+                "stable_index" ${sortInfo},
+                "trans_internal_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [searchHash]
+    }
+    let mainData = await pgPromise.query(mainOpt)
+    let mainResult = mainData.rows;
+    if (mainResult.length) {
+        mainResult[0].index_transinternal_id = dataResult[0].index_transinternal_id;
+        mainResult[mainResult.length - 1].index_transinternal_id = dataResult[dataResult.length - 1].index_transinternal_id;
+
+    }
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = mainData.rows.reverse()
+    } else {
+        formatInfo = mainData.rows;
+    }
+    responseData = {
+        transactions: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
+})
+
+//事件日志 -----------------------------------------------
+router.get("/get_event_log_flag", async function (req, res, next) {
+    var queryInfo = req.query;
+    let near_sql = {
+        text: `
+            Select 
+                "stable_index","index_translog_id"
+            FROM 
+                account_index_translog
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" desc,
+                "index_translog_id" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let end_sql = {
+        text: `
+            Select 
+                "stable_index","index_translog_id"
+            FROM 
+                account_index_translog
+            WHERE
+                "account" = $1
+            order by
+                "stable_index" asc,
+                "index_translog_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: {},
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+    let transEndInfo = await pgPromise.query(end_sql)
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+//获取交易列表
+//参数:account/position/stable_index/index_translog_id/event_log_id
+router.get("/get_event_log", async function (req, res, next) {
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "",
+        moreSearchStrTransNormal = "";
+    if (queryVal.position === "2") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if (queryVal.position === "3") {
+        direction = "<";
+        sortInfo = "desc";
+    } else if (queryVal.position === "1") {
+        sortInfo = "desc";
+    } else if (queryVal.position === "4") {
+        sortInfo = "asc";
+    }
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (index_translog_id ${direction} ${Number(queryVal.index_translog_id)})
+            and
+        `;
+        moreSearchStrTransNormal = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+            (event_log_id ${direction}  ${Number(queryVal.event_log_id)})
+            and
+        `
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "account","hash","stable_index","index_translog_id"
+            FROM
+                account_index_translog
+            WHERE
+                ${moreSearchStrIndexTrans}
+                ("account" = $1)
+            order by 
+                "stable_index" ${sortInfo},
+                "index_translog_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [queryVal.account]
+    }
+
+
+    let data = await pgPromise.query(opt)
+    let dataResult = data.rows;
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'Select trans list FROM acc event_log Error'
+        }
+        res.json(responseData);
+        return;
+    }
+
+    //上面搜出来的Hash可能相同的
+    let searchHash = [];
+    data.rows.forEach(item => {
+        if (searchHash.indexOf(item.hash) === -1) {
+            searchHash.push(item.hash)
+        }
+    });
+    let mainOpt = {
+        text: `
+            Select 
+                "hash","mci","mc_timestamp",
+                "stable_index","contract_address","from","to","method",
+                "address","data","topics"
+            FROM
+                event_log
+            WHERE
+                ${moreSearchStrTransNormal}
+                ("hash" = ANY ($1))
+            order by 
+                "stable_index" ${sortInfo},
+                "event_log_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [searchHash]
+    }
+    let mainData = await pgPromise.query(mainOpt)
+    let mainResult = mainData.rows;
+    if (mainResult.length) {
+        mainResult[0].index_translog_id = dataResult[0].index_translog_id;
+        mainResult[mainResult.length - 1].index_translog_id = dataResult[dataResult.length - 1].index_translog_id;
+
+    }
+    let tempTopics;
+    mainData.rows.forEach(element => {
+        tempTopics = element.topics.split(",");
+        element.topics = tempTopics;
+    });
+
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = mainData.rows.reverse()
+    } else {
+        formatInfo = mainData.rows;
+    }
+    responseData = {
+        transactions: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
+})
+
 //获取合约代码
 router.get("/get_contract_code", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
@@ -2357,7 +2306,6 @@ router.get("/get_account_token_list", async function (req, res, next) {
     }
     res.json(responseData);
 })
-
 
 //************************** 账号详情 结束
 
@@ -2977,9 +2925,6 @@ router.get("/get_previous_units", async function (req, res, next) {
     let data = await pgPromise.query(sqlOptions)
     PageUtility.timeLog(req, '[1] SELECT trans_witness list Afer')
 
-    // console.log("\n\n\n\n\n")
-    // console.log("data.rows")
-    // console.log(data.rows)
     if (data.code) {
         responseData = {
             units: {

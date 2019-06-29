@@ -138,18 +138,23 @@ export default {
             IS_GET_INFO: false,
 
             pageFirstItem: {
-                stable_index: 0
+                stable_index: 9999999999999,
+                index_transtoken_id: 9999999999999,
+                trans_token_id: 9999999999999
             },
             pageLastItem: {
-                stable_index: 0
+                stable_index: 0,
+                index_transtoken_id: 0,
+                trans_token_id: 0
             },
             first_trans_token_id: "",
             end_trans_token_id: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                stable_index: 999999999999,
-                source: this.$route.query.source || "1" //1 发送方 2 接收方 3见证交易
+                stable_index: 9999999999999,
+                index_transtoken_id: 9999999999999,
+                trans_token_id: 9999999999999
             },
 
             // Token转账
@@ -162,7 +167,8 @@ export default {
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
             self.url_parm.stable_index = queryInfo.stable_index;
-            self.url_parm.source = queryInfo.source;
+            self.url_parm.index_transtoken_id = queryInfo.index_transtoken_id;
+            self.url_parm.trans_token_id = queryInfo.trans_token_id;
         }
         self.getFlagTransactions(self.url_parm);
     },
@@ -183,9 +189,7 @@ export default {
                 self.$router.push(
                     `/account/${
                         self.url_parm.account
-                    }/trans_token?stable_index=0&source=${
-                        self.url_parm.source
-                    }&position=4`
+                    }/trans_token?stable_index=0&index_transtoken_id=0&trans_token_id=0&position=4`
                 );
                 return;
             }
@@ -206,7 +210,11 @@ export default {
                         self.url_parm.account
                     }/trans_token?stable_index=${
                         self.pageFirstItem.stable_index
-                    }&source=${self.url_parm.source}&position=2`
+                    }&index_transtoken_id=${
+                        self.pageFirstItem.index_transtoken_id
+                    }&trans_token_id=${
+                        self.pageFirstItem.trans_token_id
+                    }&position=2`
                 );
                 return;
             }
@@ -218,15 +226,14 @@ export default {
                         self.url_parm.account
                     }/trans_token?stable_index=${
                         self.pageLastItem.stable_index
-                    }&source=${self.url_parm.source}&position=3`
+                    }&index_transtoken_id=${
+                        self.pageLastItem.index_transtoken_id
+                    }&trans_token_id=${
+                        self.pageLastItem.trans_token_id
+                    }&position=3`
                 );
                 return;
             }
-        },
-        handlerChange(val) {
-            self.$router.push(
-                `/account/${self.url_parm.account}/trans_token?source=${val}`
-            );
         },
 
         async getFlagTransactions() {
@@ -241,8 +248,8 @@ export default {
             );
 
             if (response.success) {
-                self.first_trans_token_id = response.near_item.stable_index;
-                self.end_trans_token_id = response.end_item.stable_index;
+                self.first_stable_index = response.near_item.stable_index;
+                self.end_stable_index = response.end_item.stable_index;
                 self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
@@ -252,18 +259,30 @@ export default {
             //TODO 没有搜见证交易
             self.loadingSwitch = true;
             let opt = {
-                position: parm.position,
-                source: parm.source,
                 account: parm.account,
-                stable_index: parm.stable_index
+                position: parm.position,
+                stable_index: parm.stable_index,
+                index_transtoken_id: parm.index_transtoken_id,
+                trans_token_id: parm.trans_token_id
             };
             let response = await self.$api.get("/api/get_trans_token", opt);
 
             if (response.success) {
-                self.trans_token = response.data;
-                if (response.data.length) {
-                    self.pageFirstItem = response.data[0];
-                    self.pageLastItem = response.data[response.data.length - 1];
+                self.trans_token = response.transactions;
+                if (response.transactions.length) {
+                    let firstTrans = response.transactions[0];
+                    let lastTrans =
+                        response.transactions[response.transactions.length - 1];
+                    self.pageFirstItem.stable_index = firstTrans.stable_index;
+                    self.pageFirstItem.index_transtoken_id =
+                        firstTrans.index_transtoken_id;
+                    self.pageFirstItem.trans_token_id =
+                        firstTrans.trans_token_id;
+
+                    self.pageLastItem.stable_index = lastTrans.stable_index;
+                    self.pageLastItem.index_transtoken_id =
+                        lastTrans.index_transtoken_id;
+                    self.pageLastItem.trans_token_id = lastTrans.trans_token_id;
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;
@@ -281,17 +300,28 @@ export default {
                 self.btnSwitch.footer = true;
             }
             if (self.trans_token.length > 0) {
+                // if (
+                //     self.first_trans_token_id ===
+                //     self.pageFirstItem.stable_index
+                // ) {
+                //     self.btnSwitch.header = true;
+                //     self.btnSwitch.left = true;
+                // }
+
+                // if (
+                //     self.end_trans_token_id === self.pageLastItem.stable_index
+                // ) {
+                //     self.btnSwitch.right = true;
+                //     self.btnSwitch.footer = true;
+                // }
                 if (
-                    self.first_trans_token_id ===
-                    self.pageFirstItem.stable_index
+                    self.first_stable_index === self.pageFirstItem.stable_index
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
-                if (
-                    self.end_trans_token_id === self.pageLastItem.stable_index
-                ) {
+                if (self.end_stable_index === self.pageLastItem.stable_index) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }

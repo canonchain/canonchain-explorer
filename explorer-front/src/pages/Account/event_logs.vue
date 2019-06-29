@@ -25,6 +25,64 @@
                                 <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_INFO">
                                         <event-logs :database="event_logs"></event-logs>
+
+                                        <!-- page -->
+                                        <template v-if="event_logs.length">
+                                            <div class="pagin-block">
+                                                <el-button-group>
+                                                    <el-button
+                                                        size="mini"
+                                                        :disabled="
+                                                            btnSwitch.header
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'header'
+                                                            )
+                                                        "
+                                                    >首页</el-button>
+                                                    <el-button
+                                                        size="mini"
+                                                        icon="el-icon-arrow-left"
+                                                        :disabled="
+                                                            btnSwitch.left
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'left'
+                                                            )
+                                                        "
+                                                    >上一页</el-button>
+                                                    <el-button
+                                                        size="mini"
+                                                        :disabled="
+                                                            btnSwitch.right
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'right'
+                                                            )
+                                                        "
+                                                    >
+                                                        下一页
+                                                        <i
+                                                            class="el-icon-arrow-right el-icon--right"
+                                                        ></i>
+                                                    </el-button>
+                                                    <el-button
+                                                        size="mini"
+                                                        :disabled="
+                                                            btnSwitch.footer
+                                                        "
+                                                        @click="
+                                                            getPaginationFlag(
+                                                                'footer'
+                                                            )
+                                                        "
+                                                    >尾页</el-button>
+                                                </el-button-group>
+                                            </div>
+                                        </template>
                                     </template>
                                 </div>
                             </el-tab-pane>
@@ -69,9 +127,34 @@ export default {
                 is_has_intel_trans: false,
                 is_has_event_logs: false
             },
+            btnSwitch: {
+                header: false,
+                left: false,
+                right: false,
+                footer: false
+            },
 
-            IS_GET_ACC: false,
             IS_GET_INFO: false,
+
+            pageFirstItem: {
+                stable_index: 9999999999999,
+                index_translog_id: 9999999999999,
+                event_log_id: 9999999999999
+            },
+            pageLastItem: {
+                stable_index: 0,
+                index_translog_id: 0,
+                event_log_id: 0
+            },
+            first_stable_index: "",
+            end_stable_index: "",
+            url_parm: {
+                account: this.$route.params.id,
+                position: "1", //1 首页  2 上一页 3 下一页 4 尾页
+                stable_index: 9999999999999,
+                index_translog_id: 9999999999999,
+                event_log_id: 9999999999999
+            },
 
             // 合约代码
             event_logs: []
@@ -79,8 +162,14 @@ export default {
     },
     created() {
         self = this;
-
-        self.getEventLog();
+        let queryInfo = this.$route.query;
+        if (Object.keys(queryInfo).length > 1) {
+            self.url_parm.position = queryInfo.position;
+            self.url_parm.stable_index = queryInfo.stable_index;
+            self.url_parm.index_translog_id = queryInfo.index_translog_id;
+            self.url_parm.event_log_id = queryInfo.event_log_id;
+        }
+        self.getFlagEventLog(self.url_parm);
     },
     methods: {
         handlerAddressProps: function(props) {
@@ -90,6 +179,132 @@ export default {
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;
+        },
+        async getPaginationFlag(val) {
+            self.loadingSwitch = true;
+            // 想取最后一页
+            if (val === "footer") {
+                self.$router.push(
+                    `/account/${
+                        self.url_parm.account
+                    }/event_logs?stable_index=0&index_translog_id=0&event_log_id=0&position=4`
+                );
+                return;
+            }
+            // 想取第一页
+            if (val === "header") {
+                self.$router.push(
+                    `/account/${self.url_parm.account}/event_logs`
+                );
+                return;
+            }
+
+            if (val == "left") {
+                //取第一个item
+                self.$router.push(
+                    `/account/${
+                        self.url_parm.account
+                    }/event_logs?stable_index=${
+                        self.pageFirstItem.stable_index
+                    }&index_translog_id=${
+                        self.pageFirstItem.index_translog_id
+                    }&event_log_id=${
+                        self.pageFirstItem.event_log_id
+                    }&position=2`
+                );
+                return;
+            }
+
+            if (val == "right") {
+                //取最后一个item
+                self.$router.push(
+                    `/account/${
+                        self.url_parm.account
+                    }/event_logs?stable_index=${
+                        self.pageLastItem.stable_index
+                    }&index_translog_id=${
+                        self.pageLastItem.index_translog_id
+                    }&event_log_id=${self.pageLastItem.event_log_id}&position=3`
+                );
+
+                return;
+            }
+        },
+
+        async getFlagEventLog() {
+            //获取交易表首位值；用来禁用首页和尾页的
+            let opt = {
+                account: self.url_parm.account
+            };
+            let response = await self.$api.get("/api/get_event_log_flag", opt);
+            if (response.success) {
+                self.first_stable_index = response.near_item.stable_index;
+                self.end_stable_index = response.end_item.stable_index;
+                self.getEventLog(self.url_parm);
+            } else {
+                // console.log("error");
+            }
+        },
+        async getEventLog(parm) {
+            //TODO 没有搜见证交易
+            self.loadingSwitch = true;
+            let opt = {
+                account: parm.account,
+                position: parm.position,
+                stable_index: parm.stable_index,
+                index_translog_id: parm.index_translog_id,
+                event_log_id: parm.event_log_id
+            };
+            let response = await self.$api.get("/api/get_event_log", opt);
+
+            if (response.success) {
+                self.event_logs = response.transactions;
+
+                if (response.transactions.length) {
+                    let firstTrans = response.transactions[0];
+                    let lastTrans =
+                        response.transactions[response.transactions.length - 1];
+                    self.pageFirstItem.stable_index = firstTrans.stable_index;
+                    self.pageFirstItem.index_translog_id =
+                        firstTrans.index_translog_id;
+                    self.pageFirstItem.event_log_id = firstTrans.event_log_id;
+
+                    self.pageLastItem.stable_index = lastTrans.stable_index;
+                    self.pageLastItem.index_translog_id =
+                        lastTrans.index_translog_id;
+                    self.pageLastItem.event_log_id = lastTrans.event_log_id;
+                } else {
+                    self.IS_GET_INFO = true;
+                    self.loadingSwitch = false;
+                    return;
+                }
+            } else {
+                self.event_logs = [];
+            }
+            //禁止首页上一页
+            if (parm.position === "1") {
+                self.btnSwitch.header = true;
+                self.btnSwitch.left = true;
+            } else if (parm.position === "4") {
+                self.btnSwitch.right = true;
+                self.btnSwitch.footer = true;
+            }
+
+            if (self.event_logs.length > 0) {
+                if (
+                    self.first_stable_index === self.pageFirstItem.stable_index
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
+
+                if (self.end_stable_index === self.pageLastItem.stable_index) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
+            }
+            self.IS_GET_INFO = true;
+            self.loadingSwitch = false;
         },
         // 合约相关的
         change_table(tab, event) {
@@ -127,19 +342,6 @@ export default {
                     this.$router.push(`/account/${self.address}/contract_code`);
                     break;
             }
-        },
-        async getEventLog() {
-            let opt = {
-                account: self.address
-            };
-            let response = await self.$api.get("/api/get_event_log", opt);
-            if (response.success) {
-                self.event_logs = response.data;
-            } else {
-                console.error("/api/get_account Error");
-            }
-            self.IS_GET_INFO = true;
-            self.loadingSwitch = false;
         }
     }
 };
