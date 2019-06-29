@@ -58,6 +58,7 @@
     /**
      * accounts表 更新 [没有做]
      *      is_token_account 
+     *      is_has_token_assets 
      *      is_has_token_trans 
      *      is_has_intel_trans 
      *      is_has_event_logs 
@@ -440,6 +441,7 @@
                         type: 1,
                         balance: blockInfo.amount,
                         is_token_account: false,//针对合约
+                        is_has_token_assets: false,
                         is_has_token_trans: false,
                         is_has_intel_trans: false,
                         is_has_event_logs: false
@@ -465,6 +467,7 @@
                         type: 1,
                         balance: "0",
                         is_token_account: false,//针对合约
+                        is_has_token_assets: false,
                         is_has_token_trans: false,
                         is_has_intel_trans: false,
                         is_has_event_logs: false
@@ -487,6 +490,7 @@
                                 type: 2,
                                 balance: blockInfo.amount,
                                 is_token_account: false,//针对合约
+                                is_has_token_assets: false,
                                 is_has_token_trans: false,
                                 is_has_intel_trans: false,
                                 is_has_event_logs: false
@@ -498,6 +502,7 @@
                                 type: 1,
                                 balance: blockInfo.amount,
                                 is_token_account: false,//针对合约
+                                is_has_token_assets: false,
                                 is_has_token_trans: false,
                                 is_has_intel_trans: false,
                                 is_has_event_logs: false
@@ -538,7 +543,8 @@
 
                 //********************************** 合约相关数据组装 开始 */
                 //DO 创建合约交易[OK]
-                if (!blockInfo.to && blockInfo.contract_address) {
+                if (blockInfo.contract_address) {
+                    logger.info("新建合约:", blockInfo.contract_address)
                     //合约表
                     contractInsertAry.push({
                         contract_account: blockInfo.contract_address,
@@ -571,10 +577,14 @@
                                 mci: blockInfo.mci,
                                 mc_timestamp: blockInfo.mc_timestamp,
                                 stable_index: blockInfo.stable_index,
-                                contract_account: contractAccount,
-                                data: log_item.data,
+
+                                contract_address: contractAccount,
+                                from: log_item.topics[1] ? czr.utils.encode_account(log_item.topics[1]) : "",
+                                to: log_item.topics[2] ? czr.utils.encode_account(log_item.topics[2]) : "",
                                 method: blockInfo.data.toString().substring(0, 8),//A9059CBB
-                                method_function: blockInfo.data,//TODO ABI解析 封装方法解析
+
+                                address: log_item.address,
+                                data: log_item.data,
                                 topics: log_item.topics.join(",")
                             }
                         );
@@ -790,26 +800,30 @@
                                 tempTracesInfo.gas_used = traces_item.result.gas_used;
                                 tempTracesInfo.contract_address_create = traces_item.result.contract_address;
                                 tempTracesInfo.contract_address_create_code = traces_item.result.code;
-                            }
-                            //suicide
-                            if (tempTracesInfo.type === 2) {
-                                tempTracesInfo.contract_address_suicide = traces_item.action.contract_address;
-                                tempTracesInfo.refund_adderss = traces_item.action.refund_adderss;
-                                tempTracesInfo.balance = traces_item.action.balance;
-                            }
 
-                            //这里交易可以转CZR/CRCToken
-                            if (!tempTracesInfo.is_error) {
-                                if (tempTracesInfo.type === 2) {
-                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.contract_address, tempTracesInfo.refund_adderss, 2, tempTracesInfo.balance)
+                                //更改To，方便查询账户查询内部交易列表
+                                tempTracesInfo.to = tempTracesInfo.contract_address_create;
+
+
+                                //写账户类型
+                                if (!accountsTotal.hasOwnProperty(tempTracesInfo.contract_address_create)) {
+                                    accountsTotal[tempTracesInfo.contract_address_create] = {
+                                        account: tempTracesInfo.contract_address_create,
+                                        type: 2,
+                                        balance: "0",
+                                        is_token_account: false,//针对合约
+                                        is_has_token_assets: false,
+                                        is_has_token_trans: false,
+                                        is_has_intel_trans: true,
+                                        is_has_event_logs: false
+                                    }
                                 } else {
-                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, (tempTracesInfo.to || tempTracesInfo.contract_address_create), 1, tempTracesInfo.value)
+                                    accountsTotal[tempTracesInfo.contract_address_create].type = 2;
+                                    accountsTotal[tempTracesInfo.contract_address_create].is_has_intel_trans = true;
                                 }
-                            }
 
-                            //如果是create保存合约代码
-                            if (tempTracesInfo.type === 1) {
                                 //contract
+                                logger.info("内部交易新建合约:", tempTracesInfo.contract_address_create)
                                 contractInsertAry.push({
                                     contract_account: tempTracesInfo.contract_address_create,
                                     own_account: tempTracesInfo.from,
@@ -818,28 +832,30 @@
                                     token_symbol: ""
                                 });
 
-
                                 // code
                                 contractCodeInsertAry.push({
                                     contract_account: tempTracesInfo.contract_address_create,
                                     code: tempTracesInfo.contract_address_create_code
                                 });
-
-                                if (!accountsTotal.hasOwnProperty(tempTracesInfo.contract_address_create)) {
-                                    accountsTotal[tempTracesInfo.contract_address_create] = {
-                                        account: tempTracesInfo.contract_address_create,
-                                        type: 2,
-                                        balance: "0",
-                                        is_token_account: false,//针对合约
-                                        is_has_token_trans: false,
-                                        is_has_intel_trans: false,
-                                        is_has_event_logs: false
-                                    }
-                                } else {
-                                    accountsTotal[tempTracesInfo.contract_address_create].type = 2;
-                                }
+                            }
+                            //suicide
+                            if (tempTracesInfo.type === 2) {
+                                tempTracesInfo.contract_address_suicide = traces_item.action.contract_address;
+                                tempTracesInfo.refund_adderss = traces_item.action.refund_adderss;
+                                tempTracesInfo.balance = traces_item.action.balance;
+                                //更改From，To，方便查询账户查询内部交易列表
+                                tempTracesInfo.from = tempTracesInfo.contract_address_suicide;
+                                tempTracesInfo.to = tempTracesInfo.refund_adderss;
                             }
 
+                            //这里交易可以转CZR/CRCToken
+                            if (!tempTracesInfo.is_error) {
+                                if (tempTracesInfo.type === 2) {
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.contract_address_suicide, tempTracesInfo.refund_adderss, 2, tempTracesInfo.balance)
+                                } else {
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, (tempTracesInfo.to || tempTracesInfo.contract_address_create), 1, tempTracesInfo.value)
+                                }
+                            }
                             transInternalInsertAry.push(tempTracesInfo);
 
                         }
@@ -1299,6 +1315,7 @@
                             ${item.balance}, 
                             0,
                             ${item.is_token_account || false},
+                            ${item.is_has_token_assets || false},
                             ${item.is_has_token_trans || false},
                             ${item.is_has_intel_trans || false},
                             ${item.is_has_event_logs || false}
@@ -1318,6 +1335,7 @@
                         "balance", 
                         "transaction_count",
                         "is_token_account",
+                        "is_has_token_assets",
                         "is_has_token_trans",
                         "is_has_intel_trans",
                         "is_has_event_logs"
@@ -1652,6 +1670,7 @@
                         '${item.account}',
                         ${Number(item.balance)},
                         ${item.is_token_account || false},
+                        ${item.is_has_token_assets || false},
                         ${item.is_has_token_trans || false},
                         ${item.is_has_intel_trans || false},
                         ${item.is_has_event_logs || false}
@@ -1671,7 +1690,7 @@
                 from 
                     (values ${tempAry.toString()}) 
                     as 
-                    temp (account,balance,is_token_account,is_has_token_trans,is_has_intel_trans,is_has_event_logs) 
+                    temp (account,balance,is_token_account,is_has_token_assets,is_has_token_trans,is_has_intel_trans,is_has_event_logs) 
                 where 
                     accounts.account=temp.account
             `;
@@ -2083,10 +2102,15 @@
                         ${Number(item.mci)},
                         ${Number(item.mc_timestamp)},
                         ${Number(item.stable_index)},
-                        '${item.contract_account}',
-                        '${item.data}',
+
+                        '${item.contract_address}',
+                        '${item.from}',
+                        '${item.to}',
                         '${item.method}',
-                        '${item.method_function}',
+
+
+                        '${item.address}',
+                        '${item.data}',
                         '${item.topics}'
                     )
                     `
@@ -2100,10 +2124,14 @@
                             "mci",
                             "mc_timestamp",
                             "stable_index",
-                            "contract_account",
-                            "data",
+
+                            "contract_address",
+                            "from",
+                            "to",
                             "method",
-                            "method_function",
+
+                            "address",
+                            "data",
                             "topics"
                         )
                     VALUES ${tempAry.toString()}`
@@ -2278,24 +2306,30 @@
                     type: account_type,
                     balance: "0",
                     is_token_account: false,//针对合约
+                    is_has_token_assets: false,
                     is_has_token_trans: false,
-                    is_has_intel_trans: false,
+                    is_has_intel_trans: true,
                     is_has_event_logs: false
                 }
+            } else {
+                accountsTotal[from].is_has_intel_trans = true;
             }
             //处理收款方余额
             if (accountsTotal.hasOwnProperty(to)) {
                 //有,收款方地址已存在cache中：更新数据
                 accountsTotal[to].balance = BigNumber(accountsTotal[to].balance).plus(balance).toString(10);
+                accountsTotal[to].is_has_intel_trans = true;
+
             } else {
                 //无，收款方地址不存在cache中：写入数据
                 accountsTotal[to] = {
                     account: to,
-                    type: 1,
+                    type: 1,//判断类型
                     balance: balance,
                     is_token_account: false,//针对合约
+                    is_has_token_assets: false,
                     is_has_token_trans: false,
-                    is_has_intel_trans: false,
+                    is_has_intel_trans: true,
                     is_has_event_logs: false
                 }
             }
@@ -2306,14 +2340,16 @@
             if (!accountsTotal.hasOwnProperty(acc)) {
                 accountsTotal[acc] = {
                     account: acc,
-                    type: 1,
+                    type: 1,//这里的值需要判断更新
                     balance: "0",
                     is_token_account: false,
+                    is_has_token_assets: true,
                     is_has_token_trans: true,
                     is_has_intel_trans: false,
                     is_has_event_logs: true
                 }
             } else {
+                accountsTotal[acc].is_has_token_assets = true;
                 accountsTotal[acc].is_has_token_trans = true;
                 accountsTotal[acc].is_has_event_logs = true;
             }

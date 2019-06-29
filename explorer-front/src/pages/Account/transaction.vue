@@ -12,10 +12,10 @@
                             <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                 <template v-if="IS_GET_INFO">
                                     <template v-if="url_parm.source === '3'">
-                                        <witness-list :database="database"></witness-list>
+                                        <witness-list :database="database" :address="address"></witness-list>
                                     </template>
                                     <template v-else>
-                                        <nomal-list :database="database"></nomal-list>
+                                        <nomal-list :database="database" :address="address"></nomal-list>
                                     </template>
                                     <!-- page -->
                                     <template v-if="database.length">
@@ -171,6 +171,7 @@ export default {
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;
+            console.log(self.account_props)
         },
         async getPaginationFlag(val) {
             self.loadingSwitch = true;

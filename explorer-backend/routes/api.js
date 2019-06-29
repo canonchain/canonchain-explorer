@@ -1400,7 +1400,7 @@ router.get("/get_account", async function (req, res, next) {
             Select 
                 "account","type","balance","transaction_count",
                 "is_token_account","is_has_token_trans",
-                "is_has_intel_trans","is_has_event_logs"
+                "is_has_intel_trans","is_has_event_logs","is_has_token_assets"
             FROM 
                 "accounts"
             WHERE 
@@ -1768,23 +1768,6 @@ router.get("/get_account_transactions", async function (req, res, next) {
             message: "success"
         }
     }
-    //是否从此帐号发出
-    if (!IS_WITNESS) {
-        responseData.transactions.forEach(item => {
-            if (item.from == queryAccount) {
-                item.is_from_this_account = true;
-            } else {
-                item.is_from_this_account = false;
-            }
-            //是否转给自己
-            if (item.from == item.to) {
-                item.is_to_self = true;
-            } else {
-                item.is_to_self = false;
-            }
-        })
-    }
-
     res.json(responseData);
 })
 
@@ -1968,20 +1951,6 @@ router.get("/get_trans_token", async function (req, res, next) {
         } else {
             formatInfo = data.rows;
         }
-
-        formatInfo.forEach(item => {
-            if (item.from == queryVal.account) {
-                item.is_from_this_account = true;
-            } else {
-                item.is_from_this_account = false;
-            }
-            //是否转给自己
-            if (item.from == item.to) {
-                item.is_to_self = true;
-            } else {
-                item.is_to_self = false;
-            }
-        })
 
         if (data.rows.length) {
             responseData = {
@@ -2262,13 +2231,17 @@ router.get("/get_event_log", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "hash","mc_timestamp","contract_account","data","method","method_function","topics"
+                "hash","mc_timestamp","stable_index",
+                "contract_address","from","to","method",
+                "address","data","topics"
             FROM 
                 "event_log"
             WHERE 
-                "contract_account" = $1
+                "from" = $1
+                or
+                "to" = $1
             LIMIT
-                10
+                20
         `,
         values: [queryVal.account]
     };
@@ -2666,6 +2639,103 @@ router.get("/get_transaction_event_log", async function (req, res, next) {
     }
     res.json(responseData);
 })
+
+//获取交易props
+router.get("/get_transaction_props", async function (req, res, next) {
+    PageUtility.timeLog(req, 'start')
+    let queryVal = req.query;//hash
+
+    let tableName = '';
+    let tableCol = ''
+    let typeValue = 0;
+    let type_sql = {
+        text: `
+            Select 
+                "type"
+            FROM 
+                trans_type  
+            WHERE 
+                hash = $1
+        `,
+        values: [queryVal.hash]
+    }
+    let type = await pgPromise.query(type_sql);
+    if (!type.rows.length) {
+        responseData = {
+            data: {},
+            code: 200,
+            success: true,
+            message: "hash node found"
+        }
+        res.json(responseData);
+        return;
+    }
+    // console.log(type.rows);
+    typeValue = type.rows[0].type;
+    let errorInfo = {
+        "hash": queryVal.hash,
+        "type": typeValue,
+        is_event_log: true,
+        is_intel_trans: true,
+        is_token_trans: true,
+    }
+
+    if (typeValue === '2') {
+        //普通交易
+        tableName = 'trans_normal'
+        tableCol = `
+            "hash","type",
+            "is_event_log","is_token_trans","is_intel_trans"
+        `;
+    } else {
+        responseData = {
+            data: errorInfo,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+        res.json(responseData);
+        return;
+    }
+
+    //TODO 少选点信息
+    let opt = {
+        text: `
+            Select 
+                ${tableCol}
+            FROM 
+                ${tableName}  
+            WHERE 
+                hash = $1
+        `,
+        values: [queryVal.hash]
+    }
+
+    PageUtility.timeLog(req, '[1] SELECT transaction info Before')
+    let data = await pgPromise.query(opt)
+    PageUtility.timeLog(req, '[1] SELECT transaction info After')
+    let transaction;
+
+
+    if (data.code) {
+        responseData = {
+            data: errorInfo,
+            code: 500,
+            success: false,
+            message: "select items from transaction error"
+        }
+    } else {
+        transaction = data.rows.length ? data.rows[0] : errorInfo;
+        responseData = {
+            data: transaction,
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
 //************************** 交易详情页 结束
 
 
@@ -3054,6 +3124,25 @@ router.get("/get_mci", async function (req, res, next) {
     let data = await pgPromise.query(sql)
     PageUtility.timeLog(req, '[1] SELECT last_mci last_stable_mci After')
 
+    //获取峰值MCI
+    let tpsSql = {
+        text: `
+        select 
+            "count"
+        from 
+            timestamp
+        where 
+            type=1
+        order by
+            "count" desc
+        limit
+            1
+        `
+    };
+    PageUtility.timeLog(req, '[1] SELECT tpsSql Before')
+    let tpsData = await pgPromise.query(tpsSql)
+    PageUtility.timeLog(req, '[1] SELECT tpsSql After')
+
     if (data.code) {
         responseData = {
             mci: {},
@@ -3063,6 +3152,7 @@ router.get("/get_mci", async function (req, res, next) {
         }
     } else {
         let mciObj = {};
+        mciObj.top_tps = tpsData.rows.length ? tpsData.rows[0].count : 0;//TPS
         data.rows.forEach(item => {
             mciObj[item.key] = item.value;
         })

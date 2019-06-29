@@ -5,9 +5,7 @@
             <div class="container">
                 <div class="list-wrap" v-loading="loadingSwitch">
                     <strong class="list-title">账户列表</strong>
-                    <span class="sub_header-des"
-                        >合计 {{ TOTAL_VAL }} 个账户</span
-                    >
+                    <span class="sub_header-des">合计 {{ TOTAL_VAL }} 个账户</span>
                     <template v-if="IS_GET_INFO">
                         <account-list :database="database"></account-list>
                     </template>
@@ -19,31 +17,26 @@
                                 size="mini"
                                 :disabled="btnSwitch.header"
                                 @click="getPaginationFlag('header')"
-                                >首页</el-button
-                            >
+                            >首页</el-button>
                             <el-button
                                 size="mini"
                                 icon="el-icon-arrow-left"
                                 :disabled="btnSwitch.left"
                                 @click="getPaginationFlag('left')"
-                                >上一页</el-button
-                            >
+                            >上一页</el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.right"
                                 @click="getPaginationFlag('right')"
                             >
                                 下一页
-                                <i
-                                    class="el-icon-arrow-right el-icon--right"
-                                ></i>
+                                <i class="el-icon-arrow-right el-icon--right"></i>
                             </el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.footer"
                                 @click="getPaginationFlag('footer')"
-                                >尾页</el-button
-                            >
+                            >尾页</el-button>
                         </el-button-group>
                     </div>
                 </template>
@@ -159,26 +152,6 @@ export default {
             }
         },
 
-        async getFlagAccounts() {
-            //获取交易表首位值；用来禁用首页和尾页的
-            let response = await self.$api.get("/api/get_accounts_flag");
-
-            if (response.success) {
-                if (response.near_item.acc_id == self.pageFirstItem.acc_id) {
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.left = true;
-                }
-
-                if (response.end_item.acc_id == self.pageLastItem.acc_id) {
-                    self.btnSwitch.right = true;
-                    self.btnSwitch.footer = true;
-                }
-                self.IS_GET_INFO = true;
-                self.loadingSwitch = false;
-            } else {
-                console.log("error");
-            }
-        },
         async getAccounts(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
             self.loadingSwitch = true;
@@ -196,7 +169,10 @@ export default {
                     self.pageFirstItem = response.accounts[0];
                     self.pageLastItem =
                         response.accounts[response.accounts.length - 1];
-                    if (response.accounts.length < 20) {
+                    if (
+                        response.accounts.length < 20 &&
+                        parm.position === "2"
+                    ) {
                         self.$router.push(`/accounts`);
                     }
                 } else {
@@ -217,6 +193,26 @@ export default {
             }
 
             self.getFlagAccounts();
+        },
+        async getFlagAccounts() {
+            //获取交易表首位值；用来禁用首页和尾页的
+            let response = await self.$api.get("/api/get_accounts_flag");
+
+            if (response.success) {
+                if (response.near_item.acc_id == self.pageFirstItem.acc_id) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
+
+                if (response.end_item.acc_id == self.pageLastItem.acc_id) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
+                self.IS_GET_INFO = true;
+                self.loadingSwitch = false;
+            } else {
+                console.log("error");
+            }
         }
     }
 };

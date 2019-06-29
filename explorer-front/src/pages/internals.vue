@@ -5,9 +5,7 @@
             <div class="container">
                 <div class="list-wrap" v-loading="loadingSwitch">
                     <strong class="list-title">内部交易列表</strong>
-                    <span class="sub_header-des"
-                        >合计 {{ TOTAL_VAL }} 笔交易</span
-                    >
+                    <span class="sub_header-des">合计 {{ TOTAL_VAL }} 笔交易</span>
                     <template v-if="IS_GET_INFO">
                         <internal-list :database="database"></internal-list>
                     </template>
@@ -19,31 +17,26 @@
                                 size="mini"
                                 :disabled="btnSwitch.header"
                                 @click="getPaginationFlag('header')"
-                                >首页</el-button
-                            >
+                            >首页</el-button>
                             <el-button
                                 size="mini"
                                 icon="el-icon-arrow-left"
                                 :disabled="btnSwitch.left"
                                 @click="getPaginationFlag('left')"
-                                >上一页</el-button
-                            >
+                            >上一页</el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.right"
                                 @click="getPaginationFlag('right')"
                             >
                                 下一页
-                                <i
-                                    class="el-icon-arrow-right el-icon--right"
-                                ></i>
+                                <i class="el-icon-arrow-right el-icon--right"></i>
                             </el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.footer"
                                 @click="getPaginationFlag('footer')"
-                                >尾页</el-button
-                            >
+                            >尾页</el-button>
                         </el-button-group>
                     </div>
                 </template>
@@ -81,7 +74,6 @@ export default {
     data() {
         return {
             TOTAL_VAL: 0,
-            LIMIT_VAL: 20,
             loadingSwitch: true,
             IS_GET_INFO: false,
             TRANS_TYPE: 2,
@@ -162,7 +154,7 @@ export default {
                 if (response.data.length) {
                     self.pageFirstItem = response.data[0];
                     self.pageLastItem = response.data[response.data.length - 1];
-                    if (response.data.length < 20) {
+                    if (response.data.length < 20 && parm.position === "2") {
                         self.$router.push(`/internals`);
                     }
                 } else {

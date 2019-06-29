@@ -4,67 +4,39 @@
         <div class="block-wrap">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
-                    <el-tab-pane
-                        label="交易详情"
-                        name="trans_info"
-                    ></el-tab-pane>
-                    <el-tab-pane
-                        label="内部交易"
-                        name="intel_trans"
-                    ></el-tab-pane>
-                    <el-tab-pane
-                        label="事件日志"
-                        name="event_log"
-                    ></el-tab-pane>
+                    <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                     <el-tab-pane label="高级信息" name="advanced_info">
                         <template v-loading="loadingSwitch">
                             <template v-if="IS_GET_INFO">
                                 <div class="bui-dlist">
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            交易号
-                                        </strong>
+                                        <strong class="bui-dlist-tit">交易号</strong>
                                         <div class="bui-dlist-det">
                                             {{ blockHash }}
-                                            <template
-                                                v-if="blockInfo.type === '1'"
-                                            >
-                                                <router-link
-                                                    :to="'/dag/' + blockHash"
-                                                    >DAG中查看</router-link
-                                                >
+                                            <template v-if="blockInfo.type === '1'">
+                                                <router-link :to="'/dag/' + blockHash">DAG中查看</router-link>
                                             </template>
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            交易类型
-                                        </strong>
+                                        <strong class="bui-dlist-tit">交易类型</strong>
                                         <div class="bui-dlist-det">
-                                            <template
-                                                v-if="blockInfo.type === '0'"
-                                            >
-                                                <span class="txt-info"
-                                                    >创世交易</span
-                                                >
+                                            <template v-if="blockInfo.type === '0'">
+                                                <span class="txt-info">创世交易</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     blockInfo.type === '1'
                                                 "
                                             >
-                                                <span class="txt-info"
-                                                    >见证交易</span
-                                                >
+                                                <span class="txt-info">见证交易</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     blockInfo.type === '2'
                                                 "
                                             >
-                                                <span class="txt-info"
-                                                    >普通交易</span
-                                                >
+                                                <span class="txt-info">普通交易</span>
                                             </template>
                                             <template v-else>
                                                 <span class="txt-info">-</span>
@@ -72,140 +44,94 @@
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            发送时间
-                                        </strong>
+                                        <strong class="bui-dlist-tit">发送时间</strong>
                                         <div class="bui-dlist-det">
                                             {{
-                                                blockInfo.exec_timestamp
-                                                    | toDate
+                                            blockInfo.exec_timestamp
+                                            | toDate
                                             }}
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            主链时间
-                                        </strong>
+                                        <strong class="bui-dlist-tit">主链时间</strong>
                                         <div class="bui-dlist-det">
                                             {{
-                                                blockInfo.mc_timestamp | toDate
+                                            blockInfo.mc_timestamp | toDate
                                             }}
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            确认时间
-                                        </strong>
+                                        <strong class="bui-dlist-tit">确认时间</strong>
                                         <div class="bui-dlist-det">
                                             {{
-                                                blockInfo.stable_timestamp
-                                                    | toDate
+                                            blockInfo.stable_timestamp
+                                            | toDate
                                             }}
                                         </div>
                                     </div>
                                     <template v-if="blockInfo.type === '1'">
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">
-                                                Is Free
-                                            </strong>
-                                            <div class="bui-dlist-det">
-                                                {{ blockInfo.is_free }}
-                                            </div>
+                                            <strong class="bui-dlist-tit">Is Free</strong>
+                                            <div class="bui-dlist-det">{{ blockInfo.is_free }}</div>
                                         </div>
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">
-                                                Is On Mc
-                                            </strong>
-                                            <div class="bui-dlist-det">
-                                                {{ blockInfo.is_on_mc }}
-                                            </div>
+                                            <strong class="bui-dlist-tit">Is On Mc</strong>
+                                            <div class="bui-dlist-det">{{ blockInfo.is_on_mc }}</div>
                                         </div>
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">
-                                                Witnessed Level
-                                            </strong>
-                                            <div class="bui-dlist-det">
-                                                {{ blockInfo.witnessed_level }}
-                                            </div>
+                                            <strong class="bui-dlist-tit">Witnessed Level</strong>
+                                            <div
+                                                class="bui-dlist-det"
+                                            >{{ blockInfo.witnessed_level }}</div>
                                         </div>
                                     </template>
 
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Level
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.level }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Level</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.level }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Mci
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.mci }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Mci</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.mci }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Is Stable
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.is_stable }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Is Stable</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.is_stable }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Stable Index
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.stable_index }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Stable Index</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.stable_index }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            From State
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.stable_timestamp }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">From State</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.stable_timestamp }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            To States
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.stable_timestamp }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">To States</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.stable_timestamp }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Data Hash
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.data_hash }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Data Hash</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.data_hash }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Previous
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.previous }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Previous</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.previous }}</div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">
-                                            Signature
-                                        </strong>
-                                        <div class="bui-dlist-det">
-                                            {{ blockInfo.signature }}
-                                        </div>
+                                        <strong class="bui-dlist-tit">Signature</strong>
+                                        <div class="bui-dlist-det">{{ blockInfo.signature }}</div>
                                     </div>
                                 </div>
                             </template>
                         </template>
                     </el-tab-pane>
+                    <template v-if="blockInfo.is_intel_trans">
+                        <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                    </template>
+                    <template v-if="blockInfo.is_event_log">
+                        <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                    </template>
                 </el-tabs>
             </div>
         </div>
@@ -268,9 +194,9 @@ export default {
                 best_parent: "",
                 is_free: "",
                 is_on_mc: "",
-                is_event_log: "",
-                is_token_trans: "",
-                is_intel_trans: ""
+                is_event_log: false,
+                is_token_trans: false,
+                is_intel_trans: false
             },
             // change
             activeName: "advanced_info"

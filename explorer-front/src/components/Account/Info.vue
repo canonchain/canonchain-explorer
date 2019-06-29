@@ -121,12 +121,13 @@ export default {
                 self.account_info.total = Number(accInfo.transaction_count);
                 self.account_info.balance = accInfo.balance;
                 self.account_info.type = accInfo.type;
-                self.account_info.type = accInfo.is_token_account;
+                self.account_info.is_token_account = accInfo.is_token_account;
 
                 let addrsss_props = {
                     account_type: accInfo.type,
                     is_token_account: accInfo.is_token_account,
-                    is_has_token_assets: true,
+                    is_has_token_assets: accInfo.is_has_token_assets,
+                    is_has_token_trans: accInfo.is_has_token_trans,
                     is_has_intel_trans: accInfo.is_has_intel_trans,
                     is_has_event_logs: accInfo.is_has_event_logs,
                     is_witness: accInfo.is_witness

@@ -19,6 +19,7 @@ CREATE TABLE public.accounts
 
     -- 合约相关的
     is_token_account boolean,
+    is_has_token_assets boolean,
     is_has_token_trans boolean,
     is_has_intel_trans boolean,
     is_has_event_logs boolean,
@@ -546,10 +547,13 @@ CREATE TABLE public.event_log
     "mc_timestamp" bigint,
     "stable_index" bigint,
     
-    contract_account text,
-    "data" text,
+    "contract_address" text,
+    "from" text,
+    "to" text,
     "method" text,
-    "method_function" text,
+
+    "address" text,
+    "data" text,
     "topics" text,
 
     CONSTRAINT event_log_id_pkey PRIMARY KEY (event_log_id)

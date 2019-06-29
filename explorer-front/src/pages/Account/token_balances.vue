@@ -56,7 +56,7 @@ export default {
             address: this.$route.params.id,
             activeName: "token_balances",
             account_props: {
-                account_type: 2,
+                account_type: 1,
                 is_witness: false,
                 is_has_token_assets: false,
                 is_has_token_trans: false,

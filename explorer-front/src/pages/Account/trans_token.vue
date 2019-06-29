@@ -4,36 +4,21 @@
         <div class="page-account-wrap">
             <div class="container">
                 <div class="account-panel">
-                    <account-info
-                        :address="address"
-                        v-on:address_props="handlerAddressProps"
-                    ></account-info>
+                    <account-info :address="address" v-on:address_props="handlerAddressProps"></account-info>
                 </div>
                 <div class="account-main">
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
-                            <el-tab-pane
-                                label="交易记录"
-                                name="transaction"
-                            ></el-tab-pane>
+                            <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
 
                             <template v-if="account_props.is_has_token_assets">
                                 <!-- is_has_token_assets 应该为 is_has_token -->
-                                <el-tab-pane
-                                    label="代币余额"
-                                    name="token_balances"
-                                >
-                                </el-tab-pane>
+                                <el-tab-pane label="代币余额" name="token_balances"></el-tab-pane>
                             </template>
                             <el-tab-pane label="代币转账" name="trans_token">
-                                <div
-                                    class="accounts-main-wrap"
-                                    v-loading="loadingSwitch"
-                                >
+                                <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_INFO">
-                                        <token-trans
-                                            :database="trans_token"
-                                        ></token-trans>
+                                        <token-trans :database="trans_token" :address="address"></token-trans>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -48,8 +33,7 @@
                                                                 'header'
                                                             )
                                                         "
-                                                        >首页</el-button
-                                                    >
+                                                    >首页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
@@ -61,8 +45,7 @@
                                                                 'left'
                                                             )
                                                         "
-                                                        >上一页</el-button
-                                                    >
+                                                    >上一页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         :disabled="
@@ -89,8 +72,7 @@
                                                                 'footer'
                                                             )
                                                         "
-                                                        >尾页</el-button
-                                                    >
+                                                    >尾页</el-button>
                                                 </el-button-group>
                                             </div>
                                         </template>
@@ -98,22 +80,13 @@
                                 </div>
                             </el-tab-pane>
                             <template v-if="account_props.is_has_intel_trans">
-                                <el-tab-pane
-                                    label="合约内交易"
-                                    name="trans_internal"
-                                ></el-tab-pane>
+                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
                             </template>
                             <template v-if="account_props.is_has_event_logs">
-                                <el-tab-pane
-                                    label="事件日志"
-                                    name="event_logs"
-                                ></el-tab-pane>
+                                <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
                             </template>
                             <template v-if="account_props.account_type === 2">
-                                <el-tab-pane
-                                    label="合约创建代码"
-                                    name="contract_code"
-                                ></el-tab-pane>
+                                <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
                             </template>
                         </el-tabs>
                     </template>
@@ -348,7 +321,9 @@ export default {
                     this.$router.push(`/account/${self.address}`);
                     break;
                 case "token_balances":
-                    this.$router.push(`/account/${self.address}/token_balances`);
+                    this.$router.push(
+                        `/account/${self.address}/token_balances`
+                    );
                     break;
                 case "trans_token":
                     self.IS_GET_INFO = true;

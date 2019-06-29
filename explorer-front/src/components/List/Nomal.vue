@@ -22,6 +22,9 @@
                 <template v-if="scope.row.mci <= 0">
                     <span class="table-long-item">GENESIS</span>
                 </template>
+                <template v-else-if="scope.row.from===address">
+                    <span class="table-long-item">{{ scope.row.from }}</span>
+                </template>
                 <template v-else>
                     <router-link
                         class="table-long-item"
@@ -30,6 +33,9 @@
                 </template>
             </template>
         </el-table-column>
+        <el-table-column width="40">
+            <i class="el-icon-right"></i>
+        </el-table-column>
         <el-table-column label="收款方" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.to">
@@ -37,6 +43,9 @@
                         class="table-long-item"
                         :to="{ path: '/account/' + scope.row.to }"
                     >{{ scope.row.to }}</router-link>
+                </template>
+                <template v-else-if="scope.row.to===address">
+                    <span class="table-long-item">{{ scope.row.to }}</span>
                 </template>
                 <template v-else>-</template>
             </template>
@@ -75,6 +84,6 @@
 <script>
 export default {
     name: "NomalList",
-    props: ["database"]
+    props: ["database", "address"]
 };
 </script>

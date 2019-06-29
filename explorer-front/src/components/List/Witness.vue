@@ -2,9 +2,11 @@
     <el-table :data="database" style="width: 100%">
         <el-table-column label="时间" width="200">
             <template slot-scope="scope">
-                <span class="table-long-item">{{
+                <span class="table-long-item">
+                    {{
                     scope.row.timestamp | toDate
-                }}</span>
+                    }}
+                </span>
             </template>
         </el-table-column>
         <el-table-column label="交易号" width="200">
@@ -12,8 +14,7 @@
                 <router-link
                     class="table-long-item"
                     :to="{ path: '/block/' + scope.row.hash }"
-                    >{{ scope.row.hash }}</router-link
-                >
+                >{{ scope.row.hash }}</router-link>
             </template>
         </el-table-column>
         <el-table-column label="账户" width="200">
@@ -21,12 +22,14 @@
                 <template v-if="scope.row.mci <= 0">
                     <span class="table-long-item">GENESIS</span>
                 </template>
+                <template v-else-if="scope.row.from===address">
+                    <span class="table-long-item">{{ scope.row.from }}</span>
+                </template>
                 <template v-else>
                     <router-link
                         class="table-long-item"
                         :to="{ path: '/account/' + scope.row.from }"
-                        >{{ scope.row.from }}</router-link
-                    >
+                    >{{ scope.row.from }}</router-link>
                 </template>
             </template>
         </el-table-column>
@@ -56,9 +59,11 @@
         </el-table-column>
         <el-table-column label="稳定时间" width="200">
             <template slot-scope="scope">
-                <span class="table-long-item">{{
+                <span class="table-long-item">
+                    {{
                     scope.row.stable_timestamp | toDate
-                }}</span>
+                    }}
+                </span>
             </template>
         </el-table-column>
     </el-table>
@@ -66,6 +71,6 @@
 <script>
 export default {
     name: "WitnessList",
-    props: ["database"]
+    props: ["database", "address"]
 };
 </script>

@@ -40,6 +40,9 @@
                         }"
                     >{{ scope.row.contract_address_suicide }}</router-link>
                 </template>
+                <template v-else-if="scope.row.from===address">
+                    <span class="table-long-item">{{ scope.row.from }}</span>
+                </template>
                 <template v-else>
                     <router-link
                         class="table-long-item"
@@ -49,6 +52,9 @@
                     >{{ scope.row.from }}</router-link>
                 </template>
             </template>
+        </el-table-column>
+        <el-table-column width="40">
+            <i class="el-icon-right"></i>
         </el-table-column>
         <el-table-column label="接收方" width="180">
             <template slot-scope="scope">
@@ -68,6 +74,9 @@
                                 '/account/' + scope.row.contract_address_create
                         }"
                     >{{ scope.row.contract_address_create }}</router-link>
+                </template>
+                <template v-else-if="scope.row.to===address">
+                    <span class="table-long-item">{{ scope.row.to }}</span>
                 </template>
                 <template v-else>
                     <template v-if="scope.row.to">
@@ -106,6 +115,6 @@
 <script>
 export default {
     name: "InternalList",
-    props: ["database"]
+    props: ["database", "address"]
 };
 </script>

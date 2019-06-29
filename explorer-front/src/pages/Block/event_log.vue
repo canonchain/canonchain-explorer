@@ -5,7 +5,11 @@
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
                     <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
-                    <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                    <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
+
+                    <template v-if="hash_props.is_intel_trans">
+                        <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                    </template>
                     <el-tab-pane label="事件日志" name="event_log">
                         <template v-loading="loadingSwitch">
                             <template v-if="IS_GET_INFO">
@@ -13,7 +17,6 @@
                             </template>
                         </template>
                     </el-tab-pane>
-                    <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
                 </el-tabs>
             </div>
         </div>
@@ -42,15 +45,40 @@ export default {
             isSuccess: false,
             loadingSwitch: true,
             IS_GET_INFO: false,
+
+            event_log: [],
+            hash_props: {
+                type: "2",
+                is_event_log: false,
+                is_token_trans: false,
+                is_intel_trans: false
+            },
             // change
             activeName: "event_log"
         };
     },
     created() {
         self = this;
+        this.getTransactionsProps();
         this.getTransactions();
     },
     methods: {
+        async getTransactionsProps() {
+            //TODO 没有搜见证交易
+            self.loadingSwitch = true;
+            let opt = {
+                hash: self.blockHash
+            };
+            let response = await self.$api.get(
+                "/api/get_transaction_props",
+                opt
+            );
+            if (response.success) {
+                self.hash_props = response.data;
+            } else {
+                self.hash_props = [];
+            }
+        },
         async getTransactions() {
             //TODO 没有搜见证交易
             self.loadingSwitch = true;
@@ -63,7 +91,7 @@ export default {
             );
             let tempTopics;
 
-console.log(response);
+            console.log(response);
             if (response.success) {
                 self.event_log = response.data;
             } else {

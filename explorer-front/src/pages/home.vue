@@ -7,7 +7,7 @@
             </div>
             <!-- <div class="charts-wrap">
                 <echarts></echarts>
-            </div> -->
+            </div>-->
             <div class="trans-wrap" v-loading="loadingSwitch">
                 <h2 class="list-title">最新交易</h2>
                 <nomal-list :database="database"></nomal-list>
@@ -41,6 +41,7 @@ export default {
             mci: {
                 last_stable_mci: "-",
                 last_mci: "-",
+                top_tps: "-",
                 last_stable_block_index: "-"
             },
             database: []
@@ -83,6 +84,7 @@ export default {
                 self.mci.last_stable_block_index =
                     response.mci.last_stable_block_index;
                 self.mci.last_mci = response.mci.last_mci;
+                self.mci.top_tps = response.mci.top_tps;
             }
         }
     }
