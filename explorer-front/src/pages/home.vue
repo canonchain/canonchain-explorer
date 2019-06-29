@@ -5,9 +5,9 @@
             <div class="card-wrap">
                 <card :mci="mci"></card>
             </div>
-            <!-- <div class="charts-wrap">
+            <div class="charts-wrap">
                 <echarts></echarts>
-            </div>-->
+            </div>
             <div class="trans-wrap" v-loading="loadingSwitch">
                 <h2 class="list-title">最新交易</h2>
                 <nomal-list :database="database"></nomal-list>
@@ -22,7 +22,7 @@ import CzrHeader from "@/components/Header/Header";
 import CzrFooter from "@/components/Footer/Footer";
 import NomalList from "@/components/List/Nomal";
 // import Placard from "@/components/Home/Placard";
-// import Echarts from "@/components/Home/Echarts";
+import Echarts from "@/components/Home/Echarts";
 import Card from "@/components/Home/Card";
 
 let self;
@@ -32,7 +32,7 @@ export default {
         CzrHeader,
         CzrFooter,
         NomalList,
-        // Echarts,
+        Echarts,
         Card
     },
     data() {
@@ -80,11 +80,11 @@ export default {
         async getMci() {
             let response = await self.$api.get("/api/get_mci");
             if (response.success) {
-                self.mci.last_stable_mci = response.mci.last_stable_mci;
+                self.mci.last_stable_mci = response.mci.last_stable_mci || 0;
                 self.mci.last_stable_block_index =
-                    response.mci.last_stable_block_index;
-                self.mci.last_mci = response.mci.last_mci;
-                self.mci.top_tps = response.mci.top_tps;
+                    response.mci.last_stable_block_index || 0;
+                self.mci.last_mci = response.mci.last_mci || 0;
+                self.mci.top_tps = response.mci.top_tps || 0;
             }
         }
     }

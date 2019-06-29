@@ -8,20 +8,12 @@
                 </div>
                 <div class="account-main">
                     <el-tabs v-model="activeName" @tab-click="change_table">
-                        <el-tab-pane
-                            label="代币转账"
-                            name="transaction"
-                        ></el-tab-pane>
+                        <el-tab-pane label="代币转账" name="transaction"></el-tab-pane>
                         <el-tab-pane label="持有者" name="holder">
                             <div class="account-content">
-                                <div
-                                    class="accounts-main-wrap"
-                                    v-loading="loadingSwitch"
-                                >
+                                <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_TOKEN">
-                                        <token-holder-list
-                                            :database="trans_token"
-                                        ></token-holder-list>
+                                        <token-holder-list :database="trans_token"></token-holder-list>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -36,8 +28,7 @@
                                                                 'header'
                                                             )
                                                         "
-                                                        >首页</el-button
-                                                    >
+                                                    >首页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
@@ -49,8 +40,7 @@
                                                                 'left'
                                                             )
                                                         "
-                                                        >上一页</el-button
-                                                    >
+                                                    >上一页</el-button>
                                                     <el-button
                                                         size="mini"
                                                         :disabled="
@@ -77,8 +67,7 @@
                                                                 'footer'
                                                             )
                                                         "
-                                                        >尾页</el-button
-                                                    >
+                                                    >尾页</el-button>
                                                 </el-button-group>
                                             </div>
                                         </template>
@@ -146,6 +135,7 @@ export default {
             self.url_parm.position = queryInfo.position;
             self.url_parm.balance = queryInfo.balance;
         }
+        self.getTransactions(self.url_parm);
         self.getFlagTransactions();
     },
     methods: {
@@ -197,7 +187,6 @@ export default {
             if (response.success) {
                 self.first_trans_token_id = response.near_item.balance;
                 self.end_trans_token_id = response.end_item.balance;
-                self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
             }

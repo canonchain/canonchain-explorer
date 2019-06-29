@@ -103,7 +103,6 @@ export default {
     },
     created() {
         self = this;
-        self.getAccountsCount();
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length) {
             self.url_parm.position = queryInfo.position;
@@ -111,6 +110,8 @@ export default {
             self.url_parm.acc_id = queryInfo.acc_id;
         }
         self.getAccounts(self.url_parm);
+        self.getAccountsCount();
+        self.getFlagAccounts();
     },
     methods: {
         async getPaginationFlag(val) {
@@ -191,8 +192,6 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-
-            self.getFlagAccounts();
         },
         async getFlagAccounts() {
             //获取交易表首位值；用来禁用首页和尾页的

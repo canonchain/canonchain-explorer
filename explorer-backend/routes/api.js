@@ -2175,7 +2175,7 @@ router.get("/get_event_log", async function (req, res, next) {
     let mainOpt = {
         text: `
             Select 
-                "hash","mci","mc_timestamp",
+                "event_log_id","hash","mci","mc_timestamp",
                 "stable_index","contract_address","from","to","method",
                 "address","data","topics"
             FROM
@@ -2555,7 +2555,7 @@ router.get("/get_transaction_event_log", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "hash","mc_timestamp","contract_account","data","method","method_function","topics"
+                "hash","mc_timestamp","contract_address","address","data","method","topics"
             FROM 
                 "event_log"
             WHERE

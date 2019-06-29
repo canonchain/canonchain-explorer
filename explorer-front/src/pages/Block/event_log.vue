@@ -59,8 +59,8 @@ export default {
     },
     created() {
         self = this;
-        this.getTransactionsProps();
         this.getTransactions();
+        this.getTransactionsProps();
     },
     methods: {
         async getTransactionsProps() {

@@ -55,7 +55,7 @@
                 </template>
             </template>
         </el-table-column>
-        <el-table-column label="代币" width="230" align="right">
+        <el-table-column label="代币" min-width="230" align="right">
             <template slot-scope="scope">
                 <span>
                     {{ scope.row.amount | toCZRVal }}

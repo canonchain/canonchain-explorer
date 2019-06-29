@@ -98,13 +98,14 @@ export default {
     },
     created() {
         self = this;
-        self.getTransactionsCount();
         let queryInfo = this.$route.query;
         if (Object.keys(queryInfo).length) {
             self.url_parm.position = queryInfo.position;
             self.url_parm.token_id = queryInfo.token_id;
         }
         self.getTransactions(self.url_parm);
+        self.getTransactionsCount();
+        self.getFlagTransactions();
     },
     methods: {
         async getPaginationFlag(val) {
@@ -173,7 +174,6 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            self.getFlagTransactions();
         },
 
         async getTransactionsCount() {

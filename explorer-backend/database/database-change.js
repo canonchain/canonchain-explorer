@@ -48,7 +48,6 @@
     let timestamp10InsertAry = []; //没有的timestamp,插入[Db]
     let timestamp10UpdateAry = []; //存在的timestamp,更新[Db]
     // let tempTransTokenInsertInfo = {};
-    let testIndex = 0;
     // 操作稳定Unit相关变量 End
 
     const getCount = require('./helper/count').getCount;
@@ -751,8 +750,6 @@
                                 })
                             }
 
-                            console.log(testIndex, "开始的，Token交易的数量", transTokenInsertAry.length);
-
                             //更新Token资产表
                             //DO 处理账户，发款方不在当前 tokenAccountsTotal 时 （以前已经储存在数据库了）
                             if (!tokenAccountsTotal.hasOwnProperty(fromAccAndcontract)) {
@@ -786,8 +783,6 @@
                             }
                             //处理发款方余额
                             tokenAccountsTotal[fromAccAndcontract].balance = BigNumber(tokenAccountsTotal[fromAccAndcontract].balance).minus(transData).toString(10);
-
-                            console.log(testIndex, "处理余额后", transTokenInsertAry.length);
                             // unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                             // if (!unitIsFail) {}
                         } else {
@@ -1257,8 +1252,6 @@
                     pageUtility.batchUpdateToken(tokenUpdateAry);
                 }
 
-                testIndex++;
-                console.log(testIndex, "插入时候 tempTransTokenInsertInfo length", transTokenInsertAry.length);
                 if (transTokenInsertAry.length) {
                     pageUtility.batchInertTransToken(transTokenInsertAry);
                 }

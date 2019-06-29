@@ -147,8 +147,14 @@ export default {
                 index_transtoken_id: 0,
                 trans_token_id: 0
             },
-            first_trans_token_id: "",
-            end_trans_token_id: "",
+            first_stable_index: {
+                stable_index: "",
+                index_transtoken_id: ""
+            },
+            end_stable_index: {
+                stable_index: "",
+                index_transtoken_id: ""
+            },
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
@@ -170,6 +176,7 @@ export default {
             self.url_parm.index_transtoken_id = queryInfo.index_transtoken_id;
             self.url_parm.trans_token_id = queryInfo.trans_token_id;
         }
+        self.getTransactions(self.url_parm);
         self.getFlagTransactions(self.url_parm);
     },
     methods: {
@@ -248,9 +255,15 @@ export default {
             );
 
             if (response.success) {
-                self.first_stable_index = response.near_item.stable_index;
-                self.end_stable_index = response.end_item.stable_index;
-                self.getTransactions(self.url_parm);
+                self.first_stable_index.index_transtoken_id =
+                    response.near_item.index_transtoken_id;
+                self.first_stable_index.stable_index =
+                    response.near_item.stable_index;
+
+                self.end_stable_index.index_transtoken_id =
+                    response.end_item.index_transtoken_id;
+                self.end_stable_index.stable_index =
+                    response.end_item.stable_index;
             } else {
                 console.log("error");
             }
@@ -300,28 +313,22 @@ export default {
                 self.btnSwitch.footer = true;
             }
             if (self.trans_token.length > 0) {
-                // if (
-                //     self.first_trans_token_id ===
-                //     self.pageFirstItem.stable_index
-                // ) {
-                //     self.btnSwitch.header = true;
-                //     self.btnSwitch.left = true;
-                // }
-
-                // if (
-                //     self.end_trans_token_id === self.pageLastItem.stable_index
-                // ) {
-                //     self.btnSwitch.right = true;
-                //     self.btnSwitch.footer = true;
-                // }
                 if (
-                    self.first_stable_index === self.pageFirstItem.stable_index
+                    self.first_stable_index.index_transtoken_id ===
+                        self.pageFirstItem.index_transtoken_id &&
+                    self.first_stable_index.stable_index ===
+                        self.pageFirstItem.stable_index
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
-                if (self.end_stable_index === self.pageLastItem.stable_index) {
+                if (
+                    self.end_stable_index.index_transtoken_id ===
+                        self.pageLastItem.index_transtoken_id &&
+                    self.end_stable_index.stable_index ===
+                        self.pageLastItem.stable_index
+                ) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }

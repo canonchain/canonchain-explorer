@@ -136,6 +136,7 @@ export default {
             self.url_parm.position = queryInfo.position;
             self.url_parm.stable_index = queryInfo.stable_index;
         }
+        self.getTransactions(self.url_parm);
         self.getFlagTransactions();
     },
     methods: {
@@ -188,7 +189,6 @@ export default {
             if (response.success) {
                 self.first_trans_token_id = response.near_item.stable_index;
                 self.end_trans_token_id = response.end_item.stable_index;
-                self.getTransactions(self.url_parm);
             } else {
                 console.log("error");
             }

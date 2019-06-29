@@ -146,8 +146,14 @@ export default {
                 index_translog_id: 0,
                 event_log_id: 0
             },
-            first_stable_index: "",
-            end_stable_index: "",
+            first_stable_index: {
+                stable_index: "",
+                index_translog_id: ""
+            },
+            end_stable_index: {
+                stable_index: "",
+                index_translog_id: ""
+            },
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
@@ -169,6 +175,7 @@ export default {
             self.url_parm.index_translog_id = queryInfo.index_translog_id;
             self.url_parm.event_log_id = queryInfo.event_log_id;
         }
+        self.getEventLog(self.url_parm);
         self.getFlagEventLog(self.url_parm);
     },
     methods: {
@@ -238,9 +245,15 @@ export default {
             };
             let response = await self.$api.get("/api/get_event_log_flag", opt);
             if (response.success) {
-                self.first_stable_index = response.near_item.stable_index;
-                self.end_stable_index = response.end_item.stable_index;
-                self.getEventLog(self.url_parm);
+                self.first_stable_index.index_translog_id =
+                    response.near_item.index_translog_id;
+                self.first_stable_index.stable_index =
+                    response.near_item.stable_index;
+
+                self.end_stable_index.index_translog_id =
+                    response.end_item.index_translog_id;
+                self.end_stable_index.stable_index =
+                    response.end_item.stable_index;
             } else {
                 // console.log("error");
             }
@@ -292,13 +305,21 @@ export default {
 
             if (self.event_logs.length > 0) {
                 if (
-                    self.first_stable_index === self.pageFirstItem.stable_index
+                    self.first_stable_index.index_translog_id ===
+                        self.pageFirstItem.index_translog_id &&
+                    self.first_stable_index.stable_index ===
+                        self.pageFirstItem.stable_index
                 ) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
 
-                if (self.end_stable_index === self.pageLastItem.stable_index) {
+                if (
+                    self.end_stable_index.index_translog_id ===
+                        self.pageLastItem.index_translog_id &&
+                    self.end_stable_index.stable_index ===
+                        self.pageLastItem.stable_index
+                ) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }

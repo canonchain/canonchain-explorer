@@ -322,6 +322,7 @@ a {
 
 /*  记录 */
 .account-main {
+    min-height: 500px;
     margin-top: 10px;
     padding: 5px 15px;
     background-color: #fff;
