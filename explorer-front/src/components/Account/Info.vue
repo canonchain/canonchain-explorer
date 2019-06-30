@@ -114,7 +114,6 @@ export default {
             let opt = {
                 account: this.address
             };
-            console.log(this.address);
             let response = await self.$api.get("/api/get_account", opt);
             if (response.success) {
                 let accInfo = response.account;

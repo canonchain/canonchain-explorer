@@ -111,7 +111,6 @@ export default {
         }
         self.getAccounts(self.url_parm);
         self.getAccountsCount();
-        self.getFlagAccounts();
     },
     methods: {
         async getPaginationFlag(val) {
@@ -128,17 +127,13 @@ export default {
                 case "left":
                     //取前
                     self.$router.push(
-                        `/accounts?balance=${
-                            self.pageFirstItem.balance
-                        }&acc_id=${self.pageFirstItem.acc_id}&position=2`
+                        `/accounts?balance=${self.pageFirstItem.balance}&acc_id=${self.pageFirstItem.acc_id}&position=2`
                     );
                     break;
                 case "right":
                     //取后
                     self.$router.push(
-                        `/accounts?balance=${
-                            self.pageLastItem.balance
-                        }&acc_id=${self.pageLastItem.acc_id}&position=3`
+                        `/accounts?balance=${self.pageLastItem.balance}&acc_id=${self.pageLastItem.acc_id}&position=3`
                     );
                     break;
             }
@@ -184,7 +179,6 @@ export default {
             } else {
                 self.database = [errorInfo];
             }
-
             if (parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
@@ -192,23 +186,22 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
+            self.IS_GET_INFO = true;
+            self.loadingSwitch = false;
+            self.getFlagAccounts();
         },
         async getFlagAccounts() {
             //获取交易表首位值；用来禁用首页和尾页的
             let response = await self.$api.get("/api/get_accounts_flag");
-
             if (response.success) {
                 if (response.near_item.acc_id == self.pageFirstItem.acc_id) {
                     self.btnSwitch.header = true;
                     self.btnSwitch.left = true;
                 }
-
                 if (response.end_item.acc_id == self.pageLastItem.acc_id) {
                     self.btnSwitch.right = true;
                     self.btnSwitch.footer = true;
                 }
-                self.IS_GET_INFO = true;
-                self.loadingSwitch = false;
             } else {
                 console.log("error");
             }

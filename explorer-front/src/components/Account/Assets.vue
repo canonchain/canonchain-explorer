@@ -28,7 +28,7 @@
 let self;
 export default {
     name: "TokenList",
-    props: ["address"],
+    props: ["address", "url_parm"],
     data() {
         return {
             loadingSwitch: true,
@@ -43,15 +43,22 @@ export default {
     methods: {
         async initDatabase() {
             let opt = {
-                account: this.address
+                account: this.url_parm.account,
+                position: this.url_parm.position,
+                token_asset_id: this.url_parm.token_asset_id
             };
-            console.log(this.address);
             let response = await self.$api.get(
                 "/api/get_account_token_list",
                 opt
             );
             if (response.success) {
                 self.database = response.data;
+                let account_assets_props = {
+                    first_index: self.database[0].token_asset_id,
+                    last_index:
+                        self.database[self.database.length - 1].token_asset_id
+                };
+                self.$emit("account_assets_props", account_assets_props);
             } else {
                 console.error("/api/get_account_token_list Error");
             }

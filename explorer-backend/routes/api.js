@@ -789,13 +789,14 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
     let start_sql = {
         text: `
             Select 
-                "balance"
+                "balance","token_asset_id"
             FROM 
                 "token_asset"
             WHERE
                 "contract_account" = $1
             order by
-                "balance" desc
+                "balance" desc,
+                "token_asset_id" desc
             LIMIT
                 1
         `,
@@ -822,13 +823,14 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "balance"
+                "balance","token_asset_id"
             FROM 
                 "token_asset"
             WHERE
                 "contract_account" = $1
             order by 
-                "balance" asc
+                "balance" asc,
+                "token_asset_id" asc
             LIMIT
                 1
         `,
@@ -875,7 +877,8 @@ router.get("/get_token_holder", async function (req, res, next) {
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "balance" desc
+                    "balance" desc,
+                    "token_asset_id" desc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -892,7 +895,8 @@ router.get("/get_token_holder", async function (req, res, next) {
                 WHERE
                     "contract_account" = $1
                 order by 
-                    "balance" asc
+                    "balance" asc,
+                    "token_asset_id" asc
                 LIMIT
                     ${LIMIT_VAL}
             `,
@@ -914,15 +918,18 @@ router.get("/get_token_holder", async function (req, res, next) {
                 FROM 
                     "token_asset"
                 WHERE 
-                    (balance ${direction} $2)
-                    and
                     ("contract_account" = $1)
+                    and
+                    ("balance" ${direction}= $2)
+                    and
+                    ("token_asset_id" ${direction} $3)
                 order by
-                    "balance" ${sortInfo}
+                    "balance" ${sortInfo},
+                    "token_asset_id" ${sortInfo}
                 LIMIT
                     ${LIMIT_VAL}
             `,
-            values: [queryVal.account, queryVal.token_asset_id]
+            values: [queryVal.account, queryVal.balance, queryVal.token_asset_id]
         };
     }
 
@@ -2267,42 +2274,137 @@ router.get("/get_contract_code", async function (req, res, next) {
     res.json(responseData);
 })
 
-//获取代币列表
-router.get("/get_account_token_list", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
+//获取代币列表 -----------------------------------------------
+router.get("/get_account_token_list_flag", async function (req, res, next) {
     var queryInfo = req.query;
-
-    let token_list_sql = {
+    let near_sql = {
         text: `
             Select 
-                "token_asset_id","account","contract_account","name","symbol","precision","balance"
+                "token_asset_id"
             FROM 
-                "token_asset"
+                token_asset
             WHERE
                 "account" = $1
-            order by 
-                "token_asset_id" asc
+            order by
+                "token_asset_id" desc
+            LIMIT
+                1
         `,
         values: [queryInfo.account]
     }
-
-    PageUtility.timeLog(req, '[1] SELECT token_list_sql Before')
-    let tokenListInfo = await pgPromise.query(token_list_sql)
-    PageUtility.timeLog(req, '[1] SELECT token_list_sql After')
-    if (tokenListInfo.code) {
+    let end_sql = {
+        text: `
+            Select 
+                "token_asset_id"
+            FROM 
+                token_asset
+            WHERE
+                "account" = $1
+            order by
+                "token_asset_id" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
+    if (transStartInfo.code) {
         responseData = {
-            data: [],
+            near_item: {},
             code: 500,
             success: false,
-            message: "select get_account_token_list Error"
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+    let transEndInfo = await pgPromise.query(end_sql)
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
         }
     } else {
         responseData = {
-            data: tokenListInfo.rows,
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
             code: 200,
             success: true,
             message: "success"
         }
+    }
+    res.json(responseData);
+})
+//获取交易列表
+//参数:account/position/token_asset_id
+router.get("/get_account_token_list", async function (req, res, next) {
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "";
+    if (queryVal.position === "2") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if (queryVal.position === "3") {
+        direction = "<";
+        sortInfo = "desc";
+    } else if (queryVal.position === "1") {
+        sortInfo = "desc";
+    } else if (queryVal.position === "4") {
+        sortInfo = "asc";
+    }
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (token_asset_id ${direction} ${Number(queryVal.token_asset_id)})
+            and
+        `;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "token_asset_id","contract_account",
+                "name","symbol",
+                "precision","balance"
+            FROM
+                token_asset
+            WHERE
+                ${moreSearchStrIndexTrans}
+                ("account" = $1)
+            order by 
+                "token_asset_id" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [queryVal.account]
+    }
+
+
+    let data = await pgPromise.query(opt)
+    if (data.code) {
+        responseData = {
+            data: [],
+            code: 500,
+            success: false,
+            message: 'Select trans list FROM acc trans_normal Error'
+        }
+        res.json(responseData);
+        return;
+    }
+
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = data.rows.reverse()
+    } else {
+        formatInfo = data.rows;
+    }
+    responseData = {
+        data: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
     }
     res.json(responseData);
 })

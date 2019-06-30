@@ -146,14 +146,6 @@ export default {
                 index_translog_id: 0,
                 event_log_id: 0
             },
-            first_stable_index: {
-                stable_index: "",
-                index_translog_id: ""
-            },
-            end_stable_index: {
-                stable_index: "",
-                index_translog_id: ""
-            },
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
@@ -176,7 +168,6 @@ export default {
             self.url_parm.event_log_id = queryInfo.event_log_id;
         }
         self.getEventLog(self.url_parm);
-        self.getFlagEventLog(self.url_parm);
     },
     methods: {
         handlerAddressProps: function(props) {
@@ -192,9 +183,7 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/event_logs?stable_index=0&index_translog_id=0&event_log_id=0&position=4`
+                    `/account/${self.url_parm.account}/event_logs?stable_index=0&index_translog_id=0&event_log_id=0&position=4`
                 );
                 return;
             }
@@ -209,15 +198,7 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/event_logs?stable_index=${
-                        self.pageFirstItem.stable_index
-                    }&index_translog_id=${
-                        self.pageFirstItem.index_translog_id
-                    }&event_log_id=${
-                        self.pageFirstItem.event_log_id
-                    }&position=2`
+                    `/account/${self.url_parm.account}/event_logs?stable_index=${self.pageFirstItem.stable_index}&index_translog_id=${self.pageFirstItem.index_translog_id}&event_log_id=${self.pageFirstItem.event_log_id}&position=2`
                 );
                 return;
             }
@@ -225,13 +206,7 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/event_logs?stable_index=${
-                        self.pageLastItem.stable_index
-                    }&index_translog_id=${
-                        self.pageLastItem.index_translog_id
-                    }&event_log_id=${self.pageLastItem.event_log_id}&position=3`
+                    `/account/${self.url_parm.account}/event_logs?stable_index=${self.pageLastItem.stable_index}&index_translog_id=${self.pageLastItem.index_translog_id}&event_log_id=${self.pageLastItem.event_log_id}&position=3`
                 );
 
                 return;
@@ -245,17 +220,21 @@ export default {
             };
             let response = await self.$api.get("/api/get_event_log_flag", opt);
             if (response.success) {
-                self.first_stable_index.index_translog_id =
-                    response.near_item.index_translog_id;
-                self.first_stable_index.stable_index =
-                    response.near_item.stable_index;
+                if (
+                    response.near_item.index_translog_id ===
+                    self.pageFirstItem.index_translog_id
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
 
-                self.end_stable_index.index_translog_id =
-                    response.end_item.index_translog_id;
-                self.end_stable_index.stable_index =
-                    response.end_item.stable_index;
-            } else {
-                // console.log("error");
+                if (
+                    response.end_item.index_translog_id ===
+                    self.pageLastItem.index_translog_id
+                ) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
             }
         },
         async getEventLog(parm) {
@@ -272,20 +251,10 @@ export default {
 
             if (response.success) {
                 self.event_logs = response.transactions;
-
                 if (response.transactions.length) {
-                    let firstTrans = response.transactions[0];
-                    let lastTrans =
+                    self.pageFirstItem = response.transactions[0];
+                    self.pageLastItem =
                         response.transactions[response.transactions.length - 1];
-                    self.pageFirstItem.stable_index = firstTrans.stable_index;
-                    self.pageFirstItem.index_translog_id =
-                        firstTrans.index_translog_id;
-                    self.pageFirstItem.event_log_id = firstTrans.event_log_id;
-
-                    self.pageLastItem.stable_index = lastTrans.stable_index;
-                    self.pageLastItem.index_translog_id =
-                        lastTrans.index_translog_id;
-                    self.pageLastItem.event_log_id = lastTrans.event_log_id;
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;
@@ -294,38 +263,18 @@ export default {
             } else {
                 self.event_logs = [];
             }
+
             //禁止首页上一页
-            if (parm.position === "1") {
+            if (self.url_parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
-            } else if (parm.position === "4") {
+            } else if (self.url_parm.position === "4") {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-
-            if (self.event_logs.length > 0) {
-                if (
-                    self.first_stable_index.index_translog_id ===
-                        self.pageFirstItem.index_translog_id &&
-                    self.first_stable_index.stable_index ===
-                        self.pageFirstItem.stable_index
-                ) {
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.left = true;
-                }
-
-                if (
-                    self.end_stable_index.index_translog_id ===
-                        self.pageLastItem.index_translog_id &&
-                    self.end_stable_index.stable_index ===
-                        self.pageLastItem.stable_index
-                ) {
-                    self.btnSwitch.right = true;
-                    self.btnSwitch.footer = true;
-                }
-            }
             self.IS_GET_INFO = true;
             self.loadingSwitch = false;
+            self.getFlagEventLog(self.url_parm);
         },
         // 合约相关的
         change_table(tab, event) {

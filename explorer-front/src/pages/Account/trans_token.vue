@@ -147,14 +147,6 @@ export default {
                 index_transtoken_id: 0,
                 trans_token_id: 0
             },
-            first_stable_index: {
-                stable_index: "",
-                index_transtoken_id: ""
-            },
-            end_stable_index: {
-                stable_index: "",
-                index_transtoken_id: ""
-            },
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
@@ -177,7 +169,6 @@ export default {
             self.url_parm.trans_token_id = queryInfo.trans_token_id;
         }
         self.getTransactions(self.url_parm);
-        self.getFlagTransactions(self.url_parm);
     },
     methods: {
         handlerAddressProps: function(props) {
@@ -194,18 +185,14 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/trans_token?stable_index=0&index_transtoken_id=0&trans_token_id=0&position=4`
+                    `/account/${self.url_parm.account}/trans_token?stable_index=0&index_transtoken_id=0&trans_token_id=0&position=4`
                 );
                 return;
             }
             // 想取第一页
             if (val === "header") {
                 self.$router.push(
-                    `/account/${self.url_parm.account}/trans_token?source=${
-                        self.url_parm.source
-                    }`
+                    `/account/${self.url_parm.account}/trans_token?source=${self.url_parm.source}`
                 );
                 return;
             }
@@ -213,15 +200,7 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/trans_token?stable_index=${
-                        self.pageFirstItem.stable_index
-                    }&index_transtoken_id=${
-                        self.pageFirstItem.index_transtoken_id
-                    }&trans_token_id=${
-                        self.pageFirstItem.trans_token_id
-                    }&position=2`
+                    `/account/${self.url_parm.account}/trans_token?stable_index=${self.pageFirstItem.stable_index}&index_transtoken_id=${self.pageFirstItem.index_transtoken_id}&trans_token_id=${self.pageFirstItem.trans_token_id}&position=2`
                 );
                 return;
             }
@@ -229,15 +208,7 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/account/${
-                        self.url_parm.account
-                    }/trans_token?stable_index=${
-                        self.pageLastItem.stable_index
-                    }&index_transtoken_id=${
-                        self.pageLastItem.index_transtoken_id
-                    }&trans_token_id=${
-                        self.pageLastItem.trans_token_id
-                    }&position=3`
+                    `/account/${self.url_parm.account}/trans_token?stable_index=${self.pageLastItem.stable_index}&index_transtoken_id=${self.pageLastItem.index_transtoken_id}&trans_token_id=${self.pageLastItem.trans_token_id}&position=3`
                 );
                 return;
             }
@@ -255,17 +226,21 @@ export default {
             );
 
             if (response.success) {
-                self.first_stable_index.index_transtoken_id =
-                    response.near_item.index_transtoken_id;
-                self.first_stable_index.stable_index =
-                    response.near_item.stable_index;
+                if (
+                    response.near_item.index_transtoken_id ===
+                    self.pageFirstItem.index_transtoken_id
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
 
-                self.end_stable_index.index_transtoken_id =
-                    response.end_item.index_transtoken_id;
-                self.end_stable_index.stable_index =
-                    response.end_item.stable_index;
-            } else {
-                console.log("error");
+                if (
+                    response.end_item.index_transtoken_id ===
+                    self.pageLastItem.index_transtoken_id
+                ) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
             }
         },
         async getTransactions(parm) {
@@ -283,19 +258,9 @@ export default {
             if (response.success) {
                 self.trans_token = response.transactions;
                 if (response.transactions.length) {
-                    let firstTrans = response.transactions[0];
-                    let lastTrans =
+                    self.pageFirstItem = response.transactions[0];
+                    self.pageLastItem =
                         response.transactions[response.transactions.length - 1];
-                    self.pageFirstItem.stable_index = firstTrans.stable_index;
-                    self.pageFirstItem.index_transtoken_id =
-                        firstTrans.index_transtoken_id;
-                    self.pageFirstItem.trans_token_id =
-                        firstTrans.trans_token_id;
-
-                    self.pageLastItem.stable_index = lastTrans.stable_index;
-                    self.pageLastItem.index_transtoken_id =
-                        lastTrans.index_transtoken_id;
-                    self.pageLastItem.trans_token_id = lastTrans.trans_token_id;
                 } else {
                     self.IS_GET_INFO = true;
                     self.loadingSwitch = false;
@@ -304,37 +269,18 @@ export default {
             } else {
                 self.trans_token = [];
             }
+
             //禁止首页上一页
-            if (parm.position === "1") {
+            if (self.url_parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
-            } else if (parm.position === "4") {
+            } else if (self.url_parm.position === "4") {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            if (self.trans_token.length > 0) {
-                if (
-                    self.first_stable_index.index_transtoken_id ===
-                        self.pageFirstItem.index_transtoken_id &&
-                    self.first_stable_index.stable_index ===
-                        self.pageFirstItem.stable_index
-                ) {
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.left = true;
-                }
-
-                if (
-                    self.end_stable_index.index_transtoken_id ===
-                        self.pageLastItem.index_transtoken_id &&
-                    self.end_stable_index.stable_index ===
-                        self.pageLastItem.stable_index
-                ) {
-                    self.btnSwitch.right = true;
-                    self.btnSwitch.footer = true;
-                }
-            }
             self.IS_GET_INFO = true;
             self.loadingSwitch = false;
+            self.getFlagTransactions();
         },
         goBlockPath(block) {
             this.$router.push("/block/" + block);

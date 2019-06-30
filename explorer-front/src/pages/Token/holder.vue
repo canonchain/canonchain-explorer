@@ -113,17 +113,18 @@ export default {
                 footer: false
             },
             pageFirstItem: {
-                balance: 0
+                balance: 0,
+                token_asset_id: ""
             },
             pageLastItem: {
-                balance: 0
+                balance: 0,
+                token_asset_id: ""
             },
-            first_trans_token_id: "",
-            end_trans_token_id: "",
             url_parm: {
                 account: this.$route.params.id,
                 position: "1", //1 首页  2 上一页 3 下一页 4 尾页
-                balance: 99999999999999
+                balance: 99999999999999,
+                token_asset_id: 99999999999999
             },
             trans_token: []
         };
@@ -134,9 +135,9 @@ export default {
         if (Object.keys(queryInfo).length > 1) {
             self.url_parm.position = queryInfo.position;
             self.url_parm.balance = queryInfo.balance;
+            self.url_parm.token_asset_id = queryInfo.token_asset_id;
         }
         self.getTransactions(self.url_parm);
-        self.getFlagTransactions();
     },
     methods: {
         async getPaginationFlag(val) {
@@ -144,7 +145,7 @@ export default {
             // 想取最后一页
             if (val === "footer") {
                 self.$router.push(
-                    `/token/${self.url_parm.account}?balance=0&position=4`
+                    `/token/${self.url_parm.account}?balance=0&token_asset_id=0&position=4`
                 );
                 return;
             }
@@ -157,9 +158,7 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?balance=${
-                        self.pageFirstItem.balance
-                    }&position=2`
+                    `/token/${self.url_parm.account}?balance=${self.pageFirstItem.balance}&token_asset_id=${self.pageFirstItem.token_asset_id}&position=2`
                 );
                 return;
             }
@@ -167,9 +166,7 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/token/${self.url_parm.account}?balance=${
-                        self.pageLastItem.balance
-                    }&position=3`
+                    `/token/${self.url_parm.account}?balance=${self.pageLastItem.balance}&token_asset_id=${self.pageLastItem.token_asset_id}&position=3`
                 );
                 return;
             }
@@ -185,8 +182,20 @@ export default {
             );
 
             if (response.success) {
-                self.first_trans_token_id = response.near_item.balance;
-                self.end_trans_token_id = response.end_item.balance;
+                if (
+                    response.near_item.token_asset_id ===
+                    self.pageFirstItem.token_asset_id
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
+                if (
+                    response.end_item.token_asset_id ===
+                    self.pageLastItem.token_asset_id
+                ) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
             } else {
                 console.log("error");
             }
@@ -197,7 +206,8 @@ export default {
             let opt = {
                 position: parm.position,
                 account: parm.account,
-                balance: parm.balance
+                balance: parm.balance,
+                token_asset_id: parm.token_asset_id
             };
             let response = await self.$api.get("/api/get_token_holder", opt);
             if (response.success) {
@@ -213,27 +223,19 @@ export default {
             } else {
                 self.trans_token = [];
             }
+
             //禁止首页上一页
-            if (parm.position === "1") {
+            if (self.url_parm.position === "1") {
                 self.btnSwitch.header = true;
                 self.btnSwitch.left = true;
-            } else if (parm.position === "4") {
+            } else if (self.url_parm.position === "4") {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            if (self.trans_token.length > 0) {
-                if (self.first_trans_token_id === self.pageFirstItem.balance) {
-                    self.btnSwitch.header = true;
-                    self.btnSwitch.left = true;
-                }
 
-                if (self.end_trans_token_id === self.pageLastItem.balance) {
-                    self.btnSwitch.right = true;
-                    self.btnSwitch.footer = true;
-                }
-            }
             self.IS_GET_TOKEN = true;
             self.loadingSwitch = false;
+            self.getFlagTransactions();
         },
         // 合约相关的
         change_table(tab, event) {

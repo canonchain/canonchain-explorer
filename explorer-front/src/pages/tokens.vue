@@ -105,7 +105,6 @@ export default {
         }
         self.getTransactions(self.url_parm);
         self.getTransactionsCount();
-        self.getFlagTransactions();
     },
     methods: {
         async getPaginationFlag(val) {
@@ -124,9 +123,7 @@ export default {
             if (val == "left") {
                 //取第一个item
                 self.$router.push(
-                    `/normal_trans?token_id=${
-                        self.pageFirstItem.token_id
-                    }&position=2`
+                    `/normal_trans?token_id=${self.pageFirstItem.token_id}&position=2`
                 );
                 return;
             }
@@ -134,9 +131,7 @@ export default {
             if (val == "right") {
                 //取最后一个item
                 self.$router.push(
-                    `/normal_trans?token_id=${
-                        self.pageLastItem.token_id
-                    }&position=3`
+                    `/normal_trans?token_id=${self.pageLastItem.token_id}&position=3`
                 );
                 return;
             }
@@ -174,6 +169,9 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
+            self.IS_GET_INFO = true;
+            self.loadingSwitch = false;
+            self.getFlagTransactions();
         },
 
         async getTransactionsCount() {
@@ -196,11 +194,6 @@ export default {
                 self.btnSwitch.right = true;
                 self.btnSwitch.footer = true;
             }
-            self.IS_GET_INFO = true;
-            self.loadingSwitch = false;
-        },
-        goAccountPath(account) {
-            this.$router.push("/token/" + account);
         }
     }
 };

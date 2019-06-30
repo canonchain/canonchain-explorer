@@ -11,7 +11,66 @@
                         <el-tabs v-model="activeName" @tab-click="change_table">
                             <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
                             <el-tab-pane label="代币余额" name="token_balances">
-                                <account-assets :address="address"></account-assets>
+                                <account-assets
+                                    :address="address"
+                                    :url_parm="url_parm"
+                                    v-on:account_assets_props="handlerAccountAssetsProps"
+                                ></account-assets>
+                                <!-- page -->
+                                <template v-if="2">
+                                    <div class="pagin-block">
+                                        <el-button-group>
+                                            <el-button
+                                                size="mini"
+                                                :disabled="
+                                                            btnSwitch.header
+                                                        "
+                                                @click="
+                                                            getPaginationFlag(
+                                                                'header'
+                                                            )
+                                                        "
+                                            >首页</el-button>
+                                            <el-button
+                                                size="mini"
+                                                icon="el-icon-arrow-left"
+                                                :disabled="
+                                                            btnSwitch.left
+                                                        "
+                                                @click="
+                                                            getPaginationFlag(
+                                                                'left'
+                                                            )
+                                                        "
+                                            >上一页</el-button>
+                                            <el-button
+                                                size="mini"
+                                                :disabled="
+                                                            btnSwitch.right
+                                                        "
+                                                @click="
+                                                            getPaginationFlag(
+                                                                'right'
+                                                            )
+                                                        "
+                                            >
+                                                下一页
+                                                <i class="el-icon-arrow-right el-icon--right"></i>
+                                            </el-button>
+                                            <el-button
+                                                size="mini"
+                                                :disabled="
+                                                            btnSwitch.footer
+                                                        "
+                                                @click="
+                                                            getPaginationFlag(
+                                                                'footer'
+                                                            )
+                                                        "
+                                            >尾页</el-button>
+                                        </el-button-group>
+                                    </div>
+                                </template>
                             </el-tab-pane>
                             <template v-if="account_props.is_has_token_trans">
                                 <el-tab-pane label="代币转账" name="trans_token"></el-tab-pane>
@@ -63,9 +122,24 @@ export default {
                 is_has_intel_trans: false,
                 is_has_event_logs: false
             },
-
+            account_assets_props: {
+                first_index: 0,
+                last_index: 0
+            },
+            btnSwitch: {
+                header: false,
+                left: false,
+                right: false,
+                footer: false
+            },
             IS_GET_ACC: false,
-            IS_GET_INFO: false
+            IS_GET_INFO: false,
+            url_parm: {
+                account: this.$route.params.id,
+                position: this.$route.query.position || 1, //1 首页  2 上一页 3 下一页 4 尾页
+                token_asset_id:
+                    this.$route.query.token_asset_id || 9999999999999
+            }
         };
     },
     created() {
@@ -79,6 +153,73 @@ export default {
             self.account_props.is_has_token_trans = props.is_has_token_trans;
             self.account_props.is_has_intel_trans = props.is_has_intel_trans;
             self.account_props.is_has_event_logs = props.is_has_event_logs;
+        },
+        handlerAccountAssetsProps: function(props) {
+            self.account_assets_props.first_index = props.first_index;
+            self.account_assets_props.last_index = props.last_index;
+            // console.log(props);
+            self.getFlagTransactions();
+        },
+
+        async getPaginationFlag(val) {
+            self.loadingSwitch = true;
+            // 想取最后一页
+            if (val === "footer") {
+                self.$router.push(
+                    `/account/${self.url_parm.account}/token_balances?token_asset_id=0&position=4`
+                );
+                return;
+            }
+            // 想取第一页
+            if (val === "header") {
+                self.$router.push(
+                    `/account/${self.url_parm.account}/token_balances?source=${self.url_parm.source}`
+                );
+                return;
+            }
+
+            if (val == "left") {
+                //取第一个item
+                self.$router.push(
+                    `/account/${self.url_parm.account}/token_balances?token_asset_id=${self.account_assets_props.first_index}&position=2`
+                );
+                return;
+            }
+
+            if (val == "right") {
+                //取最后一个item
+                self.$router.push(
+                    `/account/${self.url_parm.account}/token_balances?token_asset_id=${self.account_assets_props.last_index}&position=3`
+                );
+                return;
+            }
+        },
+
+        async getFlagTransactions() {
+            let opt = {
+                account: self.url_parm.account
+            };
+            let response = await self.$api.get(
+                "/api/get_account_token_list_flag",
+                opt
+            );
+            // console.log(response);
+            if (response.success) {
+                if (
+                    response.near_item.token_asset_id ===
+                    self.account_assets_props.first_index
+                ) {
+                    self.btnSwitch.header = true;
+                    self.btnSwitch.left = true;
+                }
+                if (
+                    response.end_item.token_asset_id ===
+                    self.account_assets_props.last_index
+                ) {
+                    self.btnSwitch.right = true;
+                    self.btnSwitch.footer = true;
+                }
+            }
         },
 
         // 合约相关的
