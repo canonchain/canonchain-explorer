@@ -41,6 +41,7 @@ export default {
 .mci-number {
     font-size: 22px;
     line-height: 20px;
+    color: #28388c;
 }
 @media (max-width: 999px) {
     .mci-number {

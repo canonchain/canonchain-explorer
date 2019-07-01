@@ -99,13 +99,14 @@ export default {
 .trans-wrap {
     margin-top: 10px;
     padding: 20px 10px;
+    min-height: 500px;
     background-color: #fff;
 }
 
 .card-wrap {
     background-color: #fff;
     color: #28388c;
-    padding: 18px 10px 0 10px;
+    padding: 18px 10px 10px 10px;
 }
 .charts-wrap {
     margin-top: 10px;
