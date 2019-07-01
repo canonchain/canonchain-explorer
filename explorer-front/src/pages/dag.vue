@@ -5,16 +5,10 @@
             <div id="menuSocial">
                 <router-link class="dag-link" to="/">首页</router-link>
                 <router-link class="dag-link" to="/accounts">账户</router-link>
-                <router-link class="dag-link" to="/normal_trans"
-                    >普通交易</router-link
-                >
-                <router-link class="dag-link" to="/witness_trans"
-                    >见证交易</router-link
-                >
+                <router-link class="dag-link" to="/normal_trans">普通交易</router-link>
+                <router-link class="dag-link" to="/witness_trans">见证交易</router-link>
                 <router-link class="dag-link" to="/tokens">代币</router-link>
-                <router-link class="dag-link" to="/internals"
-                    >内部交易</router-link
-                >
+                <router-link class="dag-link" to="/internals">内部交易</router-link>
                 <router-link class="dag-link" to="/dag">DAG</router-link>
             </div>
             <div id="menuLeft">
@@ -60,67 +54,50 @@
                 <div class="area-wrap">
                     <div class="info-item-dev">
                         <strong>Hash</strong>:
-                        <span class="info-item-val hash-address">{{
-                            activeUnitInfo.hash
-                        }}</span>
+                        <router-link
+                            class="hash-address"
+                            :to="{
+                                    path: '/block/' + activeUnitInfo.hash
+                                }"
+                        >{{ activeUnitInfo.hash }}</router-link>
                     </div>
                     <div class="bui-dlist">
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        类型
-                                    </strong>
+                                    <strong class="bui-dlist-tit">类型</strong>
                                     <div class="bui-dlist-det">
-                                        <template
-                                            v-if="activeUnitInfo.type === '0'"
-                                        >
-                                            <span class="txt-success"
-                                                >创世交易</span
-                                            >
+                                        <template v-if="activeUnitInfo.type === '0'">
+                                            <span class="txt-success">创世交易</span>
                                         </template>
                                         <template
                                             v-else-if="
                                                 activeUnitInfo.type === '1'
                                             "
                                         >
-                                            <span class="txt-info"
-                                                >见证交易</span
-                                            >
+                                            <span class="txt-info">见证交易</span>
                                         </template>
                                     </div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Witnessed Level
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.witnessed_level }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Witnessed Level</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.witnessed_level }}</div>
                                 </div>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Level
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.level }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Level</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.level }}</div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Stable Index
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.stable_index }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Stable Index</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.stable_index }}</div>
                                 </div>
                             </el-col>
                         </el-row>
@@ -132,9 +109,7 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        From
-                                    </strong>
+                                    <strong class="bui-dlist-tit">From</strong>
                                     <div class="bui-dlist-det">
                                         <router-link
                                             class="table-long-item"
@@ -142,10 +117,11 @@
                                                 '/account/' +
                                                     activeUnitInfo.from
                                             "
-                                            >{{
-                                                activeUnitInfo.from
-                                            }}</router-link
                                         >
+                                            {{
+                                            activeUnitInfo.from
+                                            }}
+                                        </router-link>
                                     </div>
                                 </div>
                             </el-col>
@@ -153,9 +129,7 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Previous
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Previous</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
@@ -174,10 +148,11 @@
                                                         activeUnitInfo.previous
                                                     )
                                                 "
-                                                >{{
-                                                    activeUnitInfo.previous
-                                                }}</a
                                             >
+                                                {{
+                                                activeUnitInfo.previous
+                                                }}
+                                            </a>
                                         </template>
                                     </div>
                                 </div>
@@ -186,9 +161,7 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Best Parent
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Best Parent</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
@@ -207,10 +180,11 @@
                                                         activeUnitInfo.best_parent
                                                     )
                                                 "
-                                                >{{
-                                                    activeUnitInfo.best_parent
-                                                }}</a
                                             >
+                                                {{
+                                                activeUnitInfo.best_parent
+                                                }}
+                                            </a>
                                         </template>
                                     </div>
                                 </div>
@@ -219,17 +193,13 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Parents
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Parents</strong>
                                     <template
                                         v-if="
                                             activeUnitInfo.parents.length == 0
                                         "
                                     >
-                                        <div class="bui-dlist-det">
-                                            -
-                                        </div>
+                                        <div class="bui-dlist-det">-</div>
                                     </template>
                                     <template v-else>
                                         <div class="bui-dlist-det">
@@ -241,8 +211,7 @@
                                                     }
                                                 ]"
                                                 @click="toggleParents('parent')"
-                                                >查看</strong
-                                            >
+                                            >查看</strong>
                                             <a
                                                 href="javascript:;"
                                                 v-for="item in activeUnitInfo.parents"
@@ -252,8 +221,7 @@
                                                 @click="
                                                     goBlockHash(item.parent)
                                                 "
-                                                >{{ item.parent }}</a
-                                            >
+                                            >{{ item.parent }}</a>
                                         </div>
                                     </template>
                                 </div>
@@ -267,69 +235,49 @@
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Is Stable
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.is_stable }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Is Stable</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.is_stable }}</div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Status
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.witnessed_level }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Status</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.witnessed_level }}</div>
                                 </div>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Is Free
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.is_free }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Is Free</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.is_free }}</div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Is On Mc
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.is_on_mc }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">Is On Mc</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.is_on_mc }}</div>
                                 </div>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Exec Time
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Exec Time</strong>
                                     <div class="bui-dlist-det">
                                         {{
-                                            activeUnitInfo.exec_timestamp
-                                                | toDate
+                                        activeUnitInfo.exec_timestamp
+                                        | toDate
                                         }}
                                     </div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Mc Time
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Mc Time</strong>
                                     <div class="bui-dlist-det">
                                         {{
-                                            activeUnitInfo.mc_timestamp | toDate
+                                        activeUnitInfo.mc_timestamp | toDate
                                         }}
                                     </div>
                                 </div>
@@ -338,34 +286,26 @@
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Stable Time
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Stable Time</strong>
                                     <div class="bui-dlist-det">
                                         {{
-                                            activeUnitInfo.stable_timestamp
-                                                | toDate
+                                        activeUnitInfo.stable_timestamp
+                                        | toDate
                                         }}
                                     </div>
                                 </div>
                             </el-col>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        MCI
-                                    </strong>
-                                    <div class="bui-dlist-det">
-                                        {{ activeUnitInfo.mci }}
-                                    </div>
+                                    <strong class="bui-dlist-tit">MCI</strong>
+                                    <div class="bui-dlist-det">{{ activeUnitInfo.mci }}</div>
                                 </div>
                             </el-col>
                         </el-row>
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Status
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Status</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
@@ -373,9 +313,7 @@
                                                     false
                                             "
                                         >
-                                            <span class="txt-warning"
-                                                >等待确认</span
-                                            >
+                                            <span class="txt-warning">等待确认</span>
                                         </template>
                                         <template v-else>
                                             <template
@@ -383,36 +321,28 @@
                                                     activeUnitInfo.status == '0'
                                                 "
                                             >
-                                                <span class="txt-success"
-                                                    >成功</span
-                                                >
+                                                <span class="txt-success">成功</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     activeUnitInfo.status == '1'
                                                 "
                                             >
-                                                <span class="txt-danger"
-                                                    >失败(1)</span
-                                                >
+                                                <span class="txt-danger">失败(1)</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     activeUnitInfo.status == '2'
                                                 "
                                             >
-                                                <span class="txt-danger"
-                                                    >失败(2)</span
-                                                >
+                                                <span class="txt-danger">失败(2)</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     activeUnitInfo.status == '3'
                                                 "
                                             >
-                                                <span class="txt-danger"
-                                                    >失败(3)</span
-                                                >
+                                                <span class="txt-danger">失败(3)</span>
                                             </template>
                                         </template>
                                     </div>
@@ -427,17 +357,14 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Summary Block
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Summary Block</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
                                                 activeUnitInfo.last_summary_block ===
                                                     '0000000000000000000000000000000000000000000000000000000000000000'
                                             "
-                                            >-</template
-                                        >
+                                        >-</template>
                                         <template v-else>
                                             <a
                                                 href="javascript:;"
@@ -447,10 +374,11 @@
                                                         activeUnitInfo.last_summary_block
                                                     )
                                                 "
-                                                >{{
-                                                    activeUnitInfo.last_summary_block
-                                                }}</a
                                             >
+                                                {{
+                                                activeUnitInfo.last_summary_block
+                                                }}
+                                            </a>
                                         </template>
                                     </div>
                                 </div>
@@ -460,20 +388,19 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Summary
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Summary</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
                                                 activeUnitInfo.last_summary ===
                                                     '0000000000000000000000000000000000000000000000000000000000000000'
                                             "
-                                            >-</template
-                                        >
-                                        <template v-else>{{
+                                        >-</template>
+                                        <template v-else>
+                                            {{
                                             activeUnitInfo.last_summary
-                                        }}</template>
+                                            }}
+                                        </template>
                                     </div>
                                 </div>
                             </el-col>
@@ -481,9 +408,7 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Stable Block
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Stable Block</strong>
                                     <div class="bui-dlist-det">
                                         <a
                                             href="javascript:;"
@@ -493,10 +418,11 @@
                                                     activeUnitInfo.last_stable_block
                                                 )
                                             "
-                                            >{{
-                                                activeUnitInfo.last_stable_block
-                                            }}</a
                                         >
+                                            {{
+                                            activeUnitInfo.last_stable_block
+                                            }}
+                                        </a>
                                     </div>
                                 </div>
                             </el-col>
@@ -509,20 +435,15 @@
                         <el-row>
                             <el-col :span="24">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">
-                                        Signature
-                                    </strong>
+                                    <strong class="bui-dlist-tit">Signature</strong>
                                     <div class="bui-dlist-det">
                                         <template
                                             v-if="
                                                 activeUnitInfo.signature ===
                                                     '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
                                             "
-                                            >-</template
-                                        >
-                                        <template v-else>
-                                            {{ activeUnitInfo.signature }}
-                                        </template>
+                                        >-</template>
+                                        <template v-else>{{ activeUnitInfo.signature }}</template>
                                     </div>
                                 </div>
                             </el-col>
@@ -2515,11 +2436,11 @@ pre {
 }
 #listInfo .hash-address {
     line-height: 10px;
-    max-width: 250px;
+    /* max-width: 250px;
     display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: nowrap; */
 }
 .bui-dlist {
     margin-top: 0;
@@ -2530,6 +2451,7 @@ pre {
 
 .alone-item .table-long-item {
     max-width: 400px;
+    display: block;
 }
 .alone-item .bui-dlist-tit {
     width: 18%;

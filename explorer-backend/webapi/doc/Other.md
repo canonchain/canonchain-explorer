@@ -23,9 +23,9 @@
         "code": "100",
         "msg": "OK",
         "result": {
-            cheapest_gas_price:"10000",
-            median_gas_price:"15000",
-            highest_gas_price:"20000"
+            cheapest_gas_price:"10000000",
+            median_gas_price:"15000000",
+            highest_gas_price:"20000000"
         }
     }
     ```

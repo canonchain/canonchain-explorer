@@ -259,6 +259,7 @@ a {
     .bui-dlist-tit {
         float: left;
         width: 25%; /* 默认值, 具体根据视觉可改 */
+        min-width: 110px;
         text-align: right;
         padding-right: 10px;
         margin: 0;

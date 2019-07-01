@@ -82,6 +82,9 @@
                             <template v-if="account_props.is_has_intel_trans">
                                 <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
                             </template>
+                            <template v-if="account_props.is_witness">
+                                <el-tab-pane label="见证交易" name="trans_witness"></el-tab-pane>
+                            </template>
                             <template v-if="account_props.is_has_event_logs">
                                 <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
                             </template>
@@ -192,7 +195,7 @@ export default {
             // 想取第一页
             if (val === "header") {
                 self.$router.push(
-                    `/account/${self.url_parm.account}/trans_token?source=${self.url_parm.source}`
+                    `/account/${self.url_parm.account}/trans_token`
                 );
                 return;
             }
@@ -217,7 +220,6 @@ export default {
         async getFlagTransactions() {
             //获取交易表首位值；用来禁用首页和尾页的
             let opt = {
-                source: self.url_parm.source,
                 account: self.url_parm.account
             };
             let response = await self.$api.get(
@@ -316,6 +318,9 @@ export default {
                     this.$router.push(
                         `/account/${self.address}/trans_internal`
                     );
+                    break;
+                case "trans_witness":
+                    this.$router.push(`/account/${self.address}/trans_witness`);
                     break;
                 case "event_logs":
                     this.$router.push(`/account/${self.address}/event_logs`);

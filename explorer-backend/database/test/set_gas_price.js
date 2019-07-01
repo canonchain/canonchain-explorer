@@ -1,9 +1,9 @@
 (async () => {
     let pgPromise = require("../PG-promise");
 
-    let cheapest_gas_price = 10000,
-        median_gas_price = 15000,
-        highest_gas_price = 20000;
+    let cheapest_gas_price = 10000000,
+        median_gas_price = 15000000,
+        highest_gas_price = 20000000;
     let timestamp = Date.parse(new Date());//毫秒时间
     console.log("************* 修改Gas数据 开始 ************* ")
     let tempAry = [

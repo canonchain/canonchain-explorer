@@ -1086,7 +1086,7 @@ router.get("/get_internals", async function (req, res, next) {
                 Select 
                     "hash","mc_timestamp","stable_index","from","to",
                     "value","type","contract_address_create","contract_address_suicide",
-                    "refund_adderss"
+                    "refund_adderss","is_error"
                 FROM 
                     "trans_internal"
                 order by 
@@ -1101,7 +1101,9 @@ router.get("/get_internals", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","stable_index","from","to","value","type","contract_address_create","contract_address_suicide","refund_adderss"
+                    "hash","mc_timestamp","stable_index","from","to",
+                    "value","type","contract_address_create","contract_address_suicide",
+                    "refund_adderss","is_error"
                 FROM 
                     "trans_internal"
                 order by 
@@ -1123,7 +1125,9 @@ router.get("/get_internals", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "hash","mc_timestamp","stable_index","from","to","value","type","contract_address_create","contract_address_suicide","refund_adderss"
+                    "hash","mc_timestamp","stable_index","from","to",
+                    "value","type","contract_address_create","contract_address_suicide",
+                    "refund_adderss","is_error"
                 FROM 
                     "trans_internal"
                 WHERE 
@@ -1850,6 +1854,135 @@ router.get("/get_trans_token", async function (req, res, next) {
         formatInfo = mainData.rows.reverse()
     } else {
         formatInfo = mainData.rows;
+    }
+    responseData = {
+        transactions: formatInfo || [],
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
+})
+
+// 获取见证交易的flag -----------------------------------------------
+router.get("/get_trans_witness_flag", async function (req, res, next) {
+    var queryInfo = req.query;
+    let near_sql = {
+        text: `
+            Select 
+                "stable_index"
+            FROM 
+                trans_witness
+            WHERE
+                "from" = $1
+            order by
+                "stable_index" desc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let end_sql = {
+        text: `
+            Select 
+                "stable_index"
+            FROM 
+                trans_witness
+            WHERE
+                "from" = $1
+            order by
+                "stable_index" asc
+            LIMIT
+                1
+        `,
+        values: [queryInfo.account]
+    }
+    let transStartInfo = await pgPromise.query(near_sql)
+    if (transStartInfo.code) {
+        responseData = {
+            near_item: {},
+            code: 500,
+            success: false,
+            message: "select start_sql Error"
+        }
+        res.json(responseData);
+        return;
+    }
+    let transEndInfo = await pgPromise.query(end_sql)
+    if (transEndInfo.code) {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: {},
+            code: 500,
+            success: false,
+            message: "select end_sql Error"
+        }
+    } else {
+        responseData = {
+            near_item: transStartInfo.rows.length ? transStartInfo.rows[0] : {},
+            end_item: transEndInfo.rows.length ? transEndInfo.rows[0] : {},
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+// 获取见证交易列表
+//参数:account/position/stable_index
+router.get("/get_trans_witness", async function (req, res, next) {
+    let queryVal = req.query;//TODODODODODDO 参数校验
+    let direction, sortInfo;
+    let moreSearchStrIndexTrans = "";
+    if (queryVal.position === "2" || queryVal.position === "4") {
+        direction = ">";
+        sortInfo = "asc";
+    } else if ((queryVal.position === "3") || (queryVal.position === "1")) {
+        direction = "<";
+        sortInfo = "desc";
+    }
+    if ((queryVal.position === "2") || (queryVal.position === "3")) {
+        moreSearchStrIndexTrans = `
+            (stable_index ${direction}= ${Number(queryVal.stable_index)})
+            and
+        `;
+    }
+
+    let opt = {
+        text: `
+            Select 
+                "stable_index","timestamp","hash","mci","from",
+                "is_stable","status","stable_timestamp"
+            FROM
+                trans_witness
+            WHERE
+                ${moreSearchStrIndexTrans}
+                ("from" = $1)
+            order by 
+                "stable_index" ${sortInfo}
+            LIMIT
+                ${LIMIT_VAL}
+        `,
+        values: [queryVal.account]
+    }
+
+
+    let data = await pgPromise.query(opt)
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'Select witness list FROM acc trans_witness Error'
+        }
+        res.json(responseData);
+        return;
+    }
+    let formatInfo;
+    if ((queryVal.position === "4") || (queryVal.position === "2")) {
+        formatInfo = data.rows.reverse()
+    } else {
+        formatInfo = data.rows;
     }
     responseData = {
         transactions: formatInfo || [],

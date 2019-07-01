@@ -11,12 +11,6 @@
                         <el-tab-pane label="交易记录" name="transaction">
                             <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                 <template v-if="IS_GET_INFO">
-                                    <!-- <template v-if="url_parm.source === '3'">
-                                        <witness-list :database="database" :address="address"></witness-list>
-                                    </template>-->
-                                    <!-- <template v-else>
-                                    </template>-->
-
                                     <nomal-list :database="database" :address="address"></nomal-list>
                                     <!-- page -->
                                     <template v-if="database.length">
@@ -78,6 +72,9 @@
                         </template>
                         <template v-if="account_props.is_has_intel_trans">
                             <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                        </template>
+                        <template v-if="account_props.is_witness">
+                            <el-tab-pane label="见证交易" name="trans_witness"></el-tab-pane>
                         </template>
                         <template v-if="account_props.is_has_event_logs">
                             <el-tab-pane label="事件日志" name="event_logs"></el-tab-pane>
@@ -302,6 +299,9 @@ export default {
                     this.$router.push(
                         `/account/${self.address}/trans_internal`
                     );
+                    break;
+                case "trans_witness":
+                    this.$router.push(`/account/${self.address}/trans_witness`);
                     break;
                 case "event_logs":
                     this.$router.push(`/account/${self.address}/event_logs`);
