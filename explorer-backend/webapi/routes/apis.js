@@ -805,9 +805,9 @@ async function get_transaction_by_hash(query) {
 */
 //获取CZRGas
 let GAS_PRICES = {
-  "cheapest_gas_price": "10000",
-  "median_gas_price": "15000",
-  "highest_gas_price": "20000"
+  "cheapest_gas_price": "10000000",
+  "median_gas_price": "15000000",
+  "highest_gas_price": "20000000"
 }
 async function CZRGas(query) {
   let querySql = {
