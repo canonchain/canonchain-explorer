@@ -3347,18 +3347,19 @@ router.get("/get_mci", async function (req, res, next) {
 })
 //获取TPS
 router.get("/get_timestamp", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')
+    PageUtility.timeLog(req, 'start')   
     var srvObj = {};
     var cltObj = {};
-    var queryType = req.query.type || '1';// ?type=1
+    var queryType = req.query.type
+    if(queryType !== '1' && queryType !== '10' &&queryType !== '30' &&queryType !== '60'&&queryType !== '300'  ){
+        queryType = '1'
+    }
     var queryStart = req.query.start;//end
     var multiple = queryType === '1' ? 1 : Number(queryType) / 10;
-    if (multiple != 3 && multiple != 6 && multiple != 30) {
-        multiple = 1
-    }
     var limit = 300 * multiple;
     let sql = {};
     queryType = queryType === '1' ? '1' : '10';
+    // queryStart = "1561731341";
     if (queryStart) {
         var restleTimestamp = queryType === '1' ? queryStart : Math.floor(Number(queryStart) / 10);
         sql.text = `
@@ -3376,7 +3377,6 @@ router.get("/get_timestamp", async function (req, res, next) {
         sql.values = [queryType, restleTimestamp, restleTimestamp - limit];
     } else {
         let nowstamp = Date.parse(new Date()) / 1000;
-        // let nowstamp = 1558414662;
         var restleTimestamp = queryType === '1' ? nowstamp : Math.floor(nowstamp / 10);
         sql.text = `
             Select 
@@ -3408,25 +3408,33 @@ router.get("/get_timestamp", async function (req, res, next) {
         let timestamp = [];
         let count = [];
         data.rows.forEach(item => {
-            srvObj[item.timestamp] = Math.ceil(item.count / Number(queryType));
+            // srvObj[item.timestamp] = Math.ceil(item.count / Number(queryType));
+            srvObj[item.timestamp] = Number(item.count)
         });
 
         for (let i = 0; i < 300 * multiple; i += multiple) {
             cltObj[restleTimestamp - i] = 0;
         }
-        timestamp.forEach((item, index) => {
-            srvObj[item] = count[index];
+        // timestamp.forEach((item, index) => {
+        //     srvObj[item] = count[index];
 
-        });
+        // });
         Object.keys(cltObj).forEach((item) => {
             for (let i = 0; i < multiple; i++) {
                 cltObj[item] += (srvObj[(item - i).toString()] || 0);
+                // console.log("type:"+typeof srvObj[(item - i).toString()])
             }
         });
         Object.keys(cltObj).forEach((items, index) => {
             timestamp[index] = items;
-            count[index] = cltObj[items];
+            if(queryType==='1'){
+                count[index] = cltObj[items]
+            }else{
+                count[index] = (cltObj[items]/multiple/10).toFixed(3)
+            }
+            // count[index] = cltObj[items]
         });
+        // console.log(multiple)
         responseData = {
             timestamp: timestamp,
             count: count,
