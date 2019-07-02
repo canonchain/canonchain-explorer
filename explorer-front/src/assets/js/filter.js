@@ -8,12 +8,12 @@ function numFormat(num) {
 }
 
 /**
- * 接收: wei为单位的金额
+ * 接收: 10*10-18次方为单位的金额
  * 返回：czr为单位的金额
  *  */
 export const toCZRVal = value => {
     if (value) {
-        let tempVal = czr.utils.fromWei(value, "czr");
+        let tempVal = czr.utils.fromKing(value, "czr");
         return numFormat(tempVal);
     } else {
         return 0;
@@ -22,13 +22,13 @@ export const toCZRVal = value => {
 
 /**
  * 
- * @param {total} val 单位Wei
+ * @param {total} val 单位10*10-18次方 
  * @param {d} val 小数点位数
  */
 export const toTokenVal = (value, precision) => {
     precision = Number(precision) || 18;
     if (value) {
-        let tempVal = czr.utils.fromWeiToken(value, precision);
+        let tempVal = czr.utils.fromKingToken(value, precision);
         return numFormat(tempVal);
     } else {
         return 0;

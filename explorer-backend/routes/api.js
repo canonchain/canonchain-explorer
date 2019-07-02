@@ -316,25 +316,6 @@ router.get("/get_accounts", async function (req, res, next) {
             // element.true_balance = element.balance;
             //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
             element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
-            //并保留6位精度
-            // let tempVal = element.balance
-            // if (tempVal == 0) {
-            //     element.balance = 0; //TODO Keep 6 decimal places
-            // } else {
-            //     var reg = /(\d+(?:\.)?)(\d{0,6})/;
-            //     var regAry = reg.exec(tempVal);
-            //     var integer = regAry[1];
-            //     var decimal = regAry[2];
-            //     if (decimal) {
-            //         while (decimal.length < 6) {
-            //             decimal += "0";
-            //         }
-            //     } else {
-            //         decimal = ".000000"
-            //     }
-            //     element.balance = integer + decimal; //TODO Keep 6 decimal places
-            // }
-            // element.rank = LIMIT_VAL * basePage + (index + 1);
         });
 
         responseData = {

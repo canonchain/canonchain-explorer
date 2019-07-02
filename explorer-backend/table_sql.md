@@ -38,7 +38,7 @@ COMMENT ON COLUMN public.accounts.type
     IS '账户类型（1普通账户、2合约账户）';
  
 COMMENT ON COLUMN public.accounts.balance
-    IS '余额，单位是Wei';
+    IS '余额';
 COMMENT ON COLUMN public.accounts.transaction_count
     IS '交易数量，该账户相关的交易数量';
 

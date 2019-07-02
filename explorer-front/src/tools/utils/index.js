@@ -5,14 +5,14 @@ import BigNumber from 'bignumber.js'
 var unitMap = {
     'none': '0',
     'None': '0',
-    'wei': '1',
-    'Wei': '1',
-    'kwei': '1000',
-    'Kwei': '1000',
-    'mwei': '1000000',
-    'Mwei': '1000000',
-    'gwei': '1000000000',
-    'Gwei': '1000000000',
+    'king': '1',
+    'King': '1',
+    'kking': '1000',
+    'Kking': '1000',
+    'mking': '1000000',
+    'Mking': '1000000',
+    'gking': '1000000000',
+    'Gking': '1000000000',
     'czr': '1000000000000000000',
     'CZR': '1000000000000000000',
 };
@@ -45,17 +45,17 @@ var getValueOfUnit = function (unit) {
     return new BigNumber(unitValue, 10);
 };
 
-var fromWei = function (number, unit) {
+var fromKing = function (number, unit) {
     var returnValue = toBigNumber(number).dividedBy(getValueOfUnit(unit));
     return isBigNumber(number) ? returnValue : returnValue.toString(10);
 };
 
-let fromWeiToken = function (number, precision) {
+let fromKingToken = function (number, precision) {
     let returnValue = toBigNumber(number).dividedBy(precision);
     return isBigNumber(number) ? returnValue : returnValue.toString(10);
 };
 
-var toWei = function (number, unit) {
+var toKing = function (number, unit) {
     var returnValue = toBigNumber(number).times(getValueOfUnit(unit));
     return isBigNumber(number) ? returnValue : returnValue.toString(10);
 };
@@ -63,9 +63,9 @@ var toWei = function (number, unit) {
 var exportsObj = {
     toBigNumber: toBigNumber,
     isBigNumber: isBigNumber,
-    toWei: toWei,
-    fromWei: fromWei,
-    fromWeiToken: fromWeiToken
+    toKing: toKing,
+    fromKing: fromKing,
+    fromKingToken: fromKingToken
 };
 
 export default exportsObj;
