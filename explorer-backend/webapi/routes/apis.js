@@ -181,6 +181,12 @@ async function tx_list(query) {
   if (query.page) {
     let limitVal = Number(query.offset) || 10;
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0; 
+    if(limitVal<0 || offsetVal<0){
+      return{
+        "code":"400",
+        "msg":"parameter page and offset must be positive"
+      }
+    }
     sql.text += `offset
                   $2
                 limit
@@ -259,6 +265,12 @@ async function tx_list_internal(query) {
   if (query.page) {
     let limitVal = Number(query.offset) || 10;
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
+    if(limitVal<0 || offsetVal<0){
+      return{
+        "code":"400",
+        "msg":"parameter page and offset must be positive"
+      }
+    }
     sql.text += `offset
                   $2
                 limit
@@ -405,6 +417,12 @@ async  function txlist_crc(query){
   if (query.page) {
     let limitVal = Number(query.limit) || 10;
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
+    if(limitVal<0 || offsetVal<0){
+      return{
+        "code":"400",
+        "msg":"parameter page and offset must be positive"
+      }
+    }
     sql.text += `offset
                   $1
                 limit
@@ -562,12 +580,31 @@ async function tx_list_account(query) {
 */
 //生成离线交易
 async function generate_offline_block(query){
-  let transation  = {}
-  if(query.from){transation.from=query.from}
-  if(query.to){transation.to=query.to}
+  if(!query.from || !query.to){
+    return {
+      "code":"400",
+      "msg":"parameter from and to is required for generation"
+    }
+  }
+  if(invalidAcct(query.from) || invalidAcct(query.to)){
+    return {
+      "code":400,
+      "msg":"from or to is invalid format"
+    }
+  }
+  if(!(+query.amount >= 0 && +query.gas >= 0)){
+    return{
+      "code":400,
+      "msg":"amount and gas is required and must not Negative"
+    }
+  }
+  let transation  = {
+    "from":query.from,
+    "to":query.to,
+    "amount":query.amount,
+    "gas":query.gas
+  }
   if(query.previous){transation.previous=query.previous}
-  if(query.amount){transation.amount=query.amount}
-  if(query.gas){transation.gas=query.gas}
   if(query.data){transation.data=query.data}
   if(query.gas_price){transation.gas_price = query.gas_price}
 
