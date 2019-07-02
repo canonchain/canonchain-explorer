@@ -734,9 +734,9 @@ router.get("/get_token_trans", async function (req, res, next) {
                 FROM 
                     "trans_token"
                 WHERE 
-                    (stable_index ${direction} $2)
-                    and
                     ("contract_account" = $1)
+                    and
+                    (stable_index ${direction} $2)
                 order by 
                     "stable_index" ${sortInfo}
                 LIMIT
@@ -1599,7 +1599,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_trans_id ${direction} ${Number(queryVal.index_trans_id)})
-            and
+            
         `;
         moreSearchStrTransNormal = `
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
@@ -1616,8 +1616,10 @@ router.get("/get_account_transactions", async function (req, res, next) {
             FROM
                 account_index_trans
             WHERE
-                ${moreSearchStrIndexTrans}
                 ("account" = $1)
+                and
+                ${moreSearchStrIndexTrans}
+                
             order by 
                 "stable_index" ${sortInfo},
                 "index_trans_id" ${sortInfo}
@@ -1776,7 +1778,7 @@ router.get("/get_trans_token", async function (req, res, next) {
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_transtoken_id ${direction} ${Number(queryVal.index_transtoken_id)})
-            and
+            
         `;
         moreSearchStrTransNormal = `
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
@@ -1793,8 +1795,10 @@ router.get("/get_trans_token", async function (req, res, next) {
             FROM
                 account_index_transtoken
             WHERE
-                ${moreSearchStrIndexTrans}
                 ("account" = $1)
+                and
+                ${moreSearchStrIndexTrans}
+                
             order by 
                 "stable_index" ${sortInfo},
                 "index_transtoken_id" ${sortInfo}
@@ -2082,7 +2086,7 @@ router.get("/get_trans_internal", async function (req, res, next) {
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_transinternal_id ${direction} ${Number(queryVal.index_transinternal_id)})
-            and
+            
         `;
         moreSearchStrTransNormal = `
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
@@ -2099,8 +2103,10 @@ router.get("/get_trans_internal", async function (req, res, next) {
             FROM
                 account_index_transinternal
             WHERE
-                ${moreSearchStrIndexTrans}
                 ("account" = $1)
+                and
+                ${moreSearchStrIndexTrans}
+                
             order by 
                 "stable_index" ${sortInfo},
                 "index_transinternal_id" ${sortInfo}
@@ -2263,7 +2269,7 @@ router.get("/get_event_log", async function (req, res, next) {
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_translog_id ${direction} ${Number(queryVal.index_translog_id)})
-            and
+            
         `;
         moreSearchStrTransNormal = `
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
@@ -2280,8 +2286,10 @@ router.get("/get_event_log", async function (req, res, next) {
             FROM
                 account_index_translog
             WHERE
-                ${moreSearchStrIndexTrans}
                 ("account" = $1)
+                and
+                ${moreSearchStrIndexTrans}
+                
             order by 
                 "stable_index" ${sortInfo},
                 "index_translog_id" ${sortInfo}
@@ -2491,7 +2499,6 @@ router.get("/get_account_token_list", async function (req, res, next) {
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
             (token_asset_id ${direction} ${Number(queryVal.token_asset_id)})
-            and
         `;
     }
 
@@ -2504,8 +2511,10 @@ router.get("/get_account_token_list", async function (req, res, next) {
             FROM
                 token_asset
             WHERE
-                ${moreSearchStrIndexTrans}
                 ("account" = $1)
+                and
+                ${moreSearchStrIndexTrans}
+                
             order by 
                 "token_asset_id" ${sortInfo}
             LIMIT

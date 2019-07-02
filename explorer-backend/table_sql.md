@@ -51,17 +51,10 @@ CREATE INDEX balance_accid_index
     (balance, acc_id)
     TABLESPACE pg_default;
 
--- Index: balance_index
-
--- DROP INDEX public.balance_index;
-
-CREATE INDEX balance_index
+CREATE INDEX accounts_account_index
     ON public.accounts USING btree
-    (balance)
+    (account)
     TABLESPACE pg_default;
-
-COMMENT ON INDEX public.balance_index
-    IS 'balance_index';
 
 ```
 
@@ -85,10 +78,19 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE INDEX index_trans_id_and_index
+CREATE INDEX index_trans_acc_index_id
     ON public.account_index_trans USING btree
     (account, stable_index,index_trans_id)
     TABLESPACE pg_default;
+CREATE INDEX index_trans_index_id
+    ON public.account_index_trans USING btree
+    (stable_index, index_trans_id)
+    TABLESPACE pg_default;
+CREATE INDEX index_trans_account
+    ON public.account_index_trans USING btree
+    (account )
+    TABLESPACE pg_default;
+
 ```
 
 ## 账户的代币转账索引表
@@ -110,9 +112,17 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE INDEX index_transtoken_id_and_index
+CREATE INDEX index_transtoken_acc_index_id
     ON public.account_index_transtoken USING btree
     (account, stable_index,index_transtoken_id)
+    TABLESPACE pg_default;
+CREATE INDEX index_transtoken_index_id
+    ON public.account_index_transtoken USING btree
+    (stable_index, index_transtoken_id)
+    TABLESPACE pg_default;
+CREATE INDEX index_transtoken_account
+    ON public.account_index_transtoken USING btree
+    (account )
     TABLESPACE pg_default;
 ```
 
@@ -135,10 +145,22 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE INDEX index_transinternal_id_and_index
+
+CREATE INDEX index_transinternal_acc_index_id
     ON public.account_index_transinternal USING btree
     (account, stable_index,index_transinternal_id)
     TABLESPACE pg_default;
+
+CREATE INDEX index_transinternal_index_id
+    ON public.account_index_transinternal USING btree
+    (stable_index, index_transinternal_id)
+    TABLESPACE pg_default;
+    
+CREATE INDEX index_transinternal_account
+    ON public.account_index_transinternal USING btree
+    ("account")
+    TABLESPACE pg_default;
+
 ```
 
 ## 账户的事件日志索引表
@@ -160,9 +182,17 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE INDEX index_translog_id_and_index
+CREATE INDEX index_translog_acc_index_id
     ON public.account_index_translog USING btree
     (account, stable_index,index_translog_id)
+    TABLESPACE pg_default;
+CREATE INDEX index_translog_index_id
+    ON public.account_index_translog USING btree
+    (stable_index, index_translog_id)
+    TABLESPACE pg_default;
+CREATE INDEX index_translog_id_account
+    ON public.account_index_translog USING btree
+    (account )
     TABLESPACE pg_default;
 ```
 
@@ -218,29 +248,25 @@ WITH (
 )
 TABLESPACE pg_default;
 
--- Index: from_index
--- DROP INDEX public.mormal_from_index;
-CREATE INDEX from_index
-    ON public.trans_normal USING btree
-    ("from")
-    TABLESPACE pg_default;
-COMMENT ON INDEX public.from_index
-    IS 'from_index';
-
--- Index: hash_index
--- DROP INDEX public.mormal_hash_index;
-CREATE UNIQUE INDEX hash_index
+CREATE UNIQUE INDEX trans_normal_hash
     ON public.trans_normal USING btree
     (hash)
     TABLESPACE pg_default;
 
--- Index: mormal_stable_index
--- DROP INDEX public.mormal_stable_index;
-CREATE INDEX mormal_stable_index
+CREATE INDEX trans_normal_stable
     ON public.trans_normal USING btree
     (stable_index)
     TABLESPACE pg_default;
 
+CREATE INDEX trans_normal_stable_id
+    ON public.trans_normal USING btree
+    (stable_index,pkid)
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_normal_stable_id_hash
+    ON public.trans_normal USING btree
+    (stable_index,pkid,hash)
+    TABLESPACE pg_default;
 ```
 
 ## 见证交易表(存创始hash的简要信息)
@@ -281,23 +307,24 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE UNIQUE INDEX witness_hash_index
+CREATE UNIQUE INDEX trans_witness_hash
     ON public.trans_witness USING btree
     (hash)
     TABLESPACE pg_default;
 
--- Index: witness_from_index
--- DROP INDEX public.witness_from_index;
-CREATE INDEX witness_from_index
+CREATE INDEX trans_witness_from
     ON public.trans_witness USING btree
     ("from")
     TABLESPACE pg_default;
 
--- Index: witness_stable_index
--- DROP INDEX public.witness_stable_index;
-CREATE INDEX witness_stable_index
+CREATE INDEX trans_witness_stable
     ON public.trans_witness USING btree
     (stable_index)
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_witness_stable_from
+    ON public.trans_witness USING btree
+    (stable_index,"from")
     TABLESPACE pg_default;
 
 ```
@@ -348,15 +375,9 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE UNIQUE INDEX genesis_hash_index
+CREATE UNIQUE INDEX trans_genesis_hash
     ON public.trans_genesis USING btree
     (hash)
-    TABLESPACE pg_default;
--- Index: gen_stable_index
--- DROP INDEX public.gen_stable_index;
-CREATE INDEX genesis_stable_index
-    ON public.trans_genesis USING btree
-    (stable_index)
     TABLESPACE pg_default;
 
 ```
@@ -379,7 +400,7 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-CREATE UNIQUE INDEX type_hash_index
+CREATE UNIQUE INDEX trans_type_hash
     ON public.trans_type USING btree
     (hash)
     TABLESPACE pg_default;
@@ -409,13 +430,10 @@ COMMENT ON COLUMN public.parents.item
 COMMENT ON COLUMN public.parents.parent
     IS 'parent';
 
--- Index: parent_item_index
--- DROP INDEX public.parent_item_index;
-CREATE INDEX parent_item_index
+CREATE INDEX parents_item
     ON public.parents USING btree
-    (item COLLATE pg_catalog."default")
+    (item )
     TABLESPACE pg_default;
-
 ```
 
 ## timestap表的创建
@@ -442,13 +460,21 @@ IS 'type';
 COMMENT ON COLUMN public.timestamp.count
 IS 'count';
 
--- Index: time_timestamp_index
--- DROP INDEX public.time_timestamp_index;
-CREATE INDEX time_timestamp_index
+
+CREATE INDEX timestamp_type
     ON public."timestamp" USING btree
-    (timestamp)
+    ("type")
     TABLESPACE pg_default;
 
+CREATE INDEX timestamp_count
+    ON public."timestamp" USING btree
+    ("count")
+    TABLESPACE pg_default;
+
+CREATE INDEX timestamp_type_timestamp
+    ON public."timestamp" USING btree
+    ("type",timestamp)
+    TABLESPACE pg_default;
 ```
 
 ## global
@@ -466,6 +492,10 @@ WITH(
 )
 TABLESPACE pg_default;
 
+CREATE INDEX global_key
+    ON public."global" USING btree
+    ("key")
+    TABLESPACE pg_default;
 
 ```
 
@@ -556,6 +586,11 @@ WITH (
 )
 TABLESPACE pg_default;
 
+CREATE INDEX token_id
+    ON public."token" USING btree
+    ("token_id")
+    TABLESPACE pg_default;
+
 ```
 
 ### trans_token | Token交易表
@@ -587,6 +622,36 @@ WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
+CREATE INDEX trans_token_hash
+    ON public."trans_token" USING btree
+    ("hash")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_token_stable
+    ON public."trans_token" USING btree
+    ("stable_index")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_token_contract
+    ON public."trans_token" USING btree
+    ("contract_account")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_token_contract_index
+    ON public."trans_token" USING btree
+    ("contract_account","stable_index")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_token_stable_id
+    ON public."trans_token" USING btree
+    ("stable_index","trans_token_id")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_token_stable_id_hash
+    ON public."trans_token" USING btree
+    ("stable_index","trans_token_id","hash")
+    TABLESPACE pg_default;
 
 ```
 
@@ -634,6 +699,26 @@ WITH (
 )
 TABLESPACE pg_default;
 
+
+CREATE INDEX trans_internal_hash
+    ON public."trans_internal" USING btree
+    ("hash")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_internal_stable
+    ON public."trans_internal" USING btree
+    ("stable_index")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_internal_stable_id
+    ON public."trans_internal" USING btree
+    ("stable_index","trans_internal_id")
+    TABLESPACE pg_default;
+
+CREATE INDEX trans_internal_stable_id_hash
+    ON public."trans_internal" USING btree
+    ("stable_index","trans_internal_id","hash")
+    TABLESPACE pg_default;
 ```
 
 ### event_log | 事件日志表
@@ -665,6 +750,21 @@ WITH (
 )
 TABLESPACE pg_default;
 
+CREATE INDEX event_log_hash
+    ON public."event_log" USING btree
+    ("hash")
+    TABLESPACE pg_default;
+
+CREATE INDEX event_log_stable_id
+    ON public."event_log" USING btree
+    ("stable_index","event_log_id")
+    TABLESPACE pg_default;
+
+CREATE INDEX event_log_stable_id_hash
+    ON public."event_log" USING btree
+    ("stable_index","event_log_id","hash")
+    TABLESPACE pg_default;
+
 ```
 
 ### token_asset | Token资产表
@@ -690,6 +790,34 @@ WITH (
 )
 TABLESPACE pg_default;
 
+
+CREATE INDEX token_asset_account
+    ON public."token_asset" USING btree
+    ("account")
+    TABLESPACE pg_default;
+
+
+CREATE INDEX token_asset_id
+    ON public."token_asset" USING btree
+    ("token_asset_id")
+    TABLESPACE pg_default;
+
+
+CREATE INDEX token_asset_contract
+    ON public."token_asset" USING btree
+    ("contract_account")
+    TABLESPACE pg_default;
+
+CREATE INDEX token_asset_balance_id
+    ON public."token_asset" USING btree
+    ("balance","token_asset_id")
+    TABLESPACE pg_default;
+
+CREATE INDEX token_asset_contract_balance_id
+    ON public."token_asset" USING btree
+    ("contract_account","balance","token_asset_id")
+    TABLESPACE pg_default;
+
 ```
 
 
@@ -710,6 +838,10 @@ WITH (
 )
 TABLESPACE pg_default;
 
+CREATE INDEX gas_price_timestamp
+    ON public."gas_price" USING btree
+    ("timestamp")
+    TABLESPACE pg_default;
 ```
 
 ### api_keys | api_key表
@@ -726,6 +858,11 @@ CREATE TABLE public.api_keys
 WITH(
     oids = false
 )
-TABLESPACE pg_default
+TABLESPACE pg_default;
+
+CREATE INDEX api_keys_timestamp
+    ON public."api_keys" USING btree
+    ("create_timestamp")
+    TABLESPACE pg_default;
 ```
 

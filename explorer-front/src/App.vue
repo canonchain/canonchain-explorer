@@ -14,13 +14,24 @@ export default {
 </script>
 
 <style>
-/* @import './assets/css/reset.css'; */
 html,
 body {
     background: #f3f3f3;
 }
 a {
     color: #28388c;
+}
+.txt-warning {
+  color: #e6a23c;
+}
+.txt-info {
+  color: #909399;
+}
+.txt-success {
+  color: #67c23a;
+}
+.txt-danger {
+  color: #f56c6c;
 }
 #app {
     font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
