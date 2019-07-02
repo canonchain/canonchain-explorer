@@ -230,13 +230,11 @@ export default {
                 let beautify = "";
                 response.data.forEach(element => {
                     if (element.type === "0") {
-                        typeStr = "call";
+                        typeStr = element.call_type;
                         element.type_before = self.format(
                             element.trace_address
                         );
-                        element.type_str = `${typeStr}_${
-                            element.trace_address
-                        }`;
+                        element.type_str = `${typeStr}_${element.trace_address}`;
                     } else if (element.type === "1") {
                         typeStr = "create";
                         element.type_str = typeStr;

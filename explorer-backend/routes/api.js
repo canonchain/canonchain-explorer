@@ -25,7 +25,12 @@ let LIMIT_VAL = 20;
 
 //@ts-check
 let WITNESS_LIST = [];
-
+let paramError = {
+    data: [],
+    code: 500,
+    success: false,
+    message: 'Wrong or missing parameter'
+}
 
 let PageUtility = {
     timeLog: function (req, symbol_str) {
@@ -95,6 +100,16 @@ let PageUtility = {
             WITNESS_LIST.push(item.account.toUpperCase());
         })
         logger.info(WITNESS_LIST);
+    },
+    isHasParam: function (opt, ary) {
+        let item;
+        for (let i = 0; i < ary.length; i++) {
+            item = ary[i];
+            if (!opt[item]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 PageUtility.getWitnessList();
@@ -242,7 +257,7 @@ router.get("/get_accounts", async function (req, res, next) {
            `,
             values: [LIMIT_VAL]
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -289,7 +304,12 @@ router.get("/get_accounts", async function (req, res, next) {
            `,
             values: [Number(queryVal.acc_id), Number(queryVal.balance), LIMIT_VAL]
         }
+    } else {
+        res.json(paramError);
+        return;
     }
+    //  if ((queryVal.position === "2") || (queryVal.position === "3"))
+
 
     PageUtility.timeLog(req, '[1] SELECT transaction info Before')
     let data = await pgPromise.query(opt)
@@ -432,6 +452,12 @@ router.get("/get_token_flag", async function (req, res, next) {
 router.get("/get_tokens", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;
+
+    if (!PageUtility.isHasParam(queryVal, ["token_id"])) {
+        res.json(paramError);
+        return;
+    }
+
     let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_total","transaction_count","account_count"',
         tableName = "token";
 
@@ -473,7 +499,7 @@ router.get("/get_tokens", async function (req, res, next) {
             `,
             values: [LIMIT_VAL]
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -497,6 +523,9 @@ router.get("/get_tokens", async function (req, res, next) {
             `,
             values: [Number(queryVal.token_id), LIMIT_VAL]
         }
+    } else {
+        res.json(paramError);
+        return;
     }
 
 
@@ -534,6 +563,11 @@ router.get("/get_tokens", async function (req, res, next) {
 router.get("/get_token_info", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;
+
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
 
     let opt = {
         text: `
@@ -581,7 +615,12 @@ router.get("/get_token_info", async function (req, res, next) {
 //获取Token交易Flag
 router.get("/get_token_trans_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    var queryInfo = req.query;
+    var queryVal = req.query;
+
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let errorInfo = {
         "stable_index": "0"
     }
@@ -599,7 +638,7 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
 
 
@@ -632,7 +671,7 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     PageUtility.timeLog(req, '[2] SELECT end_sql Before')
     let transEndInfo = await pgPromise.query(opt)
@@ -661,6 +700,11 @@ router.get("/get_token_trans_flag", async function (req, res, next) {
 router.get("/get_token_trans", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//account | source | stable_index
+
+    if (!PageUtility.isHasParam(queryVal, ["account", "stable_index"])) {
+        res.json(paramError);
+        return;
+    }
 
     let opt;
 
@@ -699,7 +743,7 @@ router.get("/get_token_trans", async function (req, res, next) {
             `,
             values: [queryVal.account]
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -725,6 +769,9 @@ router.get("/get_token_trans", async function (req, res, next) {
             `,
             values: [queryVal.account, queryVal.stable_index]
         };
+    } else {
+        res.json(paramError);
+        return;
     }
     let data = await pgPromise.query(opt);
     if (data.code) {
@@ -764,7 +811,12 @@ router.get("/get_token_trans", async function (req, res, next) {
 //获取Token持有账户Flag
 router.get("/get_token_holder_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    var queryInfo = req.query;
+    var queryVal = req.query;
+
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let errorInfo = {}
 
     let start_sql = {
@@ -781,7 +833,7 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
 
 
@@ -815,7 +867,7 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     PageUtility.timeLog(req, '[2] SELECT end_sql Before')
     let transEndInfo = await pgPromise.query(opt)
@@ -844,6 +896,11 @@ router.get("/get_token_holder_flag", async function (req, res, next) {
 router.get("/get_token_holder", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//account | source | token_asset_id
+    if (!PageUtility.isHasParam(queryVal, ["account", "balance", "token_asset_id"])) {
+        res.json(paramError);
+        return;
+    }
+
     let opt;
 
     //根据position查询
@@ -883,7 +940,7 @@ router.get("/get_token_holder", async function (req, res, next) {
             `,
             values: [queryVal.account]
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -981,7 +1038,6 @@ router.get("/get_internal_count", async function (req, res, next) {
 //获取内部交易的Flag
 router.get("/get_internal_flag", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
-    var queryInfo = req.query;
     let errorInfo = {
         "stable_index": "0"
     }
@@ -1057,6 +1113,11 @@ router.get("/get_internal_flag", async function (req, res, next) {
 router.get("/get_internals", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//stable_index
+    if (!PageUtility.isHasParam(queryVal, ["stable_index"])) {
+        res.json(paramError);
+        return;
+    }
+
     let opt;
 
     //根据position查询
@@ -1094,7 +1155,7 @@ router.get("/get_internals", async function (req, res, next) {
             `,
             values: []
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -1120,6 +1181,9 @@ router.get("/get_internals", async function (req, res, next) {
             `,
             values: [queryVal.stable_index]
         };
+    } else {
+        res.json(paramError);
+        return;
     }
     let data = await pgPromise.query(opt);
     if (data.code) {
@@ -1137,10 +1201,6 @@ router.get("/get_internals", async function (req, res, next) {
         } else {
             formatInfo = data.rows;
         }
-
-        // data.rows.forEach(item => {
-        //     item.trace_type = item.trace_type + "_" + item.trace_flag;
-        // })
 
         if (data.rows.length) {
             responseData = {
@@ -1321,7 +1381,7 @@ router.get("/get_trans", async function (req, res, next) {
             `,
             values: [LIMIT_VAL]
         }
-    } else {
+    } else if ((queryVal.position === "2") || (queryVal.position === "3")) {
         let direction, sortInfo;
         if (queryVal.position === "2") {
             direction = ">";
@@ -1345,6 +1405,9 @@ router.get("/get_trans", async function (req, res, next) {
             `,
             values: [Number(queryVal.stable_index), LIMIT_VAL]
         }
+    } else {
+        res.json(paramError);
+        return;
     }
 
 
@@ -1386,7 +1449,10 @@ router.get("/get_account", async function (req, res, next) {
     }
     PageUtility.timeLog(req, 'start')
     var queryAccount = req.query.account;// ?account=2
-
+    if (!PageUtility.isHasParam(req.query, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let opt = {
         text: `
             Select 
@@ -1493,7 +1559,11 @@ router.get("/get_contract", async function (req, res, next) {
 //获取交易表中最近(LIMIT+1)项
 //参数：account -----------------------------------------------
 router.get("/get_account_trans_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -1508,7 +1578,7 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -1524,7 +1594,7 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -1561,6 +1631,13 @@ router.get("/get_account_trans_flag", async function (req, res, next) {
 //参数:account/position/stable_index/index_trans_id/pkid
 router.get("/get_account_transactions", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+
+    //不需要这么多参数，后面需要优化掉
+    if (!PageUtility.isHasParam(queryVal, ["account", "pkid", "stable_index", "index_trans_id"])) {
+        res.json(paramError);
+        return;
+    }
+
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "",
         moreSearchStrTransNormal = "";
@@ -1574,13 +1651,16 @@ router.get("/get_account_transactions", async function (req, res, next) {
         sortInfo = "desc";
     } else if (queryVal.position === "4") {
         sortInfo = "asc";
+    } else {
+        res.json(paramError);
+        return;
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
+            and
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_trans_id ${direction} ${Number(queryVal.index_trans_id)})
-            
         `;
         moreSearchStrTransNormal = `
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
@@ -1598,9 +1678,7 @@ router.get("/get_account_transactions", async function (req, res, next) {
                 account_index_trans
             WHERE
                 ("account" = $1)
-                and
                 ${moreSearchStrIndexTrans}
-                
             order by 
                 "stable_index" ${sortInfo},
                 "index_trans_id" ${sortInfo}
@@ -1609,7 +1687,6 @@ router.get("/get_account_transactions", async function (req, res, next) {
         `,
         values: [queryVal.account]
     }
-
 
     let data = await pgPromise.query(opt)
     let dataResult = data.rows;
@@ -1672,7 +1749,11 @@ router.get("/get_account_transactions", async function (req, res, next) {
 
 // 获取Token转账的flag -----------------------------------------------
 router.get("/get_trans_token_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -1687,7 +1768,7 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -1703,7 +1784,7 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -1740,6 +1821,11 @@ router.get("/get_trans_token_flag", async function (req, res, next) {
 //参数:account/position/stable_index/index_transtoken_id/trans_token_id
 router.get("/get_trans_token", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+    if (!PageUtility.isHasParam(queryVal, ["account", "stable_index", "index_transtoken_id", "trans_token_id"])) {
+        res.json(paramError);
+        return;
+    }
+
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "",
         moreSearchStrTransNormal = "";
@@ -1753,9 +1839,13 @@ router.get("/get_trans_token", async function (req, res, next) {
         sortInfo = "desc";
     } else if (queryVal.position === "4") {
         sortInfo = "asc";
+    } else {
+        res.json(paramError);
+        return;
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
+            and
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_transtoken_id ${direction} ${Number(queryVal.index_transtoken_id)})
@@ -1777,7 +1867,6 @@ router.get("/get_trans_token", async function (req, res, next) {
                 account_index_transtoken
             WHERE
                 ("account" = $1)
-                and
                 ${moreSearchStrIndexTrans}
                 
             order by 
@@ -1851,7 +1940,11 @@ router.get("/get_trans_token", async function (req, res, next) {
 
 // 获取见证交易的flag -----------------------------------------------
 router.get("/get_trans_witness_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -1865,7 +1958,7 @@ router.get("/get_trans_witness_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -1880,7 +1973,7 @@ router.get("/get_trans_witness_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -1917,6 +2010,11 @@ router.get("/get_trans_witness_flag", async function (req, res, next) {
 //参数:account/position/stable_index
 router.get("/get_trans_witness", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
+
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "";
     if (queryVal.position === "2" || queryVal.position === "4") {
@@ -1925,6 +2023,9 @@ router.get("/get_trans_witness", async function (req, res, next) {
     } else if ((queryVal.position === "3") || (queryVal.position === "1")) {
         direction = "<";
         sortInfo = "desc";
+    } else {
+        res.json(paramError);
+        return;
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
@@ -1980,7 +2081,11 @@ router.get("/get_trans_witness", async function (req, res, next) {
 
 //获取内部交易的Flag -----------------------------------------------
 router.get("/get_trans_internal_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -1995,7 +2100,7 @@ router.get("/get_trans_internal_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -2011,7 +2116,7 @@ router.get("/get_trans_internal_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -2048,6 +2153,10 @@ router.get("/get_trans_internal_flag", async function (req, res, next) {
 //参数:account/position/stable_index/index_transinternal_id/trans_internal_id
 router.get("/get_trans_internal", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+    if (!PageUtility.isHasParam(queryVal, ["account", "position", "stable_index", "index_transinternal_id", "trans_internal_id"])) {
+        res.json(paramError);
+        return;
+    }
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "",
         moreSearchStrTransNormal = "";
@@ -2064,6 +2173,7 @@ router.get("/get_trans_internal", async function (req, res, next) {
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
+            and
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_transinternal_id ${direction} ${Number(queryVal.index_transinternal_id)})
@@ -2085,7 +2195,6 @@ router.get("/get_trans_internal", async function (req, res, next) {
                 account_index_transinternal
             WHERE
                 ("account" = $1)
-                and
                 ${moreSearchStrIndexTrans}
                 
             order by 
@@ -2163,7 +2272,11 @@ router.get("/get_trans_internal", async function (req, res, next) {
 
 //事件日志 -----------------------------------------------
 router.get("/get_event_log_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -2178,7 +2291,7 @@ router.get("/get_event_log_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -2194,7 +2307,7 @@ router.get("/get_event_log_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -2231,6 +2344,10 @@ router.get("/get_event_log_flag", async function (req, res, next) {
 //参数:account/position/stable_index/index_translog_id/event_log_id
 router.get("/get_event_log", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+    if (!PageUtility.isHasParam(queryVal, ["account", "position", "stable_index", "index_translog_id", "event_log_id"])) {
+        res.json(paramError);
+        return;
+    }
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "",
         moreSearchStrTransNormal = "";
@@ -2247,6 +2364,7 @@ router.get("/get_event_log", async function (req, res, next) {
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
+            and
             (stable_index ${direction}= ${Number(queryVal.stable_index)})
             and
             (index_translog_id ${direction} ${Number(queryVal.index_translog_id)})
@@ -2268,7 +2386,6 @@ router.get("/get_event_log", async function (req, res, next) {
                 account_index_translog
             WHERE
                 ("account" = $1)
-                and
                 ${moreSearchStrIndexTrans}
                 
             order by 
@@ -2352,7 +2469,10 @@ router.get("/get_event_log", async function (req, res, next) {
 router.get("/get_contract_code", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//account
-
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let opt = {
         text: `
             Select 
@@ -2398,7 +2518,11 @@ router.get("/get_contract_code", async function (req, res, next) {
 
 //获取代币列表 -----------------------------------------------
 router.get("/get_account_token_list_flag", async function (req, res, next) {
-    var queryInfo = req.query;
+    var queryVal = req.query;
+    if (!PageUtility.isHasParam(queryVal, ["account"])) {
+        res.json(paramError);
+        return;
+    }
     let near_sql = {
         text: `
             Select 
@@ -2412,7 +2536,7 @@ router.get("/get_account_token_list_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let end_sql = {
         text: `
@@ -2427,7 +2551,7 @@ router.get("/get_account_token_list_flag", async function (req, res, next) {
             LIMIT
                 1
         `,
-        values: [queryInfo.account]
+        values: [queryVal.account]
     }
     let transStartInfo = await pgPromise.query(near_sql)
     if (transStartInfo.code) {
@@ -2464,6 +2588,10 @@ router.get("/get_account_token_list_flag", async function (req, res, next) {
 //参数:account/position/token_asset_id
 router.get("/get_account_token_list", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
+    if (!PageUtility.isHasParam(queryVal, ["account", "position", "token_asset_id"])) {
+        res.json(paramError);
+        return;
+    }
     let direction, sortInfo;
     let moreSearchStrIndexTrans = "";
     if (queryVal.position === "2") {
@@ -2479,6 +2607,7 @@ router.get("/get_account_token_list", async function (req, res, next) {
     }
     if ((queryVal.position === "2") || (queryVal.position === "3")) {
         moreSearchStrIndexTrans = `
+            and
             (token_asset_id ${direction} ${Number(queryVal.token_asset_id)})
         `;
     }
@@ -2493,7 +2622,6 @@ router.get("/get_account_token_list", async function (req, res, next) {
                 token_asset
             WHERE
                 ("account" = $1)
-                and
                 ${moreSearchStrIndexTrans}
                 
             order by 
@@ -2539,27 +2667,15 @@ router.get("/get_account_token_list", async function (req, res, next) {
 router.get("/get_transaction_short", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryTransaction = req.query.transaction;// TODO 验证格式
+
+    if (!PageUtility.isHasParam(req.query, ["transaction"])) {
+        res.json(paramError);
+        return;
+    }
+
     let tableName = '';
     let tableCol = ''
     let typeValue = 0;
-    // if (queryTransaction.length !== 64) {
-    //     responseData = {
-    //         transaction: {
-    //             "hash": queryTransaction,
-    //             "from": "",
-    //             "to": "",
-    //             "amount": "0",
-    //             "data": "",
-    //             "mc_timestamp": "1534146836",
-    //             "status": "0",
-    //             "is_stable": "0"
-    //         },
-    //         code: 500,
-    //         success: false,
-    //         message: "hash is not validated"
-    //     }
-    //     res.json(responseData);
-    // }
     //DO 选择HASH类型
     let type_sql = {
         text: `
@@ -2673,7 +2789,10 @@ router.get("/get_transaction_short", async function (req, res, next) {
 router.get("/get_transaction_trans_token", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//hash
-
+    if (!PageUtility.isHasParam(queryVal, ["hash"])) {
+        res.json(paramError);
+        return;
+    }
     let opt = {
         text: `
             Select 
@@ -2682,6 +2801,8 @@ router.get("/get_transaction_trans_token", async function (req, res, next) {
                 "trans_token"
             WHERE
                 "hash" = $1
+            order by
+                trans_token_id asc
         `,
         values: [queryVal.hash]
     }
@@ -2709,6 +2830,10 @@ router.get("/get_transaction_trans_token", async function (req, res, next) {
 router.get("/get_transaction_trans_internal", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//hash
+    if (!PageUtility.isHasParam(queryVal, ["hash"])) {
+        res.json(paramError);
+        return;
+    }
     let opt = {
         text: `
             Select 
@@ -2745,6 +2870,8 @@ router.get("/get_transaction_trans_internal", async function (req, res, next) {
                 "trans_internal"
             WHERE
                 "hash" = $1
+            order by
+                trans_internal_id asc
         `,
         values: [queryVal.hash]
     }
@@ -2759,9 +2886,6 @@ router.get("/get_transaction_trans_internal", async function (req, res, next) {
             message: "Select FROM trans_internal Error"
         }
     } else {
-        data.rows.forEach(item => {
-            item.trace_type = item.trace_type + "_" + item.trace_flag;
-        })
         responseData = {
             data: data.rows,
             code: 200,
@@ -2776,7 +2900,10 @@ router.get("/get_transaction_trans_internal", async function (req, res, next) {
 router.get("/get_transaction_event_log", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//hash
-
+    if (!PageUtility.isHasParam(queryVal, ["hash"])) {
+        res.json(paramError);
+        return;
+    }
     let opt = {
         text: `
             Select 
@@ -2785,6 +2912,8 @@ router.get("/get_transaction_event_log", async function (req, res, next) {
                 "event_log"
             WHERE
                 "hash" = $1
+            order by
+                event_log_id asc
         `,
         values: [queryVal.hash]
     };
@@ -2817,7 +2946,10 @@ router.get("/get_transaction_event_log", async function (req, res, next) {
 router.get("/get_transaction_props", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryVal = req.query;//hash
-
+    if (!PageUtility.isHasParam(queryVal, ["hash"])) {
+        res.json(paramError);
+        return;
+    }
     let tableName = '';
     let tableCol = ''
     let typeValue = 0;
@@ -2918,6 +3050,11 @@ router.get("/get_transaction", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
     let queryTransaction = req.query.transaction;// ?account=2
     let transaction;
+
+    if (!PageUtility.isHasParam(req.query, ["transaction"])) {
+        res.json(paramError);
+        return;
+    }
 
     //TODO 少选点信息
     let opt = {
@@ -3020,11 +3157,14 @@ router.get("/get_transaction", async function (req, res, next) {
 router.get("/get_previous_units", async function (req, res, next) {
     PageUtility.timeLog(req, 'start')
 
-    var searchParameter = req.query;
+    var queryVal = req.query;
     var sqlOptions;
-
-    // console.log(searchParameter);
-    if (searchParameter.direction === 'down') {
+    if (!PageUtility.isHasParam(queryVal, ["direction", "stable_index"])) {
+        res.json(paramError);
+        return;
+    }
+    // console.log(queryVal);
+    if (queryVal.direction === 'down') {
         sqlOptions = {
             text: `
                 Select 
@@ -3037,9 +3177,9 @@ router.get("/get_previous_units", async function (req, res, next) {
                     stable_index desc
                 limit 
                     100`,
-            values: [searchParameter.stable_index]
+            values: [queryVal.stable_index]
         }
-    } else if (searchParameter.direction === 'up') {
+    } else if (queryVal.direction === 'up') {
 
         sqlOptions = {
             text: `
@@ -3054,10 +3194,10 @@ router.get("/get_previous_units", async function (req, res, next) {
                 limit 
                     100
             `,
-            values: [searchParameter.stable_index]
+            values: [queryVal.stable_index]
         }
 
-    } else if ((searchParameter.direction === 'center') && searchParameter.active_unit) {
+    } else if ((queryVal.direction === 'center') && queryVal.active_unit) {
         let sql = {
             text: `
                 select 
@@ -3069,7 +3209,7 @@ router.get("/get_previous_units", async function (req, res, next) {
                 limit 
                     1
             `,
-            values: [searchParameter.active_unit]
+            values: [queryVal.active_unit]
         };
         PageUtility.timeLog(req, '[0] SELECT center stable_index Before')
         let hashData = await pgPromise.query(sql)
@@ -3130,7 +3270,7 @@ router.get("/get_previous_units", async function (req, res, next) {
             order by 
                 stable_index desc
             `,
-            values: [searchParameter.active_unit, centerHashInfo.stable_index]
+            values: [queryVal.active_unit, centerHashInfo.stable_index]
         }
     } else {
         sqlOptions = `
@@ -3337,11 +3477,11 @@ router.get("/get_mci", async function (req, res, next) {
 })
 //获取TPS
 router.get("/get_timestamp", async function (req, res, next) {
-    PageUtility.timeLog(req, 'start')   
+    PageUtility.timeLog(req, 'start')
     var srvObj = {};
     var cltObj = {};
     var queryType = req.query.type
-    if(queryType !== '1' && queryType !== '10' &&queryType !== '30' &&queryType !== '60'&&queryType !== '300'  ){
+    if (queryType !== '1' && queryType !== '10' && queryType !== '30' && queryType !== '60' && queryType !== '300') {
         queryType = '1'
     }
     var queryStart = req.query.start;//end
@@ -3417,10 +3557,10 @@ router.get("/get_timestamp", async function (req, res, next) {
         });
         Object.keys(cltObj).forEach((items, index) => {
             timestamp[index] = items;
-            if(queryType==='1'){
+            if (queryType === '1') {
                 count[index] = cltObj[items]
-            }else{
-                count[index] = (cltObj[items]/multiple/10).toFixed(3)
+            } else {
+                count[index] = (cltObj[items] / multiple / 10).toFixed(3)
             }
             // count[index] = cltObj[items]
         });

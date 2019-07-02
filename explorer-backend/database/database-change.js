@@ -906,8 +906,12 @@
                             if (!tempTracesInfo.is_error) {
                                 if (tempTracesInfo.type === 2) {
                                     pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.contract_address_suicide, tempTracesInfo.refund_adderss, 2, tempTracesInfo.balance)
-                                } else {
-                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, (tempTracesInfo.to || tempTracesInfo.contract_address_create), 1, tempTracesInfo.value)
+                                } else if (tempTracesInfo.type === 0) {
+                                    // if (tempTracesInfo.call_type !== 'staticcall') {
+                                    // }
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, tempTracesInfo.to, 1, tempTracesInfo.value)
+                                } else if (tempTracesInfo.type === 1) {
+                                    pageUtility.handlerAccountAssets(accountsTotal, tempTracesInfo.from, tempTracesInfo.contract_address_create, 1, tempTracesInfo.value)
                                 }
                             }
                             transInternalInsertAry.push(tempTracesInfo);
