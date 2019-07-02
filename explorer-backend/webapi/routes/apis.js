@@ -168,7 +168,7 @@ async function tx_list(query) {
   let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
   let sql = {
     text: `select 
-            "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status"
+            "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price"
           from
             trans_normal  
           where 

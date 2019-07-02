@@ -103,7 +103,10 @@
                 is_stable: "1"
                 mc_timestamp: "1560946863"
                 stable_index: "6572"
-                status: "0"
+                status: "0",
+                gas:"10000000000",
+                gas_used:"21000",
+                gas_price:"1500000"
             }
         ]
     }
