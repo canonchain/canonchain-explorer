@@ -1,156 +1,164 @@
 <template>
     <div class="page-block">
         <czr-header></czr-header>
-        <div class="block-wrap">
+        <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
                     <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                     <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
 
                     <el-tab-pane label="内部交易" name="intel_trans">
-                        <div v-loading="loadingSwitch">
-                            <template v-if="IS_GET_INFO">
-                                <el-table :data="intel_trans" style="width: 100%">
-                                    <el-table-column label="类型" width="220">
-                                        <template slot-scope="scope">
-                                            <template v-if="scope.row.type === '0'">
-                                                <span class="beautify-color">
-                                                    {{
-                                                    scope.row.type_before
-                                                    }}
-                                                </span>
-                                                {{ scope.row.type_str }}
-                                            </template>
-                                            <template
-                                                v-else-if="
+                        <template v-if="IS_GET_INFO">
+                            <el-table :data="intel_trans" style="width: 100%">
+                                <el-table-column label="类型" width="220">
+                                    <template slot-scope="scope">
+                                        <template v-if="scope.row.type === '0'">
+                                            <span class="beautify-color">
+                                                {{
+                                                scope.row.type_before
+                                                }}
+                                            </span>
+                                            {{ scope.row.type_str }}
+                                        </template>
+                                        <template
+                                            v-else-if="
                                                     scope.row.type === '1'
                                                 "
-                                            >create</template>
-                                            <template
-                                                v-else-if="
+                                        >create</template>
+                                        <template
+                                            v-else-if="
                                                     scope.row.type === '2'
                                                 "
-                                            >suicide</template>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="发送方" width="220">
-                                        <template slot-scope="scope">
-                                            <template v-if="scope.row.type === '2'">
-                                                <router-link
-                                                    class="table-long-item"
-                                                    :to="{
+                                        >suicide</template>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="发送方" width="220">
+                                    <template slot-scope="scope">
+                                        <template v-if="scope.row.type === '2'">
+                                            <router-link
+                                                class="table-long-item"
+                                                :to="{
                                                         path:
                                                             '/account/' +
                                                             scope.row
                                                                 .contract_address_suicide
                                                     }"
-                                                >
-                                                    {{
-                                                    scope.row
-                                                    .contract_address_suicide
-                                                    }}
-                                                </router-link>
-                                            </template>
-                                            <template v-else>
-                                                <router-link
-                                                    class="table-long-item"
-                                                    :to="{
+                                            >
+                                                {{
+                                                scope.row
+                                                .contract_address_suicide
+                                                }}
+                                            </router-link>
+                                        </template>
+                                        <template v-else>
+                                            <router-link
+                                                class="table-long-item"
+                                                :to="{
                                                         path:
                                                             '/account/' +
                                                             scope.row.from
                                                     }"
-                                                >
-                                                    {{
-                                                    scope.row.from
-                                                    }}
-                                                </router-link>
-                                            </template>
+                                            >
+                                                {{
+                                                scope.row.from
+                                                }}
+                                            </router-link>
                                         </template>
-                                    </el-table-column>
-                                    <el-table-column label="接收方" width="220">
-                                        <template slot-scope="scope">
-                                            <template v-if="scope.row.type === '2'">
-                                                <router-link
-                                                    class="table-long-item"
-                                                    :to="{
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="接收方" width="220">
+                                    <template slot-scope="scope">
+                                        <template v-if="scope.row.type === '2'">
+                                            <router-link
+                                                class="table-long-item"
+                                                :to="{
                                                         path:
                                                             '/account/' +
                                                             scope.row
                                                                 .refund_adderss
                                                     }"
-                                                >
-                                                    {{
-                                                    scope.row.refund_adderss
-                                                    }}
-                                                </router-link>
-                                            </template>
-                                            <template
-                                                v-else-if="
+                                            >
+                                                {{
+                                                scope.row.refund_adderss
+                                                }}
+                                            </router-link>
+                                        </template>
+                                        <template
+                                            v-else-if="
                                                     scope.row.type === '1'
                                                 "
-                                            >
-                                                <router-link
-                                                    class="table-long-item"
-                                                    :to="{
+                                        >
+                                            <router-link
+                                                class="table-long-item"
+                                                :to="{
                                                         path:
                                                             '/account/' +
                                                             scope.row
                                                                 .contract_address_create
                                                     }"
-                                                >
-                                                    {{
-                                                    scope.row
-                                                    .contract_address_create
-                                                    }}
-                                                </router-link>
-                                            </template>
-                                            <template v-else>
-                                                <template v-if="scope.row.to">
-                                                    <template>
-                                                        <router-link
-                                                            class="table-long-item"
-                                                            :to="{
+                                            >
+                                                {{
+                                                scope.row
+                                                .contract_address_create
+                                                }}
+                                            </router-link>
+                                        </template>
+                                        <template v-else>
+                                            <template v-if="scope.row.to">
+                                                <template>
+                                                    <router-link
+                                                        class="table-long-item"
+                                                        :to="{
                                                                 path:
                                                                     '/account/' +
                                                                     scope.row.to
                                                             }"
-                                                        >
-                                                            {{
-                                                            scope.row.to
-                                                            }}
-                                                        </router-link>
-                                                    </template>
-                                                </template>
-                                                <template v-else>
-                                                    <span>-</span>
+                                                    >
+                                                        {{
+                                                        scope.row.to
+                                                        }}
+                                                    </router-link>
                                                 </template>
                                             </template>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="价值" width="180">
-                                        <template slot-scope="scope">
-                                            <template
-                                                v-if="scope.row.type === '2'"
-                                            >{{scope.row.balance | toCZRVal}}</template>
                                             <template v-else>
-                                                {{
-                                                (scope.row.value) | toCZRVal
-                                                }}
-                                            </template>CZR
+                                                <span>-</span>
+                                            </template>
                                         </template>
-                                    </el-table-column>
-                                    <el-table-column label="Gas Limit" align="right">
-                                        <template slot-scope="scope">
-                                            <span>
-                                                {{
-                                                scope.row.gas || 0
-                                                }}
-                                            </span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="状态" width="60">
+                                    <template slot-scope="scope">
+                                        <template v-if="scope.row.is_error">
+                                            <span class="txt-danger">失败</span>
                                         </template>
-                                    </el-table-column>
-                                </el-table>
-                            </template>
-                        </div>
+                                        <template v-else>
+                                            <span class="txt-success">成功</span>
+                                        </template>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="价值" width="180">
+                                    <template slot-scope="scope">
+                                        <template
+                                            v-if="scope.row.type === '2'"
+                                        >{{scope.row.balance | toCZRVal}}</template>
+                                        <template v-else>
+                                            {{
+                                            (scope.row.value) | toCZRVal
+                                            }}
+                                        </template>CZR
+                                    </template>
+                                </el-table-column>
+                                <el-table-column label="Gas Limit" align="right">
+                                    <template slot-scope="scope">
+                                        <span>
+                                            {{
+                                            scope.row.gas || 0
+                                            }}
+                                        </span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </template>
                     </el-tab-pane>
                     <template v-if="hash_props.is_event_log">
                         <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>

@@ -24,7 +24,7 @@
 
     // 操作稳定Unit相关变量 Start
     let unitIsFail;
-    let MCI_LIMIT = 1000;
+    let MCI_LIMIT = 500;
     // let stableCount = 0; //异步控制
 
     let BLOCKS_LENGTH = 0;
@@ -162,7 +162,6 @@
                 //成功
                 logger.info(`Global新建Mci : 成功`);
                 db_LSBI = 0;
-                // pageUtility.readyGetData();
                 pageUtility.getWitness_list()
             }
         },
@@ -455,6 +454,7 @@
                 }
             }).catch((err) => {
                 logger.info(`mciBlocks-Error : ${err}`);
+                pageUtility.init();
             })
         },
         async filterData() {
@@ -592,7 +592,7 @@
                 //DO 解析log
                 //事件日志表，部署合约时跳过，Token转账之类会有
                 if (blockInfo.log.length) {
-                    logger.info('解析log信息');
+                    // logger.info('解析log信息');
                     blockInfo.is_event_log = true;
                     let tempTransTokenInsertInfo = {};
                     let tempEventLogItem = {};
@@ -834,15 +834,18 @@
                             }
                             //call类型
                             if (tempTracesInfo.type === 0) {
+                                logger.info("traces_item")
+                                logger.info(traces_item)
                                 tempTracesInfo.call_type = traces_item.action.call_type;
                                 tempTracesInfo.from = traces_item.action.from;
                                 tempTracesInfo.to = traces_item.action.to;
                                 tempTracesInfo.gas = traces_item.action.gas;
                                 tempTracesInfo.input = traces_item.action.input;
                                 tempTracesInfo.value = traces_item.action.value;
-
-                                tempTracesInfo.gas_used = traces_item.result.gas_used;
-                                tempTracesInfo.output = traces_item.result.output;
+                                if (!traces_item.error) {
+                                    tempTracesInfo.gas_used = traces_item.result.gas_used || 0;
+                                    tempTracesInfo.output = traces_item.result.output;
+                                }
                             }
                             //create
                             if (tempTracesInfo.type === 1) {
@@ -851,9 +854,12 @@
                                 tempTracesInfo.init = traces_item.action.init;
                                 tempTracesInfo.value = traces_item.action.value;
 
-                                tempTracesInfo.gas_used = traces_item.result.gas_used;
-                                tempTracesInfo.contract_address_create = traces_item.result.contract_address;
-                                tempTracesInfo.contract_address_create_code = traces_item.result.code;
+                                if (!traces_item.error) {
+                                    tempTracesInfo.gas_used = traces_item.result.gas_used;
+                                    tempTracesInfo.contract_address_create = traces_item.result.contract_address;
+                                    tempTracesInfo.contract_address_create_code = traces_item.result.code;
+                                }
+
 
                                 //更改To，方便查询账户查询内部交易列表
                                 tempTracesInfo.to = tempTracesInfo.contract_address_create;
@@ -877,20 +883,24 @@
                                 }
 
                                 //contract
-                                logger.info("内部交易新建合约:", tempTracesInfo.contract_address_create)
-                                contractInsertAry.push({
-                                    contract_account: tempTracesInfo.contract_address_create,
-                                    own_account: tempTracesInfo.from,
-                                    born_unit: blockInfo.hash,
-                                    token_name: "",
-                                    token_symbol: ""
-                                });
+                                // logger.info("内部交易新建合约:", tempTracesInfo.contract_address_create)
+                                if (!traces_item.error) {
+                                    contractInsertAry.push({
+                                        contract_account: tempTracesInfo.contract_address_create,
+                                        own_account: tempTracesInfo.from,
+                                        born_unit: blockInfo.hash,
+                                        token_name: "",
+                                        token_symbol: ""
+                                    });
 
-                                // code
-                                contractCodeInsertAry.push({
-                                    contract_account: tempTracesInfo.contract_address_create,
-                                    code: tempTracesInfo.contract_address_create_code
-                                });
+                                    // code
+                                    contractCodeInsertAry.push({
+                                        contract_account: tempTracesInfo.contract_address_create,
+                                        code: tempTracesInfo.contract_address_create_code
+                                    });
+                                }
+
+
                             }
                             //suicide
                             if (tempTracesInfo.type === 2) {
@@ -1504,7 +1514,9 @@
                     ${Number(item.is_on_mc)}
                 )
                 `);
-                calcAccountTranCount(item, calcObj)
+                if (item.mci > 0) {
+                    calcAccountTranCount(item, calcObj)
+                }
             });
 
             let batchInsertSql = {
@@ -1536,8 +1548,7 @@
 
         //插入 trans_genesis 
         async batchInsertGenesissBlock(blockAry) {
-            let tempAry = [],
-                calcObj = {};
+            let tempAry = [];
             blockAry.forEach((item) => {
                 tempAry.push(`
                 (
@@ -1571,7 +1582,6 @@
                     '${(item.log_bloom)}'
                 )
                 `);
-                calcAccountTranCount(item, calcObj)
             });
 
             let batchInsertSql = {
@@ -1601,9 +1611,6 @@
                 logger.info(batchInsertSql)
                 logger.info(e)
             }
-
-            pageUtility.updateAccountTranCount(calcObj);
-            // pageUtility.updateGlobalTranCount(0, tempAry.length);
 
         },
 

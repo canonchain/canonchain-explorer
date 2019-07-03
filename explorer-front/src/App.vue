@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <router-view/>
+        <router-view />
     </div>
 </template>
 
@@ -22,16 +22,16 @@ a {
     color: #28388c;
 }
 .txt-warning {
-  color: #e6a23c;
+    color: #e6a23c;
 }
 .txt-info {
-  color: #909399;
+    color: #909399;
 }
 .txt-success {
-  color: #67c23a;
+    color: #67c23a;
 }
 .txt-danger {
-  color: #f56c6c;
+    color: #f56c6c;
 }
 #app {
     font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
@@ -348,4 +348,13 @@ a {
     padding: 0 6px;
 }
 /* 账户详情 开始 */
+.info-null {
+    text-align: center;
+    padding-top: 80px;
+    color: #999;
+}
+.info-null .info-null-icon {
+    margin: 0 auto 20px;
+    font-size: 86px;
+}
 </style>

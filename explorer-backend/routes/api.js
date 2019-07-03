@@ -2693,7 +2693,7 @@ router.get("/get_transaction_short", async function (req, res, next) {
         //不存在的Hash
         responseData = {
             transaction: {},
-            code: 200,
+            code: 404,
             success: true,
             message: "hash node found"
         }
@@ -3159,7 +3159,7 @@ router.get("/get_previous_units", async function (req, res, next) {
 
     var queryVal = req.query;
     var sqlOptions;
-    if (!PageUtility.isHasParam(queryVal, ["direction", "stable_index"])) {
+    if (!PageUtility.isHasParam(queryVal, ["direction"])) {
         res.json(paramError);
         return;
     }

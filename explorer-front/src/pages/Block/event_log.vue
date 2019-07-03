@@ -1,7 +1,7 @@
 <template>
     <div class="page-block">
         <czr-header></czr-header>
-        <div class="block-wrap">
+        <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
                     <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
@@ -11,7 +11,7 @@
                         <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
                     </template>
                     <el-tab-pane label="事件日志" name="event_log">
-                        <template v-loading="loadingSwitch">
+                        <template>
                             <template v-if="IS_GET_INFO">
                                 <event-logs :database="event_log"></event-logs>
                             </template>
@@ -64,8 +64,6 @@ export default {
     },
     methods: {
         async getTransactionsProps() {
-            //TODO 没有搜见证交易
-            self.loadingSwitch = true;
             let opt = {
                 hash: self.blockHash
             };
@@ -80,8 +78,6 @@ export default {
             }
         },
         async getTransactions() {
-            //TODO 没有搜见证交易
-            self.loadingSwitch = true;
             let opt = {
                 hash: self.blockHash
             };

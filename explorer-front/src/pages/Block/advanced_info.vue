@@ -1,12 +1,12 @@
 <template>
     <div class="page-block">
         <czr-header></czr-header>
-        <div class="block-wrap">
+        <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
                     <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                     <el-tab-pane label="高级信息" name="advanced_info">
-                        <template v-loading="loadingSwitch">
+                        <template>
                             <template v-if="IS_GET_INFO">
                                 <div class="bui-dlist">
                                     <div class="block-item-des">
@@ -43,15 +43,17 @@
                                             </template>
                                         </div>
                                     </div>
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">发送时间</strong>
-                                        <div class="bui-dlist-det">
-                                            {{
-                                            blockInfo.exec_timestamp
-                                            | toDate
-                                            }}
+                                    <template v-if="blockInfo.type === '1' ">
+                                        <div class="block-item-des">
+                                            <strong class="bui-dlist-tit">发送时间</strong>
+                                            <div class="bui-dlist-det">
+                                                {{
+                                                blockInfo.timestamp
+                                                | toDate
+                                                }}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </template>
                                     <div class="block-item-des">
                                         <strong class="bui-dlist-tit">主链时间</strong>
                                         <div class="bui-dlist-det">
@@ -102,18 +104,28 @@
                                         <strong class="bui-dlist-tit">Stable Index</strong>
                                         <div class="bui-dlist-det">{{ blockInfo.stable_index }}</div>
                                     </div>
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">From State</strong>
-                                        <div class="bui-dlist-det">{{ blockInfo.stable_timestamp }}</div>
-                                    </div>
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">To States</strong>
-                                        <div class="bui-dlist-det">{{ blockInfo.stable_timestamp }}</div>
-                                    </div>
-                                    <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">Data Hash</strong>
-                                        <div class="bui-dlist-det">{{ blockInfo.data_hash }}</div>
-                                    </div>
+                                    <template v-if="blockInfo.type !== '1'">
+                                        <div class="block-item-des">
+                                            <strong class="bui-dlist-tit">From State</strong>
+                                            <div class="bui-dlist-det">{{ blockInfo.from_state }}</div>
+                                        </div>
+                                        <div class="block-item-des">
+                                            <strong class="bui-dlist-tit">To States</strong>
+                                            <div class="bui-dlist-det">
+                                                <template v-if="blockInfo.to_states.length">
+                                                    <div
+                                                        v-for="(item,index) in blockInfo.to_states"
+                                                        :key="index"
+                                                    >{{item}}</div>
+                                                </template>
+                                                <template v-else>-</template>
+                                            </div>
+                                        </div>
+                                        <div class="block-item-des">
+                                            <strong class="bui-dlist-tit">Data Hash</strong>
+                                            <div class="bui-dlist-det">{{ blockInfo.data_hash }}</div>
+                                        </div>
+                                    </template>
                                     <div class="block-item-des">
                                         <strong class="bui-dlist-tit">Previous</strong>
                                         <div class="bui-dlist-det">{{ blockInfo.previous }}</div>
@@ -164,7 +176,7 @@ export default {
                 from: "",
                 handling_fee: 0,
                 previous: "",
-                exec_timestamp: "",
+                timestamp: "",
                 work: "",
                 signature: "",
                 level: "",
@@ -220,6 +232,9 @@ export default {
                 if (trsns_info) {
                     //所有类型共有的
                     self.blockInfo = trsns_info;
+                    self.blockInfo.to_states = self.blockInfo.to_states
+                        ? self.blockInfo.to_states.split(",")
+                        : [];
                 }
             } else {
                 console.error("/api/get_transaction_short Error");
