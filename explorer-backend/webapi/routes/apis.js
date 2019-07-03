@@ -588,29 +588,41 @@ async function generate_offline_block(query){
   }
   if(invalidAcct(query.from) || invalidAcct(query.to)){
     return {
-      "code":400,
+      "code":"400",
       "msg":"from or to is invalid format"
     }
   }
-  if(!(+query.amount >= 0 && +query.gas >= 0)){
+  if(!(+query.amount >= 0 )){
     return{
-      "code":400,
-      "msg":"amount and gas is required and must not Negative"
+      "code":"400",
+      "msg":"parameter amount is required and must not Negative"
+    }
+  }
+  if(!( +query.gas >= 0)){
+    return{
+      "code":"400",
+      "msg":"parameter gas is required and must not Negative"
+    }
+  }
+  if(!( +query.gas_price >= 0)){
+    return{
+      "code":"400",
+      "msg":"parameter gas_price is required and must not Negative"
     }
   }
   let transation  = {
     "from":query.from,
     "to":query.to,
     "amount":query.amount,
-    "gas":query.gas
+    "gas":query.gas,
+    "gas_price":query.gas_price
   }
   if(query.previous){transation.previous=query.previous}
   if(query.data){transation.data=query.data}
-  if(query.gas_price){transation.gas_price = query.gas_price}
 
   let czrRlt = await czr.request.generateOfflineBlock(transation)
   let retRlt = {}
-  retRlt.code = czrRlt.code? "100":"401"
+  retRlt.code = czrRlt.code? "401":"100"
   retRlt.msg = czrRlt.msg
   if(!czrRlt.code){
     let rltAry = Object.keys(czrRlt)
@@ -664,20 +676,63 @@ async function send_offline_block(query) {
   //     "signature": "4ABC0440DEC29AA49B6C1EEAE1D5C263B9856C218ACA4E9EDA0292FF3CBB6E85404F5266CD0B58CEF825E24EDF9C7F9A5B6FDCE415EF384C5AAF403D187ABF03",
   //     "gen_next_work":""//可选,是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
   // }
+  if(!query.from || !query.to){
+    return {
+      "code":"400",
+      "msg":"parameter from and to is required for generation"
+    }
+  }
+  if(invalidAcct(query.from) || invalidAcct(query.to)){
+    return {
+      "code":"400",
+      "msg":"from or to is invalid format"
+    }
+  }
+  if(!(+query.amount >= 0 )){
+    return{
+      "code":"400",
+      "msg":"parameter amount is required and must not Negative"
+    }
+  }
+  if(!( +query.gas >= 0)){
+    return{
+      "code":"400",
+      "msg":"parameter gas is required and must not Negative"
+    }
+  }
+  if(!( +query.gas_price >= 0)){
+    return{
+      "code":"400",
+      "msg":"parameter gas_price is required and must not Negative"
+    }
+  }
+  if(!query.signature){
+    return{
+      "code":"400",
+      "msg":"parameter signature is required"
+    }
+  }
+  if(!query.previous){
+    return{
+      "code":"400",
+      "msg":"parameter previous is required"
+    }
+  }
   let options = {
-    // "hash": query.hash,
-    "previous": query.previous,
     "from": query.from,
     "to": query.to,
     "amount": query.amount,
     "gas": query.gas,
     "gas_price":query.gas_price,
-    "data": query.data || '',
     "signature": query.signature,
-    "gen_next_work": query.gen_next_work || 1,
   }
+  if(query.data){options["data"]=query.data};
+  if(query.gen_next_work){options["gen_next_work"]=query.gen_next_work};
+  if(query.previous){options["previous"]=query.previous};
+
   let res = await czr.request.sendOfflineBlock(options);
-  res.code = res.code || '100'
+  console.log("res.code:",res.code)
+  res.code = res.code? "401": '100'
   return res;
 }
 
