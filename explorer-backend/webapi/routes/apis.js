@@ -609,8 +609,17 @@ async function generate_offline_block(query){
   if(query.gas_price){transation.gas_price = query.gas_price}
 
   let czrRlt = await czr.request.generateOfflineBlock(transation)
-  czrRlt.code = czrRlt.code || "100"
-  return czrRlt
+  let retRlt = {}
+  retRlt.code = czrRlt.code? "100":"401"
+  retRlt.msg = czrRlt.msg
+  if(!czrRlt.code){
+    let rltAry = Object.keys(czrRlt)
+    retRlt.result = {}
+    for(let i=2;i<rltAry.length;i++){
+      retRlt.result[rltAry[i]] = czrRlt[rltAry[i]]
+    }
+  }
+  return retRlt
   
 }
 
