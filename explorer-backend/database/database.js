@@ -655,7 +655,6 @@
                                     owner: await pageUtility.call(contractAccount, "owner"),
                                 };
                                 allTokenInfo[contractAccount] = tempTokenInfo;
-
                             } else {
                                 logger.info("内存中已经有Token合约啦，不需要搜索！！！")
                                 tempTokenInfo = allTokenInfo[contractAccount];
@@ -989,14 +988,44 @@
             //处理账户
             let tempAccountAllAry = Object.keys(accountsTotal);
             let upsertSql = {
-                text: "select account from accounts where account = ANY ($1)",
+                text: `
+                select 
+                    account,"type",
+                    "is_token_account","is_has_token_assets",
+                    "is_has_token_trans","is_has_intel_trans",
+                    "is_has_event_logs"
+                from 
+                    accounts 
+                where 
+                    account = ANY ($1)
+                `,
                 values: [tempAccountAllAry]
             };
             let accountRes = await client.query(upsertSql);
             if (!accountRes.code) {
+                let tempAccInfo = {};
                 accountRes.rows.forEach(item => {
                     if (accountsTotal.hasOwnProperty(item.account)) {
-                        accountsUpdateAry.push(accountsTotal[item.account]);//更新的数据
+                        tempAccInfo = accountsTotal[item.account];
+                        if (item.is_token_account) {
+                            tempAccInfo.is_token_account = true;
+                        }
+                        if (item.is_has_token_assets) {
+                            tempAccInfo.is_has_token_assets = true;
+                        }
+                        if (item.is_has_token_trans) {
+                            tempAccInfo.is_has_token_trans = true;
+                        }
+                        if (item.is_has_intel_trans) {
+                            tempAccInfo.is_has_intel_trans = true;
+                        }
+                        if (item.is_has_event_logs) {
+                            tempAccInfo.is_has_event_logs = true;
+                        }
+                        if (item.type === 2) {
+                            tempAccInfo.type = 2;
+                        }
+                        accountsUpdateAry.push(tempAccInfo);//更新的数据
                         delete accountsTotal[item.account];
                     }
                 });
@@ -1780,9 +1809,9 @@
         },
 
         //批量更新账户
-        async batchUpdateAccount(accountAry) {
+        async batchUpdateAccount(accountsUpdateAry) {
             let tempAry = [];
-            accountAry.forEach((item) => {
+            accountsUpdateAry.forEach((item) => {
                 tempAry.push(
                     `
                     (
@@ -1797,15 +1826,17 @@
                     `
                 );
             });
-            // let batchUpdateSql = 'update accounts set balance = accounts.balance + temp.balance from (values ' + tempAry.toString() +
-            // ') as temp (account,balance) where accounts.account=temp.account';
 
-            // let batchUpdateSql = 'update accounts set balance = accounts.balance + temp.balance from (values ' + tempAry.toString() + ') as temp (account,balance) where accounts.account=temp.account';
             let batchUpdateSql = `
                 update 
                     accounts 
                 set 
-                    balance = accounts.balance + temp.balance 
+                    balance = accounts.balance + temp.balance ,
+                    is_token_account = temp.is_token_account ,
+                    is_has_token_assets = temp.is_has_token_assets ,
+                    is_has_token_trans = temp.is_has_token_trans ,
+                    is_has_intel_trans = temp.is_has_intel_trans ,
+                    is_has_event_logs = temp.is_has_event_logs
                 from 
                     (values ${tempAry.toString()}) 
                     as 
