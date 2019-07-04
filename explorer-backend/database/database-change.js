@@ -109,6 +109,9 @@
     let tokenAssetInsertAry = [];//插入[Db]     /done
     let tokenAssetUpdateAry = [];//更新[Db]     /done
     let tokenAccountsTotal = {};
+
+    let allTokenInfo = {};
+    let tempTokenInfo = {}
     //合约相关的结束
 
     // account index table
@@ -222,7 +225,6 @@
             logger.info(`获取网络中最新稳定的 LSBI-Start`);
             czr.request.status().then(function (status) {
                 logger.info(`获取网络中最新稳定的 LSBI-Success `);
-                logger.info(status);
                 return status
             }).catch((err) => {
                 logger.info(`获取网络中最新稳定的 LSBI-Error : ${err}`);
@@ -487,7 +489,9 @@
             });
 
             //普通交易 操作表: account / timestamp / trans_nomaol
-            await Promise.all(normalTransInsertAry.map(async (blockInfo) => {
+            for (let normalIndex = 0, len = normalTransInsertAry.length; normalIndex < len;) {
+                let blockInfo = normalTransInsertAry[normalIndex];
+                // await Promise.all(normalTransInsertAry.map(async (blockInfo) => {
                 //DO 处理账户，发款方不在当前 accountsTotal 时 （以前已经储存在数据库了）
                 if (!accountsTotal.hasOwnProperty(blockInfo.from)) {
                     accountsTotal[blockInfo.from] = {
@@ -597,7 +601,11 @@
                     let tempTransTokenInsertInfo = {};
                     let tempEventLogItem = {};
 
-                    await Promise.all(blockInfo.log.map(async (log_item) => {
+                    for (let blockInfoLogIndex = 0, len = blockInfo.log.length; blockInfoLogIndex < len;) {
+                        let log_item = blockInfo.log[blockInfoLogIndex];
+
+                        // await Promise.all(blockInfo.log.map(async (log_item) => {
+
                         let contractAccount = czr.utils.encode_account(log_item.address);
                         let transData = parseInt(log_item.data, 16);
                         tempEventLogItem = {
@@ -637,13 +645,22 @@
                             blockInfo.is_token_trans = true;
                             //解析出对应的Token信息
                             logger.info('有Token转账', contractAccount);
-                            let tempTokenInfo = {
-                                token_name: await pageUtility.call(contractAccount, "name"),
-                                token_symbol: await pageUtility.call(contractAccount, "symbol"),
-                                token_precision: await pageUtility.call(contractAccount, "decimals"),
-                                token_total: await pageUtility.call(contractAccount, "totalSupply"),
-                                owner: await pageUtility.call(contractAccount, "owner"),
-                            };
+                            if (!allTokenInfo.hasOwnProperty(contractAccount)) {
+                                logger.info("内存中没有找到Token合约，需要搜索~~~")
+                                tempTokenInfo = {
+                                    token_name: await pageUtility.call(contractAccount, "name"),
+                                    token_symbol: await pageUtility.call(contractAccount, "symbol"),
+                                    token_precision: await pageUtility.call(contractAccount, "decimals"),
+                                    token_total: await pageUtility.call(contractAccount, "totalSupply"),
+                                    owner: await pageUtility.call(contractAccount, "owner"),
+                                };
+                                allTokenInfo[contractAccount] = tempTokenInfo;
+
+                            } else {
+                                logger.info("内存中已经有Token合约啦，不需要搜索！！！")
+                                tempTokenInfo = allTokenInfo[contractAccount];
+                            }
+
 
                             //双方账户
                             let contractFromAcc = czr.utils.encode_account(log_item.topics[1]);
@@ -786,15 +803,18 @@
                             // unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                             // if (!unitIsFail) {}
                         } else {
-                            blockInfo.is_token_trans = false;//无Token转账
+                            //如果已经设为True，则保持不变
+                            if (!blockInfo.is_token_trans) {
+                                blockInfo.is_token_trans = false;//无Token转账
+                            }
                         }
-                    }));
-
+                        // }));
+                        blockInfoLogIndex++;
+                    }
                 } else {
                     blockInfo.is_event_log = false;//无事件日志
                     blockInfo.is_token_trans = false;//无Token转账
                 }
-
 
                 //内部交易表
                 if ((blockInfo.data) && (blockInfo.block_traces.length > 1)) {
@@ -834,8 +854,6 @@
                             }
                             //call类型
                             if (tempTracesInfo.type === 0) {
-                                logger.info("traces_item")
-                                logger.info(traces_item)
                                 tempTracesInfo.call_type = traces_item.action.call_type;
                                 tempTracesInfo.from = traces_item.action.from;
                                 tempTracesInfo.to = traces_item.action.to;
@@ -945,7 +963,9 @@
                     blockInfo.is_intel_trans = false;
                 }
                 //********************************** 合约相关数据组装 结束 */
-            }));
+                // }));
+                normalIndex++;
+            }
 
             /*
              * 处理账户
