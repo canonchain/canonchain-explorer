@@ -5,7 +5,7 @@ var http = require('http');
 var server, port;
 var utility = {
   init: function () {
-    port = utility.normalizePort(process.env.PORT || '50616');
+    port = utility.normalizePort(process.env.PORT || '8001');
     app.set('port', port);
 
     server = http.createServer(app);

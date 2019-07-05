@@ -5,13 +5,13 @@ console.log("local:", pathStr);
 
 //浏览器服务
 let explorerSvc = new Service({
-    name: 'wifisong.canonchain.webapi',    //服务名称
+    name: 'wifisong.canonchain.explorer.webapi',    //服务名称
     description: 'CanonChain的浏览器服务', //描述
     script: pathStr
 });
 
 explorerSvc.on('uninstall', function () {
-    console.log('wifisong.canonchain.webapi Uninstall Complete.');
+    console.log('wifisong.canonchain.explorer.webapi Uninstall Complete.');
     console.log('The service exists: ', explorerSvc.exists);
 });
 explorerSvc.uninstall();
