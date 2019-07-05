@@ -6,6 +6,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 explorer-backend/node_modules/
+explorer-backend/webapi/test/apikey_config.js
 explorer-backend/logs/
 explorer-backend/data_logs/
 explorer-backend/dist/

@@ -3538,21 +3538,15 @@ router.get("/get_timestamp", async function (req, res, next) {
         let timestamp = [];
         let count = [];
         data.rows.forEach(item => {
-            // srvObj[item.timestamp] = Math.ceil(item.count / Number(queryType));
             srvObj[item.timestamp] = Number(item.count)
         });
 
         for (let i = 0; i < 300 * multiple; i += multiple) {
             cltObj[restleTimestamp - i] = 0;
         }
-        // timestamp.forEach((item, index) => {
-        //     srvObj[item] = count[index];
-
-        // });
         Object.keys(cltObj).forEach((item) => {
             for (let i = 0; i < multiple; i++) {
                 cltObj[item] += (srvObj[(item - i).toString()] || 0);
-                // console.log("type:"+typeof srvObj[(item - i).toString()])
             }
         });
         Object.keys(cltObj).forEach((items, index) => {
@@ -3562,9 +3556,7 @@ router.get("/get_timestamp", async function (req, res, next) {
             } else {
                 count[index] = (cltObj[items] / multiple / 10).toFixed(3)
             }
-            // count[index] = cltObj[items]
         });
-        // console.log(multiple)
         responseData = {
             timestamp: timestamp,
             count: count,

@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node ./bin/www",
     "webapi": "node ./webapi/bin/www",
-    "data": "node ./database/database.js"
+    "data": "node ./database/database.js",
+    "gene_apikey":"node ./webapi/test/gene_apikey.js"
   },
   "dependencies": {
     "bignumber.js": "^7.2.1",
