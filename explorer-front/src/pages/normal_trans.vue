@@ -114,6 +114,9 @@ export default {
             self.url_parm.stable_index = queryInfo.stable_index;
         }
         self.getTransactions(self.url_parm);
+        setInterval(() => {
+            self.getTransactions(self.url_parm);
+        }, 1800);
         self.getTransactionsCount();
     },
     methods: {
@@ -149,7 +152,7 @@ export default {
 
         async getTransactions(parm) {
             //TODO 当尾页中，点击下一页时候，数组记录
-            self.loadingSwitch = true;
+            // self.loadingSwitch = true;
             let opt = {
                 position: parm.position,
                 type: self.TRANS_TYPE,
