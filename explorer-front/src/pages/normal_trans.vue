@@ -114,9 +114,9 @@ export default {
             self.url_parm.stable_index = queryInfo.stable_index;
         }
         self.getTransactions(self.url_parm);
-        setInterval(() => {
-            self.getTransactions(self.url_parm);
-        }, 1800);
+        // setInterval(() => {
+        //     self.getTransactions(self.url_parm);
+        // }, 1800);
         self.getTransactionsCount();
     },
     methods: {
