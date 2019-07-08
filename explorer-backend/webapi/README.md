@@ -35,7 +35,7 @@
 <summary>其它</summary>
 <!-- TOC -->
 
-- [gas_price （获取 CZR Gas）](./doc/Other.md/#获取CZR Gas)
+- [gas_price （获取 CZR Gas）](./doc/Other.md/#获取Gas价格)
 - [estimate_gas （ 获得估算Gas）](./doc/Other.md/#获得估算Gas)
 - [to_hex czr地址转16进制](./doc/Other.md/#czr地址转16进制)
 
