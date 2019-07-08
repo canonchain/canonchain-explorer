@@ -7,7 +7,7 @@
                     <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
                     <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
 
-                    <el-tab-pane label="内部交易" name="intel_trans">
+                    <el-tab-pane label="合约内交易" name="intel_trans">
                         <template v-if="IS_GET_INFO">
                             <el-table :data="intel_trans" style="width: 100%">
                                 <el-table-column label="类型" width="220">

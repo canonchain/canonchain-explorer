@@ -544,7 +544,7 @@
 
                     }
                     //处理发款方余额
-                    accountsTotal[blockInfo.from].balance = BigNumber(accountsTotal[blockInfo.from].balance).minus(blockInfo.amount).toString(10);
+                    accountsTotal[blockInfo.from].balance = BigNumber(accountsTotal[blockInfo.from].balance).minus(blockInfo.amount).minus(blockInfo.gas_used * blockInfo.gas_price).toString(10);
                 }
 
                 //DO timestamp 1秒

@@ -49,7 +49,7 @@
                         </li>
                         <li class="nav-item">
                             <router-link class="nav-link" to="/internals"
-                                >内部交易</router-link
+                                >合约内交易</router-link
                             >
                         </li>
                         <li class="nav-item" v-if="is_mobile == false">

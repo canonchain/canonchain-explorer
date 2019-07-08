@@ -15,7 +15,7 @@ module.exports = {
     devServer: {
         proxy: {
             '/api': {
-                target: 'http://localhost:50616',   //代理接口
+                target: 'http://localhost:8001',   //代理接口
                 changeOrigin: true,
                 pathRewrite: {
                     '^/api': '/api'    //代理的路径

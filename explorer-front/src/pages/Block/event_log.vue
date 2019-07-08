@@ -8,7 +8,7 @@
                     <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
 
                     <template v-if="hash_props.is_intel_trans">
-                        <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                        <el-tab-pane label="合约内交易" name="intel_trans"></el-tab-pane>
                     </template>
                     <el-tab-pane label="事件日志" name="event_log">
                         <template>

@@ -4,7 +4,7 @@
         <div class="page-container">
             <div class="container">
                 <div class="list-wrap" v-loading="loadingSwitch">
-                    <strong class="list-title">内部交易列表</strong>
+                    <strong class="list-title">合约内交易列表</strong>
                     <span class="sub_header-des">合计 {{ TOTAL_VAL }} 笔交易</span>
                     <template v-if="IS_GET_INFO">
                         <internal-list :database="database"></internal-list>

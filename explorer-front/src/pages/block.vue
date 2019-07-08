@@ -398,7 +398,7 @@
                         <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_intel_trans">
-                        <el-tab-pane label="内部交易" name="intel_trans"></el-tab-pane>
+                        <el-tab-pane label="合约内交易" name="intel_trans"></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_event_log">
                         <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
