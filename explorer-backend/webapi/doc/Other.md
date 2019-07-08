@@ -1,6 +1,6 @@
 
 ## 其它API列表
-- [gas_price （获取 CZR Gas）](#获取CZR Gas)
+- [gas_price （获取 CZR Gas）](#获取Gas价格)
 - [estimate_gas （ 获得估算Gas）](#获得估算Gas)
 - [to_hex （czr地址转16进制）](#czr地址转16进制)
 
@@ -8,7 +8,7 @@
 金额的单位请参考：[API结果说明](../README.md/#接口返回结果)
 
 
-### 获取CZR Gas
+### 获取Gas价格
 
 - 方式 ：GET
 - 参数
