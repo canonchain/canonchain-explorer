@@ -443,101 +443,6 @@ async  function txlist_crc(query){
   }
 }
 
-//cjd暂时不用,通过交易hash获得交易信
-async function getIntnTransByHash(query) {
-  let sql = {
-    text:
-      `select
-        "type", 
-        from 
-          trans_internal
-        where
-          hash = $1
-        `,
-    values: [query.hash]
-  }
-  let rlt = await pgPromise.query(sql);
-  return {
-    "status": 100,
-    "msg": "ok",
-    "result": rlt.rows || []
-  }
-}
-//cjd暂时不用
-async function token_tx(query) {
-  if (!query.account && !query.contractaddress) {
-    return {
-      "status": 400,
-      "msg": "Require one of Parameters of account and contractaddress"
-    };
-  }
-  let sqlWhereVal = query.account && query.contractaddress ? ` ('from'='${query.account}' or 'to'='${query.account}') and  contract_account='${query.contractaddress}'` :
-    query.contractaddress ? ` contract_account='${query.contractaddress}'` : ` 'from'='${query.account}' or 'to'='${query.account}'   `;
-
-  let sql = {
-    text:
-      `select
-          mci,mc_timestamp,hash,"from",contract_account,"to",amount,token_name,token_symbol,token_precision,trans_token_id,gas,gas_price,gas_used,input
-        from
-          trans_token
-        where           
-       `+ sqlWhereVal,
-  };
-  if (query.page) {
-    let limitVal = Number(query.offset) || 10;
-    let offsetVal = Number(query.page) ? Number(query.page) * limitVal : 0;
-    sql.text += `offset
-                  $1
-                limit
-                  $2
-                `;
-    sql.values = [offsetVal, limitVal];
-  } else {
-    sql.text += `limit
-                  10000;
-                `;
-  }
-  let rlt = await pgPromise.query(sql);
-  return {
-    "status": 100,
-    "msg": "ok",
-    "result": rlt.rows[0] || {}
-  }
-}
-//cjd暂时不用
-async function tx_list_account(query) {
-  //校验
-  if (!query.account) {
-    return {
-      "status": 9001,
-      "msg": "Parameter missing account",
-      "result": query
-    }
-  }
-  //TODO 验证 格式
-
-  let listOptions = {
-    text: `
-      Select 
-        count(1)
-      FROM 
-        transaction 
-      WHERE 
-        "from" = $1 
-        OR
-        "to"=$1
-    `,
-    values: [query.account]
-  };
-
-  const resList = await pgPromise.query(listOptions);
-  return {
-    "status": 100,
-    "msg": "OK",
-    "result": Number(resList.rows[0].count)
-  }
-}
-
 
 // ******************************** 账户模块 结束
 
@@ -583,7 +488,7 @@ async function generate_offline_block(query){
   if(!query.from || !query.to){
     return {
       "code":"400",
-      "msg":"parameter from and to is required for generation"
+      "msg":"parameter from and to is required"
     }
   }
   if(invalidAcct(query.from) || invalidAcct(query.to)){
@@ -771,15 +676,13 @@ async function get_transaction_by_hash(query) {
   if (!query.hash) {
     return {
       "code": 400,
-      "msg": "Parameter missing txhash",
-      "result": query
+      "msg": "Parameter missing txhash"
     }
   }
   if(invalidTxHash(query.hash)){
     return {
       "code":400,
-      "msg": "invalid txhash",
-      "result":query
+      "msg": "invalid txhash"
     }
   }
   let transTypeSQL = `select "type" from trans_type where "hash" = '${query.hash}'`
@@ -953,15 +856,13 @@ function bs582hex(query){
   if(!query.source){
     return{
       "code": "400",
-      "msg": "parameter missing source",
-      "result": query
+      "msg": "parameter missing source"
     }
   }
   if(invalidAcct(query.source)){
     return{
       "code": "400",
-      "msg": "parameter source is not a czr address",
-      "result": query.source
+      "msg": "parameter source is not a czr address"
     }
   }
   let buf = bs58check.decode(query.source.split('_')[1])
@@ -987,7 +888,6 @@ router.get('/', async function (ctx, next) {
     ctx.body = {
       "code": 400,
       "msg": "parameter apikey is not found",
-      "request_parameter": query
     }
     return;
   } else {
@@ -1010,7 +910,6 @@ router.get('/', async function (ctx, next) {
     ctx.body = {
       "code": 400,
       "msg": "parameter action is not found",
-      "request_parameter": query
     }
     return;
   }
@@ -1023,8 +922,7 @@ router.get('/', async function (ctx, next) {
     if(!query.account){
       ctx.body = {
         "code": 400,
-        "msg": "Parameter missing account",
-        "result": query
+        "msg": "missing account parameter"
       }
       return ;
     }
@@ -1033,8 +931,7 @@ router.get('/', async function (ctx, next) {
       if(acctAry.length>20){
         ctx.body = {
           "code":"400",
-          "msg":"the number of account must be less than 20",
-          "result":query.account
+          "msg":"the numbers of account must be less than 20",
         }
         return ;
       }
@@ -1059,32 +956,31 @@ router.get('/', async function (ctx, next) {
       }
     }
     switch (query.action) {
-      case 'balance':
+      case 'account_balance':
         ctx.body = await get_balance(query);
         break;
-      case 'balance_multi':
+      case 'account_balance_multi':
         ctx.body = await get_balance_multi(query);
         break;
-      case 'txlist':
+      case 'account_txlist':
         ctx.body = await tx_list(query);
         break;
-      case 'txlist_internal':
+      case 'account_txlist_internal':
         ctx.body = await tx_list_internal(query);
         break;
-      case 'txlist_count':
+      case 'account_txlist_count':
         ctx.body = await txlist_count(query);
         break;
-      case 'balance_crc':
+      case 'account_balance_token':
         ctx.body = await balance_crc(query);
         break;
-      case 'txlist_crc':
+      case 'account_txlist_token':
         ctx.body =await txlist_crc(query);
         break;
       default:
         ctx.body = {
           "code":"403",
           "msg":"this action is net available in account module",
-          "result":query
         }
     }
   }
@@ -1094,26 +990,24 @@ router.get('/', async function (ctx, next) {
     if((query.from&&invalidAcct(query.from))||(query.to&&invalidAcct(query.to))){
       ctx.body = {
         "code":400,
-        "msg":"invalid from or to",
-        "result":query  
+        "msg":"invalid parameter from or to"
       }
       return ;
     }
     switch (query.action) {
-      case 'generate_offline_block':
+      case 'tx_offline_generation':
       ctx.body = await generate_offline_block(query);
       break;
-    case 'send_offline_block':
+    case 'tx_offline_sending':
       ctx.body = await send_offline_block(query);
       break;
-    case 'details':
+    case 'tx_details':
       ctx.body = await get_transaction_by_hash(query);
       break;
     default:
         ctx.body = {
           "code":"403",
           "msg":"this action is net available in transaction module",
-          "result":query
         }
     }
   }
@@ -1134,7 +1028,6 @@ router.get('/', async function (ctx, next) {
         ctx.body = {
           "code":"403",
           "msg":"this action is net available in other module",
-          "result":query
         }
     }
   }
@@ -1144,7 +1037,6 @@ router.get('/', async function (ctx, next) {
     ctx.body = {
       "code": 500,
       "msg": "this module is not available",
-      "request_parameter": query
     }
   }
 });
