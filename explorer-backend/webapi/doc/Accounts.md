@@ -1,11 +1,11 @@
 ## 账户API列表
-- [balance （获取 单个账户 的余额）](#获取单个账户的余额)
-- [balance_multi （获取 多个账户 的余额）](#获取多个账户的余额)
-- [txlist （获取 单个账户 的交易列表 [Normal]）](#获取单个账户的交易列表Normal)
-- [txlist_internal （获取 单个账户 的交易列表 [Internal]）](#获取单个账户的交易列表Internal)
-- [txlist_count （获取 单个账户 的交易数 [Normal]）](#获取单个账户的交易数量)
-- [balance_crc （获取 单个账户 的 CRC20 Token 余额）](#获取单个账户的CRC20余额)
-- [txlist_crc （获取 单个账户 的 CRC20 Token 交易）](#获取单个账户的CRC20交易)
+- [account_balance （获取 单个账户 的余额）](#获取单个账户的余额)
+- [account_balance_multi （获取 多个账户 的余额）](#获取多个账户的余额)
+- [account_balance_token （获取 单个账户 的 C-ERC20 Token 余额）](#获取单个账户的C-ERC20余额)
+- [account_txlist （获取 单个账户 的交易列表 Normal）](#获取单个账户的交易列表Normal)
+- [account_txlist_internal （获取 单个账户 的交易列表 Internal）](#获取单个账户的交易列表Internal)
+- [account_txlist_count （获取 单个账户 的交易数 Normal）](#获取单个账户的交易数量)
+- [account_txlist_token （获取 单个账户 的 C-ERC20 Token 交易）](#获取单个账户的C-ERC20交易)
 
 金额的单位请参考：[API结果说明](../doc/README.md/#接口返回结果)
 
@@ -16,16 +16,23 @@
 - 参数
     ```
     module  : account
-    action  : balance
+    action  : account_balance
     account : czr_account
     apikey  : YourApiKeyToken
     ```
 - 结果
     ```
+    成功：
     {
         "code"  : "100",
         "msg"   : "OK",
         "result": "649492854246559898951364"
+    }
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
     }
     ```
 - 结果说明
@@ -42,12 +49,13 @@
 - 参数
     ```
     module  : account
-    action  : balance_multi
+    action  : account_balance_multi
     account : czr_account1,czr_account2
     apikey  : YourApiKeyToken
     ```
 - 结果
     ```
+    成功：
     {
         "code": 100,
         "msg": "OK",
@@ -62,6 +70,18 @@
             }
         ]
     }
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
+    }
+
+    失败（账户数超过20个）:
+    {
+        "code"  : "400",
+        "msg"   : "the numbers of account must be less than 20",
+    }
     ```
 - 结果说明
     - 返回格式: Array
@@ -70,6 +90,57 @@
         * balance         string, CZR余额，单位：10<sup>-18</sup> CZR
 
 [返回账户API列表](#账户API列表)
+
+
+### 获取单个账户的C-ERC20余额
+
+返回从地址发送的Token
+
+- 方式 ：GET
+- 参数
+    ```
+    module              : account
+    action              : account_balance_token
+    account             : czr_xx
+    apikey              : YourApiKeyToken
+    ```
+- 结果
+    ```
+    成功：
+    {
+        "code": 100,
+        "msg": "OK",
+        "result": [
+            {
+                account :"czr_account",
+                contract_account :"czr_account",
+                name :"Token Name",
+                symbol :"Token Symbol",
+                precision:18, 
+                balance :"1580000000"
+            }
+        ]
+    }
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
+    }
+    ```
+- 结果说明
+    - 返回格式: Array
+    - 返回值: 获取到的账户Token以及对应信息
+        - account           账户
+        - contract_account  合约账户
+        - name              Token全称
+        - symbol            Token简称
+        - precision         精度
+        - balance           余额,单位：10<sup>-精度</sup> Token
+
+
+[返回账户API列表](#账户API列表)
+
 
 ### 获取单个账户的交易列表Normal
 
@@ -82,7 +153,7 @@
 - 参数
     ```
     module      : account
-    action      : txlist
+    action      : account_txlist
     account     : czr_account
     page        : 1
     limit       : 10
@@ -91,6 +162,7 @@
     ```
 - 结果
    ```
+   成功：
     {
         "code": 100,
         "msg": "OK",
@@ -110,7 +182,13 @@
             }
         ]
     }
-    ```
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
+    }
+   ```
 - 结果说明
     - 返回格式: Array
     - 返回值: 获取到的交易
@@ -138,7 +216,7 @@
 - 参数
     ```
     module      : account
-    action      : txlist_internal
+    action      : account_txlist_internal
     account     : czr_xx
     page        : 1
     limit       : 10
@@ -147,6 +225,7 @@
     ```
 - 结果
    ```
+   成功：
     {
         "code": 100,
         "msg": "OK",
@@ -170,7 +249,13 @@
             }
         ]
     }
-    ```
+    
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
+    }
+   ```
 - 结果说明
     - 返回格式: Array
     - 返回值: 获取到的合约内部交易
@@ -187,16 +272,23 @@
 - 参数
     ```
     module      : account
-    action      : txlist_count
+    action      : account_txlist_count
     account     : czr_xx
     apikey      : YourApiKeyToken
     ```
 - 结果
     ```
+    成功：
     {
         "code": 100,
         "msg": "OK",
         "result": 2
+    }
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
     }
     ```
 - 结果说明
@@ -205,49 +297,8 @@
 
 [返回账户API列表](#账户API列表)
 
-### 获取单个账户的CRC20余额
 
-返回从地址发送的Token
-
-- 方式 ：GET
-- 参数
-    ```
-    module              : account
-    action              : balance_crc
-    account             : czr_xx
-    apikey              : YourApiKeyToken
-    ```
-- 结果
-    ```
-    {
-        "code": 100,
-        "msg": "OK",
-        "result": [
-            {
-                account :"czr_account",
-                contract_account :"czr_account",
-                name :"Token Name",
-                symbol :"Token Symbol",
-                precision:18, 
-                balance :"1580000000"
-            }
-        ]
-    }
-    ```
-- 结果说明
-    - 返回格式: Array
-    - 返回值: 获取到的账户Token以及对应信息
-        - account           账户
-        - contract_account  合约账户
-        - name              Token全称
-        - symbol            Token简称
-        - precision         精度
-        - balance           余额,单位：10<sup>-精度</sup> Token
-
-
-[返回账户API列表](#账户API列表)
-
-### 获取单个账户的CRC20交易
+### 获取单个账户的C-ERC20交易
 
 **分页**
 
@@ -258,7 +309,7 @@
 - 参数
     ```
     module          : account
-    action          : txlist_crc
+    action          : account_txlist_token
     account         : czr_xx
     contractaddress : czr_xx
     page            : 1
@@ -268,6 +319,7 @@
     ```
 - 结果
    ```
+   成功：
     {
         "code": 100,
         "msg": "OK",
@@ -284,7 +336,13 @@
             }
         ]
     }
-    ```
+
+    失败（缺少account参数）：
+    {
+        "code"  : "400",
+        "msg"   : "missing account parameter",
+    }
+   ```
 - 结果说明
     - 返回格式: Array
     - 返回值: 获取到的账户Token以及对应信息

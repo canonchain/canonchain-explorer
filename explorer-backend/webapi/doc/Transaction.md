@@ -1,10 +1,10 @@
 
 ## 交易API列表
-- [generate_offline_block （生成离线交易）](#生成离线交易)
-- [send_offline_block （发送离线交易）](#发送离线交易)
-- [details （通过交易Hash获取交易详情](#获取交易详情)
+- [tx_offline_generation (生成离线交易)](#生成离线交易)
+- [tx_offline_sending (发送离线交易)](#发送离线交易)
+- [tx_details (通过交易Hash获取交易详情) ](#获取交易详情)
 
-金额的单位请参考：[API结果说明](../doc/README.md/#接口返回结果)
+金额的单位请参考：[API结果说明](../README.md/#接口返回结果)
 
 ### 生成离线交易
 
@@ -14,13 +14,13 @@
 - 参数
     ```
     module  : transaction
-    action  : generate_offline_block
-    previous：""                    可选 | 源账户的上一笔交易hash。可用于替换无法被打包的交易。
+    action  : tx_offline_generation
     from: "czr_account1"            源账户。
     to: "czr_account2"              目标账户。
     amount: "100000000000000"       金额，单位
     gas: "21000"                    执行交易使用的gas上限。未使用完的部分会返回源账户。
     gas_price: "1000000000000"      gas价格
+    previous：""                    可选 | 源账户的上一笔交易hash。可用于替换无法被打包的交易。
     data: "496E204D617468"          可选 | 智能合约代码或数据，默认为空。
     apikey  : YourApiKeyToken
     ```
@@ -28,6 +28,7 @@
         - gas_price: gas价格 ，单位：10<sup>-18</sup>CZR/gas，手续费 = 实际使用的gas * gas_price。
 - 结果
     ```
+    成功：
     {
         "code": "100",
         "msg": "OK",
@@ -40,7 +41,25 @@
             "gas": "21000",
             "gas_price": "1000000000000",
             "data": "496E204D617468205765205472757374",
-        }
+    }
+
+    失败（缺少from或to参数）：
+    {
+        "code":"400",
+        "msg":"parameter from and to is required"
+    }
+
+    失败（from或to地址非法）：
+    {
+        "code":"400",
+        "msg":"from or to is invalid format"
+    }
+
+    失败（amount非正整数，gas，gas_price错误也是类似报错）：
+    {
+        "code":"400",
+        "msg":"parameter amount is required and must not Negative"
+    }
     ```
 - 结果说明
     ```
@@ -67,8 +86,7 @@
 - 参数
     ```
     module  : transaction
-    action  : send_offline_block
-    previous: "A5E40538D4FA7505DDE81C538AAAB97142312E3FE3D606901E2C439967FE10F0"
+    action  : tx_offline_sending
     from: "czr_account1"
     to: "czr_account2"
     amount: "1000000000000000000" 金额
@@ -76,6 +94,7 @@
     gas_price: "1000000000000"
     data: "A2A98215E8DB2953"
     signature: "4AB..."         交易签名
+    previous: "A5E40538D4FA7505DDE81C538AAAB97142312E3FE3D606901E2C439967FE10F0"
     gen_next_work："1"          可选 | 是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
     apikey  : YourApiKeyToken
     ```
@@ -84,10 +103,22 @@
     - amount：金额，单位：10<sup>-18</sup>CZR。
 - 结果
     ```
+    成功：
     {
         "code": "100",
         "msg": "OK",
         "result": "E8441A74FD40465006CC078C860323A0DFF32F23AC7E7F81A153F8ECE304439A"
+    }
+
+    失败(缺失signature参数)：{
+        "code":"400",
+        "msg":"parameter signature is required"
+    }
+
+    失败（缺失previous参数）：{
+        "code":"400",
+        "msg":"parameter previous is required"
+    }
     ```
 - 结果说明
     
@@ -103,12 +134,13 @@
 - 参数
     ```
     module  : transaction
-    action  : details
+    action  : tx_details
     hash    : HASH
     apikey  : YourApiKeyToken
     ```
 - 结果
     ```
+    成功：
     {
         "code": "100",
         "msg": "OK",
@@ -127,6 +159,18 @@
             "mc_timestamp": "1560946863",
             "stable_timestamp": "1560946868"
         }
+
+    失败（缺失hash参数）：
+    {
+        "code": 400,
+        "msg": "Parameter missing txhash"
+    }
+
+    失败（hash参数非法）：
+    {
+        "code":400,
+        "msg": "invalid txhash"
+    }
     ```
 - 结果说明
     - 返回格式：Object
