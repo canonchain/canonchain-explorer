@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "webapi": "node ./webapi/bin/www",
     "data": "node ./database/database.js",
-    "gene_apikey":"node ./webapi/test/gene_apikey.js"
+    "gene_apikey": "node ./webapi/test/gene_apikey.js"
   },
   "dependencies": {
     "bignumber.js": "^7.2.1",
@@ -17,9 +17,6 @@
     "file-stream-rotator": "^0.2.1",
     "http-errors": "~1.6.2",
     "jade": "~1.11.0",
-    "log4js": "^3.0.4",
-    "morgan": "~1.9.0",
-    "node-json-rpc": "0.0.1",
     "koa": "^2.2.0",
     "koa-bodyparser": "^3.2.0",
     "koa-convert": "^1.2.0",
@@ -30,8 +27,12 @@
     "koa-static": "^3.0.0",
     "koa-views": "^5.2.1",
     "koa2-cors": "^2.0.6",
+    "log4js": "^3.0.4",
+    "morgan": "~1.9.0",
+    "node-json-rpc": "0.0.1",
+    "pg": "^7.4.3",
     "pug": "^2.0.0-rc.1",
-    "pg": "^7.4.3"
+    "web3": "^1.0.0-beta.55"
   },
   "devDependencies": {
     "node-windows": "^0.1.14"

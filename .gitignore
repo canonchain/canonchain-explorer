@@ -10,6 +10,7 @@ explorer-backend/webapi/test/apikey_config.js
 explorer-backend/logs/
 explorer-backend/data_logs/
 explorer-backend/dist/
+explorer-backend/mapping/infura_key.js
 explorer-backend/database/config.js
 explorer-backend/database/config-pool.js
 explorer-front/node_modules/

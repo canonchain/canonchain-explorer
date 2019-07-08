@@ -866,3 +866,29 @@ CREATE INDEX api_keys_timestamp
     TABLESPACE pg_default;
 ```
 
+
+## 映射相关的表
+
+******************************************************************************
+
+### ETH映射表
+
+```postgresql
+
+CREATE TABLE public.mapping_log
+(
+    mapping_log_id bigserial,
+    timestamp bigint,
+    tx text,
+    eth_address text,
+    czr_account text,
+    value numeric,
+    status smallint,
+    CONSTRAINT mapping_log_pkey PRIMARY KEY (mapping_log_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+```
