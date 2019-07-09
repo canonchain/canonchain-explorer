@@ -5,7 +5,9 @@ let fs = require('fs');
 let basePath = path.join(__dirname, '../data_logs/');
 let defaultPath = path.join(basePath, '/default_database/');
 let writeDbPath = path.join(basePath, '/write_database/');
-let prototypeDbPath = path.join(basePath, '/write_prototype/');
+let mappingWriteSql = path.join(basePath, '/mapping_write_sql/');
+let mappingGenerateSql = path.join(basePath, '/mapping_generate_sql/');
+let mappingSendSql = path.join(basePath, '/mapping_send_sql/');
 let readDbPath = path.join(basePath, '/read_database/');
 let sqlPath = path.join(basePath, '/pg_sql/');
 
@@ -20,13 +22,15 @@ if (basePath) {
     //根据不同的logType创建不同的文件目录
     confirmPath(defaultPath);
     confirmPath(writeDbPath);
-    confirmPath(prototypeDbPath);
+    confirmPath(mappingWriteSql);
+    confirmPath(mappingGenerateSql);
+    confirmPath(mappingSendSql);
     confirmPath(readDbPath);
 }
 
 log4js.configure({
     appenders: {
-        out: {type: 'console'},
+        out: { type: 'console' },
         default: {
             type: 'dateFile',
             filename: defaultPath,
@@ -39,9 +43,21 @@ log4js.configure({
             "pattern": "yyyy-MM-dd-hh.log",
             alwaysIncludePattern: true
         },
-        write_prototype: {
+        mapping_write_sql: {
             type: 'dateFile',
-            filename: prototypeDbPath,
+            filename: mappingWriteSql,
+            "pattern": "yyyy-MM-dd-hh.log",
+            alwaysIncludePattern: true
+        },
+        mapping_generate_sql: {
+            type: 'dateFile',
+            filename: mappingGenerateSql,
+            "pattern": "yyyy-MM-dd-hh.log",
+            alwaysIncludePattern: true
+        },
+        mapping_send_sql: {
+            type: 'dateFile',
+            filename: mappingSendSql,
             "pattern": "yyyy-MM-dd-hh.log",
             alwaysIncludePattern: true
         },
@@ -67,8 +83,16 @@ log4js.configure({
             appenders: ['write_db'],
             level: 'info'
         },
-        write_prototype: {
-            appenders: ['write_prototype'],
+        mapping_write_sql: {
+            appenders: ['mapping_write_sql'],
+            level: 'info'
+        },
+        mapping_generate_sql: {
+            appenders: ['mapping_generate_sql'],
+            level: 'info'
+        },
+        mapping_send_sql: {
+            appenders: ['mapping_send_sql'],
             level: 'info'
         },
         read_db: {

@@ -875,7 +875,7 @@ CREATE INDEX api_keys_timestamp
 
 ```postgresql
 
-CREATE TABLE public.mapping_log
+CREATE TABLE public.mapping_eth_log
 (
     mapping_log_id bigserial,
     timestamp bigint,
@@ -884,7 +884,41 @@ CREATE TABLE public.mapping_log
     czr_account text,
     value numeric,
     status smallint,
-    CONSTRAINT mapping_log_pkey PRIMARY KEY (mapping_log_id)
+    block_number  numeric,
+    CONSTRAINT mapping_tx_pkey PRIMARY KEY (tx)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+CREATE INDEX mapping_log_block_number
+    ON public."mapping_eth_log" USING btree
+    ("block_number")
+    TABLESPACE pg_default;
+
+CREATE INDEX mapping_log_status
+    ON public."mapping_eth_log" USING btree
+    ("status")
+    TABLESPACE pg_default;
+```
+
+### 离线交易信息
+
+```postgresql
+
+CREATE TABLE public.mapping_offline_block
+(
+    offline_block_id bigserial,
+    "hash" text,
+    "eth_tx" text,
+    "previous" text,
+    "from" text,
+    "to" text,
+    "signature" text,
+    "amount" numeric,
+    "gas" numeric,
+    "gas_price" numeric,
+    CONSTRAINT offline_block_hash_pkey PRIMARY KEY (hash)
 )
 WITH (
     OIDS = FALSE

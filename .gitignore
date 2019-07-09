@@ -7,6 +7,8 @@ yarn-debug.log*
 yarn-error.log*
 explorer-backend/node_modules/
 explorer-backend/webapi/test/apikey_config.js
+explorer-backend/mapping/sign/sign-data.json
+explorer-backend/mapping/sign/done.json
 explorer-backend/logs/
 explorer-backend/data_logs/
 explorer-backend/dist/
