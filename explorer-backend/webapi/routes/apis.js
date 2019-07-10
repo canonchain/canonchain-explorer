@@ -345,6 +345,7 @@ async function txlist_count(query){
         module   : account
         action   : balance_crc
         account  : czr_xx
+        contract_account: (可选)czr_xx ,指定token账户
         apikey   : YourApiKeyToken
     }
   * 返回
@@ -356,8 +357,16 @@ async function txlist_count(query){
 */
 //获取单个账户的CRC20余额
 async function balance_crc(query){
-
   let sql = `select account,contract_account,'name',symbol,precision,balance from token_asset where account = '${query.account}'`
+  if (query.contract_account){
+    sql += ` and contract_account = '${query.contract_account}'`
+    let rlt= await pgPromise.query(sql);
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": rlt.rowCount? rlt.rows[0]:0
+    }
+  }
   let rlt= await pgPromise.query(sql);
   return {
     "code": 100,
