@@ -102,6 +102,7 @@
     module              : account
     action              : account_balance_token
     account             : czr_xx
+    contract_account    : (可选)czr_xx ,指定token账户
     apikey              : YourApiKeyToken
     ```
 - 结果
@@ -120,6 +121,19 @@
                 balance :"1580000000"
             }
         ]
+    }
+    （如果指定token） 
+    {
+        "code": 100,
+        "msg": "OK",
+        "result": {     //如果该账户的指定token余额0，则 result 返回 0
+                account :"czr_account",
+                contract_account :"czr_account",
+                name :"Token Name",
+                symbol :"Token Symbol",
+                precision:18, 
+                balance :"1580000000"
+            }
     }
 
     失败（缺少account参数）：
