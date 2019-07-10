@@ -771,10 +771,11 @@ async function get_transaction_by_hash(query) {
     }
 */
 //获取CZRGas
+//TODO改为没有数据，返回错误
 let GAS_PRICES = {
-  "cheapest_gas_price": "10000000",
-  "median_gas_price": "15000000",
-  "highest_gas_price": "20000000"
+  "cheapest_gas_price": "50000000000000",
+  "median_gas_price": "50000000000000",
+  "highest_gas_price": "50000000000000"
 }
 async function CZRGas(query) {
   let querySql = {
