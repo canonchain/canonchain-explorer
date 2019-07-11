@@ -971,7 +971,7 @@ router.get('/', async function (ctx, next) {
       return ;
     }
 
-    if(query.action = 'account_validate'){
+    if(query.action === "account_validate"){
       ctx.body = await account_validate(query.account); 
       return ;
     }
