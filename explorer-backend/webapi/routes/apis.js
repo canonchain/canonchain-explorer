@@ -43,6 +43,35 @@ router.prefix('/apis')
 // ******************************** 账户模块 开始
 
 
+/**
+ * 
+ * 接口：验证时不时合法的czr地址
+ * 参数：
+ *  {
+        module  : account
+        action  : account_validate
+        account : czr_xxxxxxx 
+        apikey  : 
+  *  }
+   返回：
+    {
+      "code": 100,
+      "msg":ok,
+      "result":true      /    false
+    }
+ */
+async function account_validate(query){
+  let acct = query.account;
+  let rlt = await czr.request.accountValidate(acct);
+  return {
+      "code":100,
+      "msg":"ok",
+      "result":rlt.valid?  true : false
+  }
+}
+
+
+
 /** 
  * 接口：获取 单个账户 余额     
  * 参数:
@@ -966,6 +995,9 @@ router.get('/', async function (ctx, next) {
       }
     }
     switch (query.action) {
+      case 'account_validate':
+        ctx.body = await account_validate(query);
+        break;
       case 'account_balance':
         ctx.body = await get_balance(query);
         break;
