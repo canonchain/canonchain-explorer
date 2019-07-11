@@ -6,7 +6,7 @@
 <summary>账户</summary>
 
 <!-- TOC -->
-
+- [account_validate （验证czr账户是否正确）](./doc/Accounts.md/#验证czr账户是否正确)
 - [account_banlance （获取 单个账户 的余额）](./doc/Accounts.md/#获取单个账户的余额)
 - [account_banlance_multi （获取 多个账户 的余额）](./doc/Accounts.md/#获取多个账户的余额)
 - [account_banlance_token （获取 单个账户 的 C-ERC20 Token 余额）](./doc/Accounts.md/#获取单个账户的C-ERC20余额)

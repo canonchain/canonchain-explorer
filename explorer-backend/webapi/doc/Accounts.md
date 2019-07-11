@@ -1,4 +1,5 @@
 ## 账户API列表
+- [account_validate （验证czr账户是否正确）](#验证czr账户是否正确)
 - [account_balance （获取 单个账户 的余额）](#获取单个账户的余额)
 - [account_balance_multi （获取 多个账户 的余额）](#获取多个账户的余额)
 - [account_balance_token （获取 单个账户 的 C-ERC20 Token 余额）](#获取单个账户的C-ERC20余额)
@@ -8,6 +9,26 @@
 - [account_txlist_token （获取 单个账户 的 C-ERC20 Token 交易）](#获取单个账户的C-ERC20交易)
 
 金额的单位请参考：[API结果说明](../doc/README.md/#接口返回结果)
+
+
+### 验证czr账户是否正确
+- 方式 ：GET
+- 参数
+    ```
+    module  : account
+    action  : account_validate
+    account : czr_xxxxxxx 
+    apikey  : YouApikey
+    ```
+- 结果
+    ```
+    {
+        "code"   :   100
+        "msg"    :   "ok"
+        "result" :   true   /  false
+    }
+    ```
+[返回账户API列表](#账户API列表)
 
 
 ### 获取单个账户的余额
