@@ -57,7 +57,7 @@ router.prefix('/apis')
     {
       "code": 100,
       "msg":ok,
-      "result":"valid"      /      "invalid"
+      "result":true      /    false
     }
  */
 async function account_validate(query){
@@ -66,7 +66,7 @@ async function account_validate(query){
   return {
       "code":100,
       "msg":"ok",
-      "result":rlt.valid?  "valid" : "invalid"
+      "result":rlt.valid?  true : false
   }
 }
 

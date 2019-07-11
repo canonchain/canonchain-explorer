@@ -25,7 +25,7 @@
     {
         "code"   :   100
         "msg"    :   "ok"
-        "result" :   "valid"   /  "invalid"
+        "result" :   true   /  false
     }
     ```
 [返回账户API列表](#账户API列表)
