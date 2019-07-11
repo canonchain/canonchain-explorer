@@ -35,8 +35,12 @@
     let contractOpt = {}
     let getSqlTimer = null;
     let nextFromBlock;
-    let INIT_BLOCK_NUM = 4639323;//需要改为正式的 
     let fromBlockNum;
+    //需要改为正式的
+    let MAPP_INFO = {
+        INIT_BLOCK_NUM: 4639323,
+        CONTRACT_ADDRESS: "0xA766d355Ef29502Ca68637F0BCb9Ff7284D1ace2"
+    }
     /**
      * 1.从sql表找FromBlock
      *      找到用找到的
@@ -52,14 +56,14 @@
         async init() {
             fromBlockNum = nextFromBlock ? (Number(nextFromBlock) + 1) : (await pageUtility.searchMaxBlcok());
             contractOpt = {
-                address: "0xA766d355Ef29502Ca68637F0BCb9Ff7284D1ace2",//需要改为正式的
+                address: MAPP_INFO.CONTRACT_ADDRESS,
                 "fromBlock": pageUtility.tohex(fromBlockNum),
                 "toBlock": "latest",
                 topics: ["0x94fcee0b7b95ac21ec59ec2c5b2e99e75c909351baf99e93cd97e713d820627b"]
             };
             getSqlTimer = setTimeout(function () {
                 pageUtility.getContractInfo()
-            }, 5000);
+            }, 10000);
         },
         async getContractInfo() {
             try {
@@ -163,7 +167,7 @@
                 values: []
             }
             let blockInfo = await pgPromise.query(sql);
-            return blockInfo.rows.length ? (Number(blockInfo.rows[0].block_number) + 1) : INIT_BLOCK_NUM;
+            return blockInfo.rows.length ? (Number(blockInfo.rows[0].block_number) + 1) : MAPP_INFO.INIT_BLOCK_NUM;
 
         },
         tohex(num) {
