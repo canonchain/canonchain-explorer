@@ -60,9 +60,8 @@ router.prefix('/apis')
       "result":true      /    false
     }
  */
-async function account_validate(query){
-  let acct = query.account;
-  let rlt = await czr.request.accountValidate(acct);
+async function account_validate(account){
+  let rlt = await czr.request.accountValidate(account);
   return {
       "code":100,
       "msg":"ok",
@@ -523,13 +522,16 @@ async  function txlist_crc(query){
 */
 //生成离线交易
 async function generate_offline_block(query){
+
   if(!query.from || !query.to){
     return {
       "code":"400",
       "msg":"parameter from and to is required"
     }
   }
-  if(invalidAcct(query.from) || invalidAcct(query.to)){
+  let valid_from = await account_validate(query.from);
+  let valid_to = await account_validate(query.to);
+  if(!valid_from || !valid_to){
     return {
       "code":"400",
       "msg":"from or to is invalid format"
@@ -625,7 +627,9 @@ async function send_offline_block(query) {
       "msg":"parameter from and to is required for generation"
     }
   }
-  if(invalidAcct(query.from) || invalidAcct(query.to)){
+  let valid_from = await account_validate(query.from);
+  let valid_to = await account_validate(query.to);
+  if(!valid_from || !valid_to){
     return {
       "code":"400",
       "msg":"from or to is invalid format"
@@ -891,14 +895,15 @@ async function get_estimate_gas(query){
     }
 */
 //字符串转16进制
-function bs582hex(query){
+async function bs582hex(query){
   if(!query.source){
     return{
       "code": "400",
       "msg": "parameter missing source"
     }
   }
-  if(invalidAcct(query.source)){
+  let source_valid = await account_validate(query.source)
+  if(!source_valid){
     return{
       "code": "400",
       "msg": "parameter source is not a czr address"
@@ -965,6 +970,12 @@ router.get('/', async function (ctx, next) {
       }
       return ;
     }
+
+    if(query.action = 'account_validate'){
+      ctx.body = await account_validate(query.account); 
+      return ;
+    }
+
     if(query.action === 'balance_multi'){
       acctAry = query.account.split(',');
       if(acctAry.length>20){
@@ -975,7 +986,8 @@ router.get('/', async function (ctx, next) {
         return ;
       }
       for(let i=0;i<acctAry.length;i++){
-        if(invalidAcct(acctAry[i])){
+        let acct_valid = await account_validate(query.account)
+        if(!acct_valid){
           ctx.body = {
             "code":"400",
             "msg":"invalid account",
@@ -985,7 +997,8 @@ router.get('/', async function (ctx, next) {
         }
       }
     }else{
-      if(invalidAcct(query.account)){
+      let acct_valid = await account_validate(query.account)
+      if(!acct_valid){
         ctx.body = {
           "code":"400",
           "msg":"invalid account",
@@ -995,9 +1008,6 @@ router.get('/', async function (ctx, next) {
       }
     }
     switch (query.action) {
-      case 'account_validate':
-        ctx.body = await account_validate(query);
-        break;
       case 'account_balance':
         ctx.body = await get_balance(query);
         break;
@@ -1029,13 +1039,7 @@ router.get('/', async function (ctx, next) {
 
   //交易部分
   else if(query.module == 'transaction'){
-    if((query.from&&invalidAcct(query.from))||(query.to&&invalidAcct(query.to))){
-      ctx.body = {
-        "code":400,
-        "msg":"invalid parameter from or to"
-      }
-      return ;
-    }
+
     switch (query.action) {
       case 'tx_offline_generation':
       ctx.body = await generate_offline_block(query);
