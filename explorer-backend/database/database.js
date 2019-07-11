@@ -17,6 +17,7 @@
     //辅助数据 Start
     let getRpcTimer = null,
         getUnstableTimer = null;
+    let initTimer = null;
     let db_LSBI, //本地数据库的最高稳定 last stable block index
         rpc_LSBI; //RPC接口请求到的最高稳定 last stable block index
     let isStableDone = false; //稳定的MCI是否插入完成
@@ -123,9 +124,10 @@
     let pageUtility = {
         async init() {
             self = this;
-            //标记由 MCI 改为 last_stable_block_index
-            let SearchOptions = {
-                text: `
+            initTimer = setTimeout(async () => {
+                //标记由 MCI 改为 last_stable_block_index
+                let SearchOptions = {
+                    text: `
                     select 
                         value 
                     from 
@@ -133,26 +135,28 @@
                     where 
                         "key" = $1
                 `,
-                values: ["done_stable_index"]
-            };
-            let data = await client.query(SearchOptions);
+                    values: ["done_stable_index"]
+                };
+                let data = await client.query(SearchOptions);
 
-            //TODO 为了方便修改，所以都没有写语法错误/节点关闭特殊场景的处理代码，后面需要加上
-            if (data.rowCount === 0) {
-                //需要插入mci
-                pageUtility.createGlobalMci();
-            } else if (data.rowCount === 1) {
-                pageUtility.setDbStableMci(data.rows)
-            } else if (data.rowCount > 1) {
-                logger.info("get dataCurrentMai is Error");
-                return;
-            }
+                //TODO 为了方便修改，所以都没有写语法错误/节点关闭特殊场景的处理代码，后面需要加上
+                if (data.rowCount === 0) {
+                    //需要插入mci
+                    pageUtility.createGlobalMci();
+                } else if (data.rowCount === 1) {
+                    pageUtility.setDbStableMci(data.rows)
+                } else if (data.rowCount > 1) {
+                    logger.info("get dataCurrentMai is Error");
+                    return;
+                }
 
-            getCount('accountsCount', 'witness_count');
-            getCount('normalCount', 'normal_count');
-            getCount('accountsCount', 'accounts_count');
-            getCount('accountsCount', 'token_count');
-            getCount('accountsCount', 'internal_count');
+                getCount('accountsCount', 'witness_count');
+                getCount('normalCount', 'normal_count');
+                getCount('accountsCount', 'accounts_count');
+                getCount('accountsCount', 'token_count');
+                getCount('accountsCount', 'internal_count');
+            }, 5000)
+
         },
         async createGlobalMci() {
             let insertMciToGlobal = "INSERT INTO global (key,value) VALUES ('done_stable_index', 0)";
@@ -205,19 +209,23 @@
                 return wit_list;
             }).catch((err) => {
                 logger.info(`获取网络中witness_list -Error : ${err}`);
+                pageUtility.init();
+                return;
             }).then(async function (wit_list) {
-                let witnessInfo = "('";
-                witnessInfo += wit_list.witness_list.join("'),('");
-                witnessInfo += "')";
-                let witnessInsertSql = "INSERT INTO witness_list (account) VALUES " + witnessInfo;
-                let res = await client.query(witnessInsertSql);
-                pageUtility.readyGetData();
+                if (wit_list.witness_list) {
+                    let witnessInfo = "('";
+                    witnessInfo += wit_list.witness_list.join("'),('");
+                    witnessInfo += "')";
+                    let witnessInsertSql = "INSERT INTO witness_list (account) VALUES " + witnessInfo;
+                    let res = await client.query(witnessInsertSql);
+                    pageUtility.readyGetData();
+                }
             })
         },
         readyGetData() {
             getRpcTimer = setTimeout(function () {
                 pageUtility.getRPC()
-            }, 5000);
+            }, 3000);
             //TODO 时间抽出,定时器主要是为了unstable时候，避免无效读取 但 stable时候需要加快读取
         },
         getRPC() {
@@ -228,17 +236,22 @@
                 return status
             }).catch((err) => {
                 logger.info(`获取网络中最新稳定的 LSBI-Error : ${err}`);
+                pageUtility.readyGetData();
+                return;
             })
                 .then(function (status) {
-                    rpc_LSBI = Number(status.last_stable_block_index);
-                    if ((db_LSBI <= rpc_LSBI) || (db_LSBI === 0)) {
-                        pageUtility.searchMci(status);
-                    } else {
-                        getUnstableTimer = setTimeout(function () {
-                            // TODO 已经写完了，需要重新获取
-                            pageUtility.readyGetData();
-                        }, 1000)
+                    if (status) {
+                        rpc_LSBI = Number(status.last_stable_block_index);
+                        if ((db_LSBI <= rpc_LSBI) || (db_LSBI === 0)) {
+                            pageUtility.searchMci(status);
+                        } else {
+                            getUnstableTimer = setTimeout(function () {
+                                // TODO 已经写完了，需要重新获取
+                                pageUtility.readyGetData();
+                            }, 1000)
+                        }
                     }
+
                 })
         },
 
@@ -320,21 +333,46 @@
                     data.blocks.forEach((item) => {
                         hashGroupAry.push(item.hash);
                     });
-                    let hashStatesGroup = await czr.request.getBlockStates(hashGroupAry);
+                    let hashStatesGroup;
+                    try {
+                        hashStatesGroup = await czr.request.getBlockStates(hashGroupAry);
+                    } catch (error) {
+                        logger.info(`getBlockStates Error`);
+                        logger.info(error);
+                        pageUtility.init();
+                        return;
+                    }
                     let blockStatesAry = hashStatesGroup.block_states;
                     // logger.info(blockStatesAry);
                     db_LSBI = blockStatesAry[blockStatesAry.length - 1].stable_content.stable_index;
-                    logger.info(`拿到了结果, 最新LSBI: ${db_LSBI}`);
+                    logger.info(`拿到了结果, 最新LSBI: ${db_LSBI} ，hashGroupAry.length：${hashGroupAry.length}`);
 
                     //获取内部交易数据--- 开始
                     let blockTraces = {};
-                    let tempBlockTraces = {};
-                    await Promise.all(hashGroupAry.map(async (hash) => {
-                        tempBlockTraces = await czr.request.blockTraces(hash);
+                    let tempBlockTraces;
+                    // await Promise.all(hashGroupAry.map(async (hash) => {}));
+                    let hash;
+                    for (let groupIndex = 0, len = hashGroupAry.length; groupIndex < len;) {
+                        hash = hashGroupAry[groupIndex];
+                        try {
+                            tempBlockTraces = await czr.request.blockTraces(hash);
+                        } catch (error) {
+                            logger.info(`blockTraces Error`);
+                            logger.info(error);
+                            pageUtility.init();
+                            return;
+                        }
                         if (tempBlockTraces.code === 0) {
                             blockTraces[hash] = tempBlockTraces.block_traces;
+                        } else {
+                            logger.info(`blockTraces[hash] Error`);
+                            logger.info(tempBlockTraces);
+                            pageUtility.init();
+                            return;
                         }
-                    }));
+                        groupIndex++;
+
+                    }
                     //获取内部交易数据--- 结束
 
                     //写一级数据（TODO：目前继续使用以前一级数据模式，后期需要做调整）
@@ -457,6 +495,7 @@
             }).catch((err) => {
                 logger.info(`mciBlocks-Error : ${err}`);
                 pageUtility.init();
+                return;
             })
         },
         async filterData() {
@@ -478,6 +517,7 @@
                     };
                 });
             }
+            logger.info(`创世交易 结束`);
 
             //见证交易 操作表：trans_witness / parents
             witnessTransInsertAry.forEach(blockInfo => {
@@ -487,6 +527,7 @@
                     parent: blockInfo.parents
                 });
             });
+            logger.info(`见证交易 结束`);
 
             //普通交易 操作表: account / timestamp / trans_nomaol
             for (let normalIndex = 0, len = normalTransInsertAry.length; normalIndex < len;) {
@@ -647,13 +688,20 @@
                             logger.info('有Token转账', contractAccount);
                             if (!allTokenInfo.hasOwnProperty(contractAccount)) {
                                 logger.info("内存中没有找到Token合约，需要搜索~~~")
-                                tempTokenInfo = {
-                                    token_name: await pageUtility.call(contractAccount, "name"),
-                                    token_symbol: await pageUtility.call(contractAccount, "symbol"),
-                                    token_precision: await pageUtility.call(contractAccount, "decimals"),
-                                    token_total: await pageUtility.call(contractAccount, "totalSupply"),
-                                    owner: await pageUtility.call(contractAccount, "owner"),
-                                };
+                                try {
+                                    tempTokenInfo = {
+                                        token_name: await pageUtility.call(contractAccount, "name"),
+                                        token_symbol: await pageUtility.call(contractAccount, "symbol"),
+                                        token_precision: await pageUtility.call(contractAccount, "decimals"),
+                                        token_total: await pageUtility.call(contractAccount, "totalSupply"),
+                                        owner: await pageUtility.call(contractAccount, "owner"),
+                                    };
+                                } catch (error) {
+                                    logger.info(`Token合约 Error`);
+                                    logger.info(error);
+                                    pageUtility.init();
+                                    return;
+                                }
                                 allTokenInfo[contractAccount] = tempTokenInfo;
                             } else {
                                 logger.info("内存中已经有Token合约啦，不需要搜索！！！")
@@ -965,6 +1013,7 @@
                 // }));
                 normalIndex++;
             }
+            logger.info(`普通交易 结束`);
 
             /*
              * 处理账户
@@ -2435,7 +2484,14 @@
                 "data": opt
             };
 
-            let res = await czr.request.call(arg1);//[ { name: '', type: 'string', value: 'canonChain' } ]
+            let res;
+
+            try {
+                res = await czr.request.call(arg1);//[ { name: '', type: 'string', value: 'canonChain' } ]
+            } catch (error) {
+                logger.info(`call Error`);
+                logger.info(error);
+            }
             let resString = await czr.utils.decode[con_name](res.output);
             return resString[0].value.toString(10);
         },

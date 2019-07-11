@@ -813,12 +813,6 @@ async function get_transaction_by_hash(query) {
     }
 */
 //获取CZRGas
-//TODO改为没有数据，返回错误
-let GAS_PRICES = {
-  "cheapest_gas_price": "50000000000000",
-  "median_gas_price": "50000000000000",
-  "highest_gas_price": "50000000000000"
-}
 async function CZRGas(query) {
   let querySql = {
     text: `
@@ -835,11 +829,20 @@ async function CZRGas(query) {
     `
   };
   let rlt = await pgPromise.query(querySql);
-  return {
-    "code": 100,
-    "msg": "ok",
-    "result": rlt.rows[0] || GAS_PRICES
-  };
+  if (rlt.rows[0]) {
+    return {
+      "code": 100,
+      "msg": "ok",
+      "result": rlt.rows[0]
+    };
+  } else {
+    return {
+      "code": 404,
+      "msg": "not found",
+      "result": {}
+    };
+  }
+
 }
 
 /** 
