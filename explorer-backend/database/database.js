@@ -1657,7 +1657,7 @@
                     '${item.signature}',
 
                     '${item.to}',
-                    ${Number(item.amount)},
+                    ${item.amount},
                     '${item.data_hash}',
                     '${item.data}',
 
@@ -1725,7 +1725,7 @@
                     '${item.signature}',
 
                     '${item.to}',
-                    ${Number(item.amount)},
+                    ${item.amount},
                     '${item.previous}',
                     ${Number(item.gas)},
                     ${Number(item.gas_price)},
@@ -1865,7 +1865,7 @@
                     `
                     (
                         '${item.account}',
-                        ${Number(item.balance)},
+                        ${item.balance},
                         ${item.is_token_account || false},
                         ${item.is_has_token_assets || false},
                         ${item.is_has_token_trans || false},
@@ -2234,7 +2234,7 @@
 
                         '${item.contract_address_suicide}',
                         '${item.refund_adderss}',
-                        ${Number(item.balance)},
+                        ${item.balance},
 
                         ${Number(item.gas_used)},
                         '${item.output}',
