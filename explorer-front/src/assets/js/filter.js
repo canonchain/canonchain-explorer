@@ -2,9 +2,21 @@ import Tools from '../../tools'
 let czr = new Tools();
 
 //做千分符
+function handlerFormat(num) {
+    return num.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+}
 function numFormat(num) {
-    var c = (num.toString().indexOf('.') !== -1) ? num.toLocaleString() : num.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
-    return c;
+    let floatIndex = num.toString().indexOf('.');
+    let result;
+    if (floatIndex !== -1) {
+        //小数
+        let tempAry = num.toString().split(".");
+        result = `${handlerFormat(tempAry[0])}.${tempAry[1]}`
+    } else {
+        //整数
+        result = handlerFormat(num);
+    }
+    return result;
 }
 
 /**

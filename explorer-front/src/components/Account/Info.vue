@@ -10,7 +10,7 @@
                 <el-row>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">交易类型</strong>
+                            <strong class="bui-dlist-tit">账户类型</strong>
                             <div class="bui-dlist-det">
                                 <template v-if="account_info.type == 2">合约账户</template>
                                 <template v-else>普通账户</template>
