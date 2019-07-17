@@ -149,8 +149,9 @@
                 if (searchData.rows.length) {
                     let txIndex;
                     searchData.rows.forEach(element => {
-                        txIndex = array.indexOf(element.tx);
+                        txIndex = temp.indexOf(element.tx);
                         if (txIndex > -1) {
+                            temp.splice(txIndex, 1);
                             array.splice(txIndex, 1);
                         }
                     });
