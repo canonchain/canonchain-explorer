@@ -8,7 +8,7 @@
 
 ### 生成离线交易
 
-生成未签名的交易，返回交易详情，开发者需要签名后通过`send_offline_block`发送交易
+生成未签名的交易，返回交易详情，开发者需要签名后通过`tx_offline_sending`发送交易
 
 - 方式 ：GET
 - 参数
@@ -80,7 +80,7 @@
 
 ### 发送离线交易
 
-请求参数来自接口 generate_offline_block ,返回交易哈希。
+请求参数来自接口 tx_offline_generation ,返回交易哈希。
 
 - 方式 ：GET
 - 参数
@@ -99,7 +99,7 @@
     apikey  : YourApiKeyToken
     ```
 - 参数说明
-    - 其中from，to，amout，gas，data，previous来自接口 generate_offline_block 。
+    - 其中from，to，amout，gas，data，previous来自接口 tx_offline_generation 。
     - amount：金额，单位：10<sup>-18</sup>CZR。
 - 结果
     ```
