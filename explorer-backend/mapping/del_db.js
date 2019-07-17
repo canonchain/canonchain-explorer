@@ -1,3 +1,4 @@
+//这个脚本一定不能放在服务器上！！！！！！！
 (async () => {
     let pgPromise = require("../database/PG-promise");
 
@@ -23,6 +24,18 @@
     } else {
         console.log("删除 mapping_offline_block 成功")
     }
+
+    let opt3 = {
+        text: `truncate table mapping_block_number`
+    };
+    let data3 = await pgPromise.query(opt3)
+    if (data3.code) {
+        console.log("删除 mapping_block_number 失败")
+        console.log(data3)
+    } else {
+        console.log("删除 mapping_block_number 成功")
+    }
+    
     console.log("************* 删除数据 结束 ************* ")
 
 

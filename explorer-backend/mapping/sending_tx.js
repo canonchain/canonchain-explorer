@@ -24,6 +24,7 @@
             }, 5000);
         },
         async getStatus() {
+            //每次只发一笔交易
             let SearchOptions = {
                 text: `
                     select 
@@ -32,6 +33,10 @@
                         mapping_eth_log 
                     where 
                         "status" = $1
+                    order by 
+                        timestamp asc
+                    limit
+                        1
                 `,
                 values: [2]
             };
@@ -76,15 +81,12 @@
                 }
             })
             logger.info(`需要映射的数量:${data.rows.length}，已签名的数量:${targetMapAry.length}`);
-            logger.info(targetMapAry);
             if (targetMapAry.length) {
                 pageUtility.sendBlock(targetMapAry);
             } else {
                 pageUtility.init();
             }
         },
-
-
         async sendBlock(txAry) {
             let temItem;
             let successEthTxAry = [];
@@ -98,9 +100,10 @@
                 temItem = txAry[i];
                 let result = await czr.request.sendOfflineBlock(temItem);
                 if (result.code === 0) {
+                    logger.info(`发送成功了：${temItem.eth_tx}`)
                     successEthTxAry.push(temItem.eth_tx);
                 } else {
-                    logger.info(`交易发送失败了${temItem.eth_tx}`)
+                    logger.info(`发送失败了：${temItem.eth_tx}`)
                     logger.info(result);
                 }
                 i++;
@@ -113,21 +116,6 @@
         },
         async updateHashInfo(array) {
             let tempUpdateAry = [];
-            // let SearchOptions = {
-            //     text: `
-            //         select 
-            //             "hash",
-            //             "eth_tx"
-            //         from 
-            //             mapping_offline_block 
-            //         where 
-            //             hash = ANY ($1)
-            //     `,
-            //     values: [array]
-            // };
-            // let data = await client.query(SearchOptions);
-
-
             array.forEach(element => {
                 tempUpdateAry.push(`(${element})`);
             });
@@ -144,18 +132,18 @@
                 where 
                     mapping_eth_log.tx=temp.tx
             `
-            logger.info("准备更新")
+            logger.info("准备更新status = 3", tempUpdateAry)
             try {
                 await client.query('BEGIN')
                 let res = await client.query(updateStatus);
                 await client.query('COMMIT')
                 logger.info("更新成功")
+                pageUtility.init();
             } catch (e) {
-                logger.info("更新失败")
+                logger.info("发送成功了，但是更新失败")
                 logger.info(e)
             }
-            pageUtility.init();
-        },
+        }
     }
     pageUtility.init();
 })()
