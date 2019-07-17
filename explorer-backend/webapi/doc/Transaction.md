@@ -99,7 +99,7 @@
     apikey  : YourApiKeyToken
     ```
 - 参数说明
-    - 其中from，to，amout，gas，data，previous来自接口 tx_offline_generation 。
+    - 其中from，to，amout，gas，data，previous来自接口 generation_offline_block 。
     - amount：金额，单位：10<sup>-18</sup>CZR。
 - 结果
     ```
