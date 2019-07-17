@@ -926,3 +926,23 @@ WITH (
 TABLESPACE pg_default;
 
 ```
+
+## 映射的Block Number表
+
+```
+CREATE TABLE public.mapping_block_number(
+    mapping_bn_id bigserial,
+    key text,
+    value numeric,
+    CONSTRAINT mapping_bn_id_key PRIMARY KEY(mapping_bn_id)
+)
+WITH(
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+CREATE INDEX mapping_bn_key
+    ON public."mapping_block_number" USING btree
+    ("key")
+    TABLESPACE pg_default;
+```
