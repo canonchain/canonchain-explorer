@@ -14,17 +14,6 @@
         console.log("删除 mapping_eth_log 成功")
     }
 
-    let opt2 = {
-        text: `truncate table mapping_offline_block`
-    };
-    let data2 = await pgPromise.query(opt2)
-    if (data2.code) {
-        console.log("删除 mapping_offline_block 失败")
-        console.log(data2)
-    } else {
-        console.log("删除 mapping_offline_block 成功")
-    }
-
     let opt3 = {
         text: `truncate table mapping_block_number`
     };

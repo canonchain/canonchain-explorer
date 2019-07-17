@@ -134,7 +134,7 @@
             let searchSql = {
                 text: `
                     select
-                        "tx",
+                        "tx"
                     from 
                         mapping_eth_log 
                     where 
@@ -144,7 +144,10 @@
                 values: [temp]
             };
 
+            logger.info("searchLogSql ", searchSql);
             let searchData = await pgPromise.query(searchSql);
+            logger.info("searchLogSql searchData", searchData);
+
             if (!searchData.code) {
                 if (searchData.rows.length) {
                     let txIndex;

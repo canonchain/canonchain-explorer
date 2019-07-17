@@ -885,6 +885,9 @@ CREATE TABLE public.mapping_eth_log
     value numeric,
     status smallint,
     block_number  numeric,
+    czr_txhash  text,
+    patrol_time  bigint,
+    send_error  text,
     CONSTRAINT mapping_tx_pkey PRIMARY KEY (tx)
 )
 WITH (
