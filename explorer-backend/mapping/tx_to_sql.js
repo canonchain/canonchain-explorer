@@ -5,7 +5,7 @@
 (async () => {
     const Web3 = require("web3")
     const config = require("./config/to_sql_config")
-    const web3 = new Web3('https://rinkeby.infura.io/' + config.INFURA_KEY);
+    const web3 = new Web3(config.INFURA_URL);
     let Czr = require("czr");
     let czr = new Czr();
     // logger
@@ -93,6 +93,7 @@
             } catch (error) {
                 logger.info("web3.eth.getPastLogs 出错了")
                 logger.info(error)
+                throw error;
             }
         },
         async parseContractInfo(resuleInfo) {
