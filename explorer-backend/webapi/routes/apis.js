@@ -531,7 +531,7 @@ async function generate_offline_block(query){
   }
   let valid_from = await account_validate(query.from);
   let valid_to = await account_validate(query.to);
-  if(!valid_from || !valid_to){
+  if(!valid_from.result || !valid_to.result){
     return {
       "code":"400",
       "msg":"from or to is invalid format"
@@ -629,7 +629,7 @@ async function send_offline_block(query) {
   }
   let valid_from = await account_validate(query.from);
   let valid_to = await account_validate(query.to);
-  if(!valid_from || !valid_to){
+  if(!valid_from.result || !valid_to.result){
     return {
       "code":"400",
       "msg":"from or to is invalid format"
@@ -906,7 +906,7 @@ async function bs582hex(query){
     }
   }
   let source_valid = await account_validate(query.source)
-  if(!source_valid){
+  if(!source_valid.result){
     return{
       "code": "400",
       "msg": "parameter source is not a czr address"
@@ -990,7 +990,7 @@ router.get('/', async function (ctx, next) {
       }
       for(let i=0;i<acctAry.length;i++){
         let acct_valid = await account_validate(query.account)
-        if(!acct_valid){
+        if(!acct_valid.result){
           ctx.body = {
             "code":"400",
             "msg":"invalid account",
@@ -1001,7 +1001,7 @@ router.get('/', async function (ctx, next) {
       }
     }else{
       let acct_valid = await account_validate(query.account)
-      if(!acct_valid){
+      if(!acct_valid.result){
         ctx.body = {
           "code":"400",
           "msg":"invalid account",
