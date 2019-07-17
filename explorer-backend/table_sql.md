@@ -933,7 +933,7 @@ TABLESPACE pg_default;
 CREATE TABLE public.mapping_block_number(
     mapping_bn_id bigserial,
     key text,
-    value numeric,
+    value text,
     CONSTRAINT mapping_bn_id_key PRIMARY KEY(mapping_bn_id)
 )
 WITH(

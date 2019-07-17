@@ -57,8 +57,10 @@
         async start() {
             try {
                 db_block_number = await pageUtility.getDbBlockNum();
-                //TODO -12 
+                //-12 
                 eth_block_number = await web3.eth.getBlockNumber();
+                eth_block_number = Number(eth_block_number) - 12;
+
                 logger.info(`db_block_number:${db_block_number}  eth_block_number:${eth_block_number}`)
 
                 while (eth_block_number > db_block_number) {
@@ -119,9 +121,49 @@
                 }
             }))
             if (logAry.length) {
-                logger.info("插入数据库的数量:", logAry.length)
-                pageUtility.insertLogSql(logAry);
+                logger.info("先查询数据库是否存在")
+                pageUtility.searchLogSql(logAry);
             }
+        },
+        async searchLogSql(array) {
+            let temp = [];
+            array.forEach(element => {
+                temp.push(element.tx)
+            })
+            let searchSql = {
+                text: `
+                    select
+                        "tx",
+                    from 
+                        mapping_eth_log 
+                    where 
+                        tx = ANY ($1)
+        
+                `,
+                values: [temp]
+            };
+
+            let searchData = await pgPromise.query(searchSql);
+            if (!searchData.code) {
+                if (searchData.rows.length) {
+                    let txIndex;
+                    searchData.rows.forEach(element => {
+                        txIndex = array.indexOf(element.tx);
+                        if (txIndex > -1) {
+                            array.splice(txIndex, 1);
+                        }
+                    });
+                }
+            } else {
+                logger.info("searchLogSql 失败了:", searchData)
+                throw searchData;
+            }
+
+            if (array.length) {
+                logger.info("插入数据库的数量:", array.length)
+                pageUtility.insertLogSql(array);
+            }
+
         },
         async insertLogSql(array) {
             let tempAry = [];
@@ -156,10 +198,10 @@
             try {
                 await pgPromise.query(batchInsertSql);
                 logger.info("插入成功")
-                pageUtility.init();
             } catch (e) {
                 logger.info("插入失败")
                 logger.info(e)
+                throw e;
             }
         },
         async getDbBlockNum() {
@@ -179,8 +221,9 @@
                 //需要插入 db_block_number
                 logger.info(`写入 mapping_block_number Key`)
                 const insertVal = `
-                    ('db_block_number',${config.INIT_BLOCK_NUM} ),
-                    ('eth_block_number',${config.INIT_BLOCK_NUM})
+                    ('latest_hash','' ),
+                    ('db_block_number','${config.INIT_BLOCK_NUM}' ),
+                    ('eth_block_number','${config.INIT_BLOCK_NUM}' )
                 `;
 
                 let firstInsert = "INSERT INTO mapping_block_number (key,value) VALUES " + insertVal;
@@ -189,11 +232,15 @@
                     // 出错
                     logger.info(`写入 mapping_block_number 失败`);
                     logger.info(res);
+                    throw res;
                 }
                 return config.INIT_BLOCK_NUM;
             } else {
-                logger.info(Number(blockInfo.rows[0].value))
-                return blockInfo.rows.length ? Number(blockInfo.rows[0].value) : config.INIT_BLOCK_NUM;
+                // logger.info(Number(blockInfo.rows[0].value))
+                if (!blockInfo.rows.length) {
+                    throw 'blockInfo.rows.length 不存在';
+                }
+                return Number(blockInfo.rows[0].value);
             }
         },
         async updateDbBlockNum(db_block_number, eth_block_number) {
@@ -203,8 +250,8 @@
                 set
                     value=temp.value 
                         from (values 
-                                ('db_block_number',${db_block_number}),
-                                ('eth_block_number',${eth_block_number})
+                                ('db_block_number','${db_block_number}'),
+                                ('eth_block_number','${eth_block_number}')
                             ) 
                     as 
                         temp(key,value)
