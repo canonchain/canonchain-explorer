@@ -73,7 +73,7 @@
                     };
                     await pageUtility.getContractInfo()
                     // db_block_number 存入数据库
-                    logger.info("数据库 更新 db_block_number ")
+                    // logger.info("数据库 更新 db_block_number ")
                     pageUtility.updateDbBlockNum(db_block_number, eth_block_number);
                 }
                 pageUtility.startTimer(10)

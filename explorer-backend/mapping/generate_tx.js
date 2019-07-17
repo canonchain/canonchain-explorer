@@ -111,6 +111,10 @@
                     result = await czr.request.generateOfflineBlock(generateOpt);
                     if (result.code === 0) {
                         tempPrevious = result.hash;
+                    } else if (result.code === 8) {
+                        logger.info("余额不足!!!!!!!")
+                        pageUtility.init();
+                        return;
                     } else {
                         logger.info("generateOfflineBlock code出错了")
                         logger.error(result)
