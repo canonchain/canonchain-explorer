@@ -8,18 +8,19 @@
     let log4js = require('../database/log_config');
     let logger = log4js.getLogger('mapping_generate_sql');
 
-
-    let generateOpt = {
-        "from": "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
-        "to": "",
-        "amount": "",
-        "previous": "",
-        "gas": "21000",
-        "gas_price": "50000000000000"
-    }
-
+    //需要改为正式的 ****************************************************
+    let generateOpt = require("./config/generate_opt")
+    // let generate_opt = {
+    //     "from": "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
+    //     "to": "",
+    //     "amount": "",
+    //     "previous": "",
+    //     "gas": "21000",
+    //     "gas_price": "50000000000000"
+    // }
     let getSqlTimer = null;
     let tempPrevious = '';
+
     /**
      * 1.从数据库取status=1的值
      * 2.用获取到的值生成离线交易账单
@@ -44,7 +45,7 @@
                 where 
                     "status" = $1
                 order by
-                    "block_number" asc
+                    timestamp asc
             `,
                 values: [1]
             };
@@ -73,17 +74,27 @@
                 if (result.code === 0) {
                     tempPrevious = result.hash;
                     insertAry.push(result);
+                } else {
+                    logger.info("generateOfflineBlock失败，可能是余额不足")
+                    break;
                 }
                 i++;
             }
             logger.info(`需处理的交易数量 ${insertAry.length}`);
-            pageUtility.insertSql(insertAry);
+            if (insertAry.length) {
+                pageUtility.insertSql(insertAry);
+            } else {
+                pageUtility.init();
+            }
 
         },
+        // async filterStatusOneData(insertAry) {
+        //     //搜索筛选只为1的数据
+        //     pageUtility.insertSql(insertAry);
+        // },
         async insertSql(array) {
             let tempAry = [];
             let tempUpdateAry = [];
-            logger.info("array", array)
             array.forEach(element => {
                 tempAry.push(`
                     (
@@ -92,9 +103,9 @@
                         '${element.previous}',
                         '${element.from}',
                         '${element.to}',
-                        ${Number(element.amount)},
-                        ${Number(element.gas)},
-                        ${Number(element.gas_price)}
+                        ${element.amount},
+                        ${element.gas},
+                        ${element.gas_price}
                     )
                 `)
                 tempUpdateAry.push(
@@ -143,10 +154,12 @@
                 logger.info("插入成功\n")
             } catch (e) {
                 logger.info("插入失败")
+                logger.info(batchInsertSql)
+                logger.info(updateStatus)
                 logger.info(e)
             }
             pageUtility.init();
-        },
+        }
     }
     pageUtility.init();
 })()

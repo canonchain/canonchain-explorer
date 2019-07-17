@@ -1,8 +1,10 @@
-
-
+/**
+ * 把ETH上映射事件写入到sql表，等待签名
+ * 需要一定要用 pm2 启动，否则容易被infura屏蔽
+ */
 (async () => {
     const Web3 = require("web3")
-    const key = require("./infura_key")
+    const key = require("./config/infura_key")
     const web3 = new Web3('https://rinkeby.infura.io/' + key);
     let Czr = require("czr");
     let czr = new Czr();
@@ -13,7 +15,6 @@
     let pgPromise = require("../database/PG-promise");
 
     const ABI = [
-
         {
             type: 'bytes',
             name: 'czrAccount'
@@ -36,7 +37,7 @@
     let getSqlTimer = null;
     let nextFromBlock;
     let fromBlockNum;
-    //需要改为正式的
+    //需要改为正式的 ****************************************************
     let MAPP_INFO = {
         INIT_BLOCK_NUM: 4639323,
         CONTRACT_ADDRESS: "0xA766d355Ef29502Ca68637F0BCb9Ff7284D1ace2"
@@ -78,7 +79,6 @@
                 logger.info("web3.eth.getPastLogs 出错了")
                 logger.info(error)
             }
-
         },
         async parseContractInfo(resuleInfo) {
             let logAry = []
