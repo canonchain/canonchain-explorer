@@ -211,7 +211,7 @@ async function tx_list(query) {
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0; 
     if(limitVal<0 || offsetVal<0){
       return{
-        "code":"400",
+        "code":400,
         "msg":"parameter page and offset must be positive"
       }
     }
@@ -295,7 +295,7 @@ async function tx_list_internal(query) {
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
     if(limitVal<0 || offsetVal<0){
       return{
-        "code":"400",
+        "code":400,
         "msg":"parameter page and offset must be positive"
       }
     }
@@ -456,7 +456,7 @@ async  function txlist_crc(query){
     let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
     if(limitVal<0 || offsetVal<0){
       return{
-        "code":"400",
+        "code":400,
         "msg":"parameter page and offset must be positive"
       }
     }
@@ -507,7 +507,7 @@ async  function txlist_crc(query){
     }
   * 返回
     {
-    "code": "100",
+    "code": 100,
     "msg": "OK",
     "result": {
         "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",
@@ -525,7 +525,7 @@ async function generate_offline_block(query){
 
   if(!query.from || !query.to){
     return {
-      "code":"400",
+      "code":400,
       "msg":"parameter from and to is required"
     }
   }
@@ -533,25 +533,25 @@ async function generate_offline_block(query){
   let valid_to = await account_validate(query.to);
   if(!valid_from.result || !valid_to.result){
     return {
-      "code":"400",
+      "code":400,
       "msg":"from or to is invalid format"
     }
   }
   if(!(+query.amount >= 0 )){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter amount is required and must not Negative"
     }
   }
   if(!( +query.gas >= 0)){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter gas is required and must not Negative"
     }
   }
   if(!( +query.gas_price >= 0)){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter gas_price is required and must not Negative"
     }
   }
@@ -567,7 +567,7 @@ async function generate_offline_block(query){
 
   let czrRlt = await czr.request.generateOfflineBlock(transation)
   let retRlt = {}
-  retRlt.code = czrRlt.code? "401":"100"
+  retRlt.code = czrRlt.code? 401:100
   retRlt.msg = czrRlt.msg
   if(!czrRlt.code){
     let rltAry = Object.keys(czrRlt)
@@ -602,7 +602,7 @@ async function generate_offline_block(query){
     "code": "100",
     "msg": "OK",
     "result": {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": "E8441A74FD40465006CC078C860323A0DFF32F23AC7E7F81A153F8ECE304439A"
     }
@@ -623,7 +623,7 @@ async function send_offline_block(query) {
   // }
   if(!query.from || !query.to){
     return {
-      "code":"400",
+      "code":400,
       "msg":"parameter from and to is required for generation"
     }
   }
@@ -631,37 +631,37 @@ async function send_offline_block(query) {
   let valid_to = await account_validate(query.to);
   if(!valid_from.result || !valid_to.result){
     return {
-      "code":"400",
+      "code":400,
       "msg":"from or to is invalid format"
     }
   }
   if(!(+query.amount >= 0 )){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter amount is required and must not Negative"
     }
   }
   if(!( +query.gas >= 0)){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter gas is required and must not Negative"
     }
   }
   if(!( +query.gas_price >= 0)){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter gas_price is required and must not Negative"
     }
   }
   if(!query.signature){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter signature is required"
     }
   }
   if(!query.previous){
     return{
-      "code":"400",
+      "code":400,
       "msg":"parameter previous is required"
     }
   }
@@ -679,7 +679,7 @@ async function send_offline_block(query) {
 
   let res = await czr.request.sendOfflineBlock(options);
   console.log("res.code:",res.code)
-  res.code = res.code? "401": '100'
+  res.code = res.code? 401: 100
   return res;
 }
 
@@ -694,7 +694,7 @@ async function send_offline_block(query) {
     }
   * 返回
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": {
         "hash": "C33E2B4C1BB8E0B87EC7E4EB3DDA73376DF20CE551B09205D4C03199A11FBBCF",
@@ -803,7 +803,7 @@ async function get_transaction_by_hash(query) {
     }
   * 返回
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": {
             cheapest_gas_price:"10000",
@@ -856,7 +856,7 @@ async function CZRGas(query) {
     }
   * 返回
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": "21272"
     }
@@ -874,7 +874,7 @@ async function get_estimate_gas(query){
   }
   let rlt = await czr.request.estimateGas(call_obj)
   return {
-    "code": "100",
+    "code": 100,
     "msg": rlt.msg,
     "result": rlt.gas
   }
@@ -892,7 +892,7 @@ async function get_estimate_gas(query){
     }
   * 返回
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": "637a725f6163636f756e74"
     }
@@ -901,24 +901,24 @@ async function get_estimate_gas(query){
 async function bs582hex(query){
   if(!query.source){
     return{
-      "code": "400",
+      "code": 400,
       "msg": "parameter missing source"
     }
   }
   let source_valid = await account_validate(query.source)
   if(!source_valid.result){
     return{
-      "code": "400",
+      "code": 400,
       "msg": "parameter source is not a czr address"
     }
   }
   let buf = bs58check.decode(query.source.split('_')[1])
   buf = buf.slice(1,)
   return {
-    "code": "100",
+    "code": 100,
     "msg": "ok",
-      "result": buf.toString('hex')
-  } 
+    "result": buf.toString('hex')
+  }
 }
 
 // ******************************** 其他模块 结束
@@ -979,22 +979,22 @@ router.get('/', async function (ctx, next) {
       return ;
     }
 
-    if(query.action === 'balance_multi'){
-      acctAry = query.account.split(',');
+    if(query.action === 'account_balance_multi'){
+      let acctAry = query.account.split(',');
       if(acctAry.length>20){
         ctx.body = {
-          "code":"400",
+          "code":400,
           "msg":"the numbers of account must be less than 20",
         }
         return ;
       }
       for(let i=0;i<acctAry.length;i++){
-        let acct_valid = await account_validate(query.account)
+        let acct_valid = await account_validate(acctAry[i])
         if(!acct_valid.result){
           ctx.body = {
-            "code":"400",
-            "msg":"invalid account",
-            "result":acctAry[i]
+            "code":400,
+            "msg":"invalid account:"+acctAry[i],
+            "result":[]
           }
           return ;
         }
@@ -1003,7 +1003,7 @@ router.get('/', async function (ctx, next) {
       let acct_valid = await account_validate(query.account)
       if(!acct_valid.result){
         ctx.body = {
-          "code":"400",
+          "code":400,
           "msg":"invalid account",
           "result":query.account
         }
@@ -1034,7 +1034,7 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code":"403",
+          "code":403,
           "msg":"this action is net available in account module",
         }
     }
@@ -1055,7 +1055,7 @@ router.get('/', async function (ctx, next) {
       break;
     default:
         ctx.body = {
-          "code":"403",
+          "code":403,
           "msg":"this action is net available in transaction module",
         }
     }
@@ -1071,11 +1071,11 @@ router.get('/', async function (ctx, next) {
         ctx.body = await get_estimate_gas(query);
         break;
       case 'to_hex':
-        ctx.body = bs582hex(query);
+        ctx.body = await bs582hex(query);
         break;
       default:
         ctx.body = {
-          "code":"403",
+          "code":403,
           "msg":"this action is net available in other module",
         }
     }

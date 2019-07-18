@@ -30,7 +30,7 @@
     ```
     成功：
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": {
             "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",
@@ -45,19 +45,19 @@
 
     失败（缺少from或to参数）：
     {
-        "code":"400",
+        "code":400,
         "msg":"parameter from and to is required"
     }
 
     失败（from或to地址非法）：
     {
-        "code":"400",
+        "code":400,
         "msg":"from or to is invalid format"
     }
 
     失败（amount非正整数，gas，gas_price错误也是类似报错）：
     {
-        "code":"400",
+        "code":400,
         "msg":"parameter amount is required and must not Negative"
     }
     ```
@@ -105,18 +105,18 @@
     ```
     成功：
     {
-        "code": "100",
+        "code":100,
         "msg": "OK",
         "result": "E8441A74FD40465006CC078C860323A0DFF32F23AC7E7F81A153F8ECE304439A"
     }
 
     失败(缺失signature参数)：{
-        "code":"400",
+        "code":400,
         "msg":"parameter signature is required"
     }
 
     失败（缺失previous参数）：{
-        "code":"400",
+        "code":400,
         "msg":"parameter previous is required"
     }
     ```
@@ -142,7 +142,7 @@
     ```
     成功：
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": {
             "hash": "C33E2B4C1BB8E0B87EC7E4EB3DDA73376DF20CE551B09205D4C03199A11FBBCF",
