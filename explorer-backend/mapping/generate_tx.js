@@ -21,7 +21,6 @@
     // }
     let getSqlTimer = null;
     let tempPrevious = '';
-    let send_balance = "";
     /**
      * 1.从数据库取status=1的值
      * 2.用获取到的值生成离线交易账单
@@ -81,10 +80,11 @@
             //  patrol_time 巡检时间
             //  send_error
 
+            let send_balance_str = "";
             try {
                 let accObj = await czr.request.accountBalance(generateOpt.from); //todo:获取send账号余额
                 if (accObj.code === 0) {
-                    send_balance = accObj.balance;
+                    send_balance_str = accObj.balance;
                 } else {
                     logger.info("request.accountBalance code出错了")
                     logger.error(accObj)
@@ -97,12 +97,16 @@
             }
 
             let result;
+            let fee;
+            let send_balance_big = BigNumber(send_balance_str);
             for (let genIndex = 0, len = txAry.length; genIndex < len;) {
                 temItem = txAry[genIndex];
                 //Bignumber 判断 大小
-                let remainder = BigNumber(send_balance).minus(temItem.value).toNumber();
-                logger.info(`send_balance:${send_balance} temItem.value：${temItem.value}`)
-                if (remainder > 0) {
+                fee = BigNumber(generateOpt.gas).multipliedBy(generateOpt.gas_price);
+                send_balance_big = send_balance_big.minus(temItem.value).minus(fee);
+                logger.info(`send_balance_big:${send_balance_big.toString()} temItem.value：${temItem.value}`)
+
+                if (send_balance_big.isGreaterThan(0)) {
                     generateOpt.to = temItem.czr_account;
                     generateOpt.amount = temItem.value;
                     generateOpt.previous = await pageUtility.getLatestHash(); //从数据库获取
