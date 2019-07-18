@@ -68,7 +68,7 @@
                 pageUtility.init();
             }
         },
-        async generateBlock(txAry, previous) {
+        async generateBlock(txAry) {
             let temItem;
             if (!txAry.length) {
                 // logger.info("暂无需要处理的交易")
@@ -103,10 +103,9 @@
                 let remainder = BigNumber(send_balance).minus(temItem.value).toNumber();
                 logger.info(`send_balance:${send_balance} temItem.value：${temItem.value}`)
                 if (remainder > 0) {
-                    tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
                     generateOpt.to = temItem.czr_account;
                     generateOpt.amount = temItem.value;
-                    generateOpt.previous = previous || tempPrevious;
+                    generateOpt.previous = await pageUtility.getLatestHash(); //从数据库获取
 
                     // logger.info("generateOpt\n", generateOpt)
                     try {
@@ -341,7 +340,21 @@
                         let reSend = txAry[index];
                         logger.info("准备重发", reSend)
                         try {
-                            await pageUtility.generateBlock([reSend], reSend.previous)
+                            let repOpt = {
+                                "from": generateOpt.from,
+                                "password": generateOpt.password,
+                                "to": reSend.czr_account,
+                                "amount": reSend.value,
+                                "previous": reSend.previous,
+                                "gas": generateOpt.gas,
+                                "gas_price": generateOpt.gas_price
+                            }
+                            let sendResult = await czr.request.sendBlock(repOpt);
+                            if (sendResult.code !== 0) {
+                                logger.info("sendResult 出错了")
+                                logger.error(sendResult)
+                                throw "request.sendBlock 出错了";
+                            }
                             logger.info("重发成功")
                         } catch (error) {
                             logger.info("重发出错了")

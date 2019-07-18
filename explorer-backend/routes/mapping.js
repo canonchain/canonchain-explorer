@@ -40,7 +40,7 @@ router.get("/get_status_one", async function (req, res, next) {
             where
                 "status" = $1
             order by 
-                timestamp desc
+                "mapping_log_id" asc
             LIMIT 
                 ${LIMIT_VAL}
             offset
@@ -119,7 +119,7 @@ router.get("/get_status_multi", async function (req, res, next) {
             where
                 "status" = $1
             order by 
-                timestamp desc
+                "mapping_log_id" desc
             LIMIT 
                 ${LIMIT_VAL}
             offset
