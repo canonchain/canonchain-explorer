@@ -34,7 +34,7 @@ router.get("/get_status_one", async function (req, res, next) {
     let sql = {
         text: `
             Select 
-                "mapping_log_id","timestamp","tx","eth_address",czr_account,"value","status","block_number"
+                "mapping_log_id","timestamp","eth_hash","eth_address",czr_account,"value","status","block_number"
             FROM 
                 mapping_eth_log
             where
@@ -112,8 +112,8 @@ router.get("/get_status_multi", async function (req, res, next) {
     let sql = {
         text: `
             Select 
-                "mapping_log_id","timestamp","tx","eth_address",czr_account,"value","status","block_number",
-                "czr_txhash","patrol_time","send_error"
+                "mapping_log_id","timestamp","eth_hash","eth_address",czr_account,"value","status","block_number",
+                "czr_hash","patrol_time","send_error"
             FROM 
                 mapping_eth_log
             where
@@ -155,6 +155,40 @@ router.get("/get_status_multi_count", async function (req, res, next) {
         text: `
             Select 
                 count(1)
+            FROM 
+                mapping_eth_log
+            where
+                "status" = $1
+        `,
+        values: [queryVal.status]
+    };
+    let data = await pgPromise.query(sql)
+    if (data.code) {
+        responseData = {
+            data: "0",
+            code: 500,
+            success: false,
+            message: 'select 2 from mapping_eth_log count error'
+        }
+    } else {
+        responseData = {
+            data: data.rows ? data.rows[0].count : "0",
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+router.get("/get_status_multi_sum", async function (req, res, next) {
+    let queryVal = req.query;
+    if (!queryVal.status) {
+        queryVal.status = 2;
+    }
+    let sql = {
+        text: `
+            Select 
+                sum (value)
             FROM 
                 mapping_eth_log
             where

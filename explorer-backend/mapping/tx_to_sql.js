@@ -74,13 +74,13 @@
                     await pageUtility.getContractInfo()
                     // db_block_number 存入数据库
                     // logger.info("数据库 更新 db_block_number ")
-                    pageUtility.updateDbBlockNum(db_block_number, eth_block_number);
+                    await pageUtility.updateDbBlockNum(db_block_number, eth_block_number);
                 }
                 pageUtility.startTimer(10)
             } catch (e) {
                 logger.info(`start catch 错误`)
                 logger.info(e)
-                pageUtility.startTimer(1)
+                pageUtility.startTimer(10)
             }
         },
         async getContractInfo() {
@@ -88,7 +88,7 @@
                 let resuleInfo = await web3.eth.getPastLogs(contractOpt);
                 // logger.info(`从WEB3拿到数据数量:${resuleInfo.length} ，参数db_block_number：${db_block_number} - ${contractOpt.fromBlock}`)
                 if (resuleInfo.length) {
-                    pageUtility.parseContractInfo(resuleInfo);
+                    await pageUtility.parseContractInfo(resuleInfo);
                 }
             } catch (error) {
                 logger.info("web3.eth.getPastLogs 出错了")
@@ -107,7 +107,7 @@
                     );
                     let insertLog = {
                         timestamp: decodeLogInfo.timestamp.toString(10),
-                        tx: item.transactionHash,
+                        eth_hash: item.transactionHash,
                         eth_address: decodeLogInfo.ethAddress,
                         czr_account: czr.utils.encode_account(decodeLogInfo.czrAccount.substring(2)),
                         block_number: item.blockNumber,
@@ -123,36 +123,36 @@
             }))
             if (logAry.length) {
                 logger.info("先查询数据库是否存在")
-                pageUtility.searchLogSql(logAry);
+                await pageUtility.searchLogSql(logAry);
             }
         },
         async searchLogSql(array) {
             let temp = [];
             array.forEach(element => {
-                temp.push(element.tx)
+                temp.push(element.eth_hash)
             })
             let searchSql = {
                 text: `
                     select
-                        "tx"
+                        "eth_hash"
                     from 
                         mapping_eth_log 
                     where 
-                        tx = ANY ($1)
+                        eth_hash = ANY ($1)
         
                 `,
                 values: [temp]
             };
 
-            logger.info("searchLogSql ", searchSql);
+            logger.info("searchLogSql ", temp);
             let searchData = await pgPromise.query(searchSql);
-            logger.info("searchLogSql searchData", searchData);
+            logger.info("searchLogSql searchData", searchData.rows);
 
             if (!searchData.code) {
                 if (searchData.rows.length) {
                     let txIndex;
                     searchData.rows.forEach(element => {
-                        txIndex = temp.indexOf(element.tx);
+                        txIndex = temp.indexOf(element.eth_hash);
                         if (txIndex > -1) {
                             temp.splice(txIndex, 1);
                             array.splice(txIndex, 1);
@@ -166,7 +166,7 @@
 
             if (array.length) {
                 logger.info("插入数据库的数量:", array.length)
-                pageUtility.insertLogSql(array);
+                await pageUtility.insertLogSql(array);
             }
 
         },
@@ -176,7 +176,7 @@
                 tempAry.push(`
                     (
                         ${Number(element.timestamp)},
-                        '${element.tx}',
+                        '${element.eth_hash}',
                         '${element.eth_address}',
                         '${element.czr_account}',
                         '${element.block_number}',
@@ -190,7 +190,7 @@
                 INSERT INTO 
                     mapping_eth_log (
                         "timestamp",
-                        "tx",
+                        "eth_hash",
                         "eth_address",
                         "czr_account",
                         "block_number",

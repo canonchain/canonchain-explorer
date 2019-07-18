@@ -43,7 +43,7 @@
             let SearchOptions = {
                 text: `
                     select 
-                        "tx","czr_account","value"
+                        "eth_hash","czr_account","value"
                     from 
                         mapping_eth_log 
                     where 
@@ -51,7 +51,7 @@
                     order by
                         mapping_log_id asc
                     limit
-                        1
+                        100
                 `,
                 values: [1]
             };
@@ -60,29 +60,27 @@
                 let data = await client.query(SearchOptions);
                 //previous 用 send_block 发是没用的
                 tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
-                pageUtility.generateBlock(data.rows, tempPrevious)
+                await pageUtility.generateBlock(data.rows, tempPrevious)
+                pageUtility.init();
             } catch (error) {
                 logger.info("getAccInfo 出错了")
                 logger.error(error)
-                throw error;
+                // throw error;
+                pageUtility.init();
             }
         },
-        async generateBlock(txAry, previous, is_repeat) {
+        async generateBlock(txAry, previous) {
             let temItem;
             if (!txAry.length) {
                 // logger.info("暂无需要处理的交易")
-                if (!is_repeat) {
-                    pageUtility.init();
-                }
                 return;
             }
 
             //TODO
             //mapping_eth_log 增加 
-            //  czr_txhash
+            //  czr_hash
             //  patrol_time 巡检时间
             //  send_error
-
 
             try {
                 let accObj = await czr.request.accountBalance(generateOpt.from); //todo:获取send账号余额
@@ -98,88 +96,74 @@
                 logger.error(error)
                 throw error;
             }
-            temItem = txAry[0];
 
-            //Bignumber 判断 大小
-            let remainder = BigNumber(send_balance).minus(temItem.value).toNumber();
-            logger.info(`send_balance:${send_balance} temItem.value：${temItem.value}`)
-            if (remainder > 0) {
-                generateOpt.to = temItem.czr_account;
-                generateOpt.amount = temItem.value;
-                generateOpt.previous = previous;
+            let result;
+            for (let genIndex = 0, len = txAry.length; genIndex < len;) {
+                temItem = txAry[genIndex];
+                //Bignumber 判断 大小
+                let remainder = BigNumber(send_balance).minus(temItem.value).toNumber();
+                logger.info(`send_balance:${send_balance} temItem.value：${temItem.value}`)
+                if (remainder > 0) {
+                    generateOpt.to = temItem.czr_account;
+                    generateOpt.amount = temItem.value;
+                    generateOpt.previous = previous;
 
-                // logger.info("generateOpt\n", generateOpt)
-
-                let result;
-                try {
-                    result = await czr.request.generateOfflineBlock(generateOpt);
-                    if (result.code === 0) {
-                        tempPrevious = result.hash;
-                        await pageUtility.insertSql(temItem.tx, result.previous);
-                    } else if (result.code === 8) {
-                        logger.info("余额不足!!!!!!!")
-                        if (!is_repeat) {
-                            pageUtility.init();
+                    // logger.info("generateOpt\n", generateOpt)
+                    try {
+                        result = await czr.request.generateOfflineBlock(generateOpt);
+                        if (result.code === 0) {
+                            tempPrevious = result.hash;
+                            await pageUtility.updateLogAndLatestHash(temItem.eth_hash, result.previous);
+                        } else if (result.code === 8) {
+                            logger.info("余额不足!!!!!!!")
+                            return;
+                        } else {
+                            logger.info("generateOfflineBlock code出错了")
+                            logger.error(result)
+                            throw "generateOfflineBlock code出错了";
                         }
-                        return;
-                    } else {
-                        logger.info("generateOfflineBlock code出错了")
-                        logger.error(result)
-                        throw "generateOfflineBlock code出错了";
+                    } catch (error) {
+                        logger.info("generateOfflineBlock 出错了")
+                        logger.error(error)
+                        throw error;
                     }
 
-                } catch (error) {
-                    logger.info("generateOfflineBlock 出错了")
-                    logger.error(error)
-                    throw error;
+                    logger.info("generateOfflineBlock result\n", result)
+                    logger.info("------------------------------------")
+                    try {
+                        //sendBlock 不需要 Previous 参数
+                        let sendResult = await czr.request.sendBlock(generateOpt);
+                        if (sendResult.code === 0) {
+                            await pageUtility.updateCzrHash(temItem.eth_hash, sendResult.hash);
+                        } else {
+                            logger.info("sendResult 出错了")
+                            logger.error(sendResult)
+                            throw "request.sendBlock 出错了";
+                        }
+                    } catch (error) {
+                        logger.info("request.sendBlock 出错了")
+                        logger.error(error.message)
+                        //如果出错了
+                        //todo: 更新send error, status = 4(发送错误)
+                        await pageUtility.updateErrorStatus(temItem.eth_hash, error.message);
+                    }
+                } else {
+                    logger.info("余额不足")
+                    return;
                 }
-
-                logger.info("generateOfflineBlock result\n", result)
-                logger.info("------------------------------------")
-
-
-
-                try {
-                    //sendBlock 不需要 Previous 参数
-                    let sendResult = await czr.request.sendBlock(generateOpt);
-                    if (sendResult.code === 0) {
-                        //TODO:generateOpt增加巡检时间
-                        await pageUtility.updateCzrHash(temItem.tx, sendResult.hash);
-                    } else {
-                        logger.info("sendResult 出错了")
-                        logger.error(sendResult)
-                        throw "request.sendBlock 出错了";
-                    }
-                    if (!is_repeat) {
-                        pageUtility.init();
-                    }
-                } catch (error) {
-                    logger.info("request.sendBlock 出错了")
-                    logger.error(error.message)
-                    //如果出错了
-                    //todo: 更新send error, status = 4(发送错误)
-                    await pageUtility.updateErrorStatus(temItem.tx, error.message);
-                    if (!is_repeat) {
-                        pageUtility.init();
-                    }
-                }
-            } else {
-                logger.info("余额不足")
-                if (!is_repeat) {
-                    pageUtility.init();
-                }
-                return;
+                genIndex++;
             }
+
+
         },
-        async updateCzrHash(tx, czr_hash) {
+        async updateCzrHash(eth_hash, czr_hash) {
             let updateStatus = `
                 update 
                     mapping_eth_log 
                 set 
-                    czr_txhash = '${czr_hash}',
-                    patrol_time = ${Number(Date.parse(new Date())) + 10000}
+                    czr_hash = '${czr_hash}'
                 where 
-                    tx= '${tx}'
+                    eth_hash= '${eth_hash}'
             `
             try {
                 await client.query(updateStatus);
@@ -190,7 +174,7 @@
                 throw error;
             }
         },
-        async updateErrorStatus(tx, message) {
+        async updateErrorStatus(eth_hash, message) {
             let updateStatus = `
                 update 
                     mapping_eth_log 
@@ -198,7 +182,7 @@
                     status = 4,
                     send_error = '${message}'
                 where
-                    tx= '${tx}'
+                    eth_hash= '${eth_hash}'
             `
             try {
                 await client.query(updateStatus);
@@ -210,16 +194,17 @@
             }
         },
         //插入最后一笔交易的hash(tempPrevious)，和更新status需要在一个事务中
-        async insertSql(tx, previous) {
+        async updateLogAndLatestHash(eth_hash, previous) {
             //更新eth_log表
             let updateStatus = `
                 update 
                     mapping_eth_log 
                 set 
                     status = 2,
-                    previous = '${previous}'
+                    previous = '${previous}',
+                    patrol_time = ${Number(Date.parse(new Date())) + 10000}
                 where 
-                    tx= '${tx}'
+                    eth_hash= '${eth_hash}'
             `
             //更新latest_hash 目前这条更新的数据没有用处
             let updateHashSql = `
@@ -284,7 +269,7 @@
             let SearchOptions = {
                 text: `
                     select 
-                        "tx","czr_txhash","patrol_time",
+                        "eth_hash","czr_hash","patrol_time",
                         "czr_account","value","previous"
                     from 
                         mapping_eth_log 
@@ -300,30 +285,31 @@
 
             try {
                 let data = await client.query(SearchOptions);
-                patrol.checkStatus(data.rows);
+                await patrol.checkStatus(data.rows);
+                patrol.init();
             } catch (error) {
                 logger.info("查询status2 出错了")
                 logger.error(error)
-                throw error;
+                patrol.init();
             }
         },
         async checkStatus(txAry) {
             let temAry = [];
             if (!txAry.length) {
                 logger.info("暂无需要更新的交易-巡检")
-                patrol.init();
                 return;
             }
             txAry.forEach(element => {
-                temAry.push(element.czr_txhash)
+                temAry.push(element.czr_hash)
             });
 
             try {
-                let blockStates = await czr.request.getBlockStates(temAry); //todo:获取send账号余额
+                let blockStates = await czr.request.getBlockStates(temAry);
                 if (blockStates.code === 0) {
                     await patrol.filterData(blockStates.block_states, txAry);
                 } else {
-                    logger.info("request.getBlockStates Error")
+                    logger.info("request.getBlockStates 出错了")
+                    logger.info("调用参数", temAry)
                     logger.info(blockStates)
                     throw "request.getBlockStates Error";
                 }
@@ -336,7 +322,6 @@
         },
         async filterData(statusAry, txAry) {
             let tempItem;
-
             for (let index = 0, len = statusAry.length; index < len;) {
                 tempItem = statusAry[index];
                 //稳定的
@@ -393,7 +378,7 @@
                         let reSend = txAry[index];
                         logger.info("准备重发", reSend)
                         try {
-                            await pageUtility.generateBlock([reSend], reSend.previous, true)
+                            await pageUtility.generateBlock([reSend], reSend.previous)
                             logger.info("重发成功")
                         } catch (error) {
                             logger.info("重发出错了")
@@ -402,27 +387,10 @@
                         }
                     }
                 }
-                if (tempItem) {
-                    //为null时候重发 index
-                    let reSend = txAry[index];
-                    logger.info("准备重发", reSend)
-                    try {
-                        await pageUtility.generateBlock([reSend], reSend.previous, true)
-                        logger.info("重发成功")
-                    } catch (error) {
-                        logger.info("重发出错了")
-                        logger.error(error)
-                        throw error;
-                    }
-                }
-
                 index++;
             }
-
-            //更新对应的值
-            patrol.init();
         },
-        getUptatusSql(czr_txhash, status) {
+        getUptatusSql(czr_hash, status) {
             //更新eth_log表
             let updateStatus = `
                 update 
@@ -430,7 +398,7 @@
                 set 
                     status = ${status}
                 where 
-                    czr_txhash= '${czr_txhash}'
+                    czr_hash= '${czr_hash}'
             `
             return updateStatus;
         }

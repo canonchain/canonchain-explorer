@@ -879,17 +879,17 @@ CREATE TABLE public.mapping_eth_log
 (
     mapping_log_id bigserial,
     timestamp bigint,
-    tx text,
+    eth_hash text,
     eth_address text,
     czr_account text,
     value numeric,
     status smallint,
     block_number  numeric,
-    czr_txhash  text,
+    czr_hash  text,
     previous  text,
     patrol_time  bigint,
     send_error  text,
-    CONSTRAINT mapping_tx_pkey PRIMARY KEY (tx)
+    CONSTRAINT mapping_tx_pkey PRIMARY KEY (eth_hash)
 )
 WITH (
     OIDS = FALSE
