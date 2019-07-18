@@ -103,6 +103,10 @@
         "code"  : 400,
         "msg"   : "the numbers of account must be less than 20",
     }
+    失败（某个账户格式错误）：{
+        "code"  : 400,
+        "msg:   : "invalid account: '(czr_account)'",
+    }
     ```
 - 结果说明
     - 返回格式: Array

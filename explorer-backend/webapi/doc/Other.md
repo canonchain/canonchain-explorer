@@ -50,6 +50,13 @@
     module      : other
     action      : estimate_gas
     apikey      : YourApiKeyToken
+    from        :（可选）源账户
+    to          :（可选）目标账户
+    amount      :（可选）string, 金额，单位：10-18CZR
+    gas         :（可选）string, 执行交易使用的gas上限
+    gas_price   :（可选）string, gas价格，单位：10-18CZR/gas，手续费 = 实际使用的gas * gas_price
+    data        :（可选）智能合约代码或数据。默认为空
+    mci         :（可选）string, mci，接受的值："latest", "earliest" 或数字（如:"1352"）, 默认为"latest"
     ```
 - 结果
     ```
