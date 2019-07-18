@@ -20,7 +20,7 @@
 - 结果
     ```
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": {
             cheapest_gas_price:"10000000",
@@ -54,7 +54,7 @@
 - 结果
     ```
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": "21272"
     }
@@ -79,20 +79,20 @@
     ```
     成功：
     {
-        "code": "100",
+        "code": 100,
         "msg": "OK",
         "result": "b5f327e3f07f2c94dadcdb6d122addafd3aa3ac9507e8f8368f9ad3e6a378798"
     }
 
     失败（缺少source参数）
     {
-        "code": "400",
+        "code": 400,
         "msg": "parameter missing source"
     }
 
     失败（source参数不是czr地址）
     {
-        "code": "400",
+        "code": 400,
         "msg": "parameter source is not a czr address"
     }
     ```

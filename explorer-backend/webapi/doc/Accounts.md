@@ -45,14 +45,14 @@
     ```
     成功：
     {
-        "code"  : "100",
+        "code"  : 100,
         "msg"   : "OK",
         "result": "649492854246559898951364"
     }
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
     ```
@@ -94,13 +94,13 @@
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
 
     失败（账户数超过20个）:
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "the numbers of account must be less than 20",
     }
     ```
@@ -159,7 +159,7 @@
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
     ```
@@ -220,7 +220,7 @@
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
    ```
@@ -287,7 +287,7 @@
     
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
    ```
@@ -322,7 +322,7 @@
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
     ```
@@ -374,7 +374,7 @@
 
     失败（缺少account参数）：
     {
-        "code"  : "400",
+        "code"  : 400,
         "msg"   : "missing account parameter",
     }
    ```
