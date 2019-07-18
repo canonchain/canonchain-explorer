@@ -86,7 +86,7 @@
         async getContractInfo() {
             try {
                 let resuleInfo = await web3.eth.getPastLogs(contractOpt);
-                logger.info(`从WEB3拿到数据数量:${resuleInfo.length} ，参数db_block_number：${db_block_number} - ${contractOpt.fromBlock}`)
+                // logger.info(`从WEB3拿到数据数量:${resuleInfo.length} ，参数db_block_number：${db_block_number} - ${contractOpt.fromBlock}`)
                 if (resuleInfo.length) {
                     pageUtility.parseContractInfo(resuleInfo);
                 }

@@ -58,18 +58,22 @@
 
             try {
                 let data = await client.query(SearchOptions);
-                pageUtility.generateBlock(data.rows)
+                //previous 用 send_block 发是没用的
+                tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
+                pageUtility.generateBlock(data.rows, tempPrevious)
             } catch (error) {
                 logger.info("getAccInfo 出错了")
                 logger.error(error)
                 throw error;
             }
         },
-        async generateBlock(txAry) {
+        async generateBlock(txAry, previous, is_repeat) {
             let temItem;
             if (!txAry.length) {
-                logger.info("暂无需要处理的交易")
-                pageUtility.init();
+                // logger.info("暂无需要处理的交易")
+                if (!is_repeat) {
+                    pageUtility.init();
+                }
                 return;
             }
 
@@ -79,8 +83,7 @@
             //  patrol_time 巡检时间
             //  send_error
 
-            //previous 用 send_block 发是没用的
-            tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
+
             try {
                 let accObj = await czr.request.accountBalance(generateOpt.from); //todo:获取send账号余额
                 if (accObj.code === 0) {
@@ -103,17 +106,21 @@
             if (remainder > 0) {
                 generateOpt.to = temItem.czr_account;
                 generateOpt.amount = temItem.value;
-                generateOpt.previous = tempPrevious;
+                generateOpt.previous = previous;
 
-                logger.info("generateOpt\n", generateOpt)
+                // logger.info("generateOpt\n", generateOpt)
+
                 let result;
                 try {
                     result = await czr.request.generateOfflineBlock(generateOpt);
                     if (result.code === 0) {
                         tempPrevious = result.hash;
+                        await pageUtility.insertSql(temItem.tx, result.previous);
                     } else if (result.code === 8) {
                         logger.info("余额不足!!!!!!!")
-                        pageUtility.init();
+                        if (!is_repeat) {
+                            pageUtility.init();
+                        }
                         return;
                     } else {
                         logger.info("generateOfflineBlock code出错了")
@@ -137,25 +144,30 @@
                     let sendResult = await czr.request.sendBlock(generateOpt);
                     if (sendResult.code === 0) {
                         //TODO:generateOpt增加巡检时间
-                        await pageUtility.insertSql(temItem.tx);
                         await pageUtility.updateCzrHash(temItem.tx, sendResult.hash);
                     } else {
                         logger.info("sendResult 出错了")
                         logger.error(sendResult)
                         throw "request.sendBlock 出错了";
                     }
-                    pageUtility.init();
+                    if (!is_repeat) {
+                        pageUtility.init();
+                    }
                 } catch (error) {
                     logger.info("request.sendBlock 出错了")
                     logger.error(error.message)
                     //如果出错了
                     //todo: 更新send error, status = 4(发送错误)
                     await pageUtility.updateErrorStatus(temItem.tx, error.message);
-                    pageUtility.init();
+                    if (!is_repeat) {
+                        pageUtility.init();
+                    }
                 }
             } else {
                 logger.info("余额不足")
-                pageUtility.init();
+                if (!is_repeat) {
+                    pageUtility.init();
+                }
                 return;
             }
         },
@@ -165,7 +177,7 @@
                     mapping_eth_log 
                 set 
                     czr_txhash = '${czr_hash}',
-                    patrol_time = ${Number(Date.parse(new Date())) + 30000}
+                    patrol_time = ${Number(Date.parse(new Date())) + 10000}
                 where 
                     tx= '${tx}'
             `
@@ -198,13 +210,14 @@
             }
         },
         //插入最后一笔交易的hash(tempPrevious)，和更新status需要在一个事务中
-        async insertSql(tx) {
+        async insertSql(tx, previous) {
             //更新eth_log表
             let updateStatus = `
                 update 
                     mapping_eth_log 
                 set 
-                    status = 2
+                    status = 2,
+                    previous = '${previous}'
                 where 
                     tx= '${tx}'
             `
@@ -267,11 +280,12 @@
             }, 1000 * 10);
         },
         async start() {
-            let nowTime = Number(Date.parse(new Date())) + 3000;
+            let nowTime = Number(Date.parse(new Date()));
             let SearchOptions = {
                 text: `
                     select 
-                        "tx","czr_txhash","patrol_time"
+                        "tx","czr_txhash","patrol_time",
+                        "czr_account","value","previous"
                     from 
                         mapping_eth_log 
                     where 
@@ -296,7 +310,7 @@
         async checkStatus(txAry) {
             let temAry = [];
             if (!txAry.length) {
-                logger.info("暂无需要更新的交易")
+                logger.info("暂无需要更新的交易-巡检")
                 patrol.init();
                 return;
             }
@@ -307,7 +321,7 @@
             try {
                 let blockStates = await czr.request.getBlockStates(temAry); //todo:获取send账号余额
                 if (blockStates.code === 0) {
-                    await patrol.filterData(blockStates.block_states);
+                    await patrol.filterData(blockStates.block_states, txAry);
                 } else {
                     logger.info("request.getBlockStates Error")
                     logger.info(blockStates)
@@ -320,11 +334,8 @@
             }
 
         },
-        async filterData(statusAry) {
+        async filterData(statusAry, txAry) {
             let tempItem;
-            let statusZeroAry = [];
-            let statusOneAry = [];
-            let statusTwoAry = [];
 
             for (let index = 0, len = statusAry.length; index < len;) {
                 tempItem = statusAry[index];
@@ -333,74 +344,93 @@
                     switch (tempItem.stable_content.status) {
                         case 0:
                             //成功 将status设为3（成功）
-                            statusZeroAry.push(tempItem.hash)
+                            try {
+                                await client.query(patrol.getUptatusSql(tempItem.hash, 3));
+                            } catch (error) {
+                                logger.info("将status设为 3 出错了")
+                                logger.error(error)
+                                throw error;
+                            }
                             break;
                         case 1:
                             //双花 将status设为4（失败，需人工处理）
-                            statusOneAry.push(tempItem.hash)
+                            try {
+                                await client.query(patrol.getUptatusSql(tempItem.hash, 4));
+                            } catch (error) {
+                                logger.info("将status设为 4 出错了")
+                                logger.error(error)
+                                throw error;
+                            }
                             break;
                         case 2:
                             //无效 将status设为1（即后面会重新发送）
-                            statusTwoAry.push(tempItem.hash)
+                            try {
+                                await client.query(patrol.getUptatusSql(tempItem.hash, 1));
+                            } catch (error) {
+                                logger.info("将status设为 1 出错了")
+                                logger.error(error)
+                                throw error;
+                            }
                             break;
                         case 3:
                             //合约错误 将status设为4（失败，需人工处理）
-                            statusOneAry.push(tempItem.hash)
+                            try {
+                                await client.query(patrol.getUptatusSql(tempItem.hash, 4));
+                            } catch (error) {
+                                logger.info("将status设为 4 出错了")
+                                logger.error(error)
+                                throw error;
+                            }
                             break;
-
+                        default:
+                            logger.info("case到不存在的值", tempItem.stable_content.status)
+                            throw `case到不存在的值，${tempItem.stable_content.status}`;
+                    }
+                } else {
+                    logger.info(`不稳定`)
+                    if (!tempItem) {
+                        //为null时候重发 index
+                        let reSend = txAry[index];
+                        logger.info("准备重发", reSend)
+                        try {
+                            await pageUtility.generateBlock([reSend], reSend.previous, true)
+                            logger.info("重发成功")
+                        } catch (error) {
+                            logger.info("重发出错了")
+                            logger.error(error)
+                            throw error;
+                        }
                     }
                 }
+                if (tempItem) {
+                    //为null时候重发 index
+                    let reSend = txAry[index];
+                    logger.info("准备重发", reSend)
+                    try {
+                        await pageUtility.generateBlock([reSend], reSend.previous, true)
+                        logger.info("重发成功")
+                    } catch (error) {
+                        logger.info("重发出错了")
+                        logger.error(error)
+                        throw error;
+                    }
+                }
+
                 index++;
             }
 
             //更新对应的值
-
-            try {
-                await client.query('BEGIN')
-                logger.info("更新 statusZeroAry", statusZeroAry)
-                logger.info("更新 statusOneAry", statusOneAry)
-                logger.info("更新 statusTwoAry", statusTwoAry)
-                if (statusZeroAry.length) {
-                    //（成功）
-                    await client.query(patrol.updateStatusSql(statusZeroAry, 3));
-                }
-                if (statusOneAry.length) {
-                    //（失败，需人工处理）
-                    await client.query(patrol.updateStatusSql(statusOneAry, 4));
-                }
-                if (statusTwoAry.length) {
-                    //（即后面会重新发送）
-                    await client.query(patrol.updateStatusSql(statusTwoAry, 1));
-                }
-                await client.query('COMMIT')
-                logger.info("Status 更新成功")
-                patrol.init();
-            } catch (e) {
-                logger.info("Status 更新失败")
-                logger.info(e)
-                logger.info(patrol.updateStatusSql(statusZeroAry, 3))
-                logger.info(patrol.updateStatusSql(statusOneAry, 4))
-                logger.info(patrol.updateStatusSql(statusTwoAry, 1))
-                throw e;
-            }
+            patrol.init();
         },
-        updateStatusSql(statusTwoAry, value) {
-            let tempUpdateAry = [];
-            statusTwoAry.forEach(element => {
-                tempUpdateAry.push(`('${element}')`);
-            });
+        getUptatusSql(czr_txhash, status) {
             //更新eth_log表
             let updateStatus = `
                 update 
                     mapping_eth_log 
                 set 
-                    status = ${value}
-                from 
-                    (values ${tempUpdateAry.toString()}) 
-                    as 
-                    temp (czr_txhash) 
+                    status = ${status}
                 where 
-                    mapping_eth_log.czr_txhash=temp.czr_txhash
+                    czr_txhash= '${czr_txhash}'
             `
             return updateStatus;
         }

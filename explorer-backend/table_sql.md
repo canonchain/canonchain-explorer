@@ -886,6 +886,7 @@ CREATE TABLE public.mapping_eth_log
     status smallint,
     block_number  numeric,
     czr_txhash  text,
+    previous  text,
     patrol_time  bigint,
     send_error  text,
     CONSTRAINT mapping_tx_pkey PRIMARY KEY (tx)
@@ -903,31 +904,6 @@ CREATE INDEX mapping_log_status
     ON public."mapping_eth_log" USING btree
     ("status")
     TABLESPACE pg_default;
-```
-
-### 离线交易信息
-
-```postgresql
-
-CREATE TABLE public.mapping_offline_block
-(
-    offline_block_id bigserial,
-    "hash" text,
-    "eth_tx" text,
-    "previous" text,
-    "from" text,
-    "to" text,
-    "signature" text,
-    "amount" numeric,
-    "gas" numeric,
-    "gas_price" numeric,
-    CONSTRAINT offline_block_hash_pkey PRIMARY KEY (hash)
-)
-WITH (
-    OIDS = FALSE
-)
-TABLESPACE pg_default;
-
 ```
 
 ## 映射的Block Number表
