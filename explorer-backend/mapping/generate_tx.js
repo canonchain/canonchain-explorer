@@ -59,8 +59,7 @@
             try {
                 let data = await client.query(SearchOptions);
                 //previous 用 send_block 发是没用的
-                tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
-                await pageUtility.generateBlock(data.rows, tempPrevious)
+                await pageUtility.generateBlock(data.rows)
                 pageUtility.init();
             } catch (error) {
                 logger.info("getAccInfo 出错了")
@@ -104,9 +103,10 @@
                 let remainder = BigNumber(send_balance).minus(temItem.value).toNumber();
                 logger.info(`send_balance:${send_balance} temItem.value：${temItem.value}`)
                 if (remainder > 0) {
+                    tempPrevious = await pageUtility.getLatestHash(); //从数据库获取
                     generateOpt.to = temItem.czr_account;
                     generateOpt.amount = temItem.value;
-                    generateOpt.previous = previous;
+                    generateOpt.previous = previous || tempPrevious;
 
                     // logger.info("generateOpt\n", generateOpt)
                     try {
@@ -140,10 +140,11 @@
                         }
                     } catch (error) {
                         logger.info("request.sendBlock 出错了")
-                        logger.error(error.message)
+                        logger.error(error)
                         //如果出错了
                         //todo: 更新send error, status = 4(发送错误)
-                        await pageUtility.updateErrorStatus(temItem.eth_hash, error.message);
+                        // await pageUtility.updateErrorStatus(temItem.eth_hash, error.message);
+                        throw error;
                     }
                 } else {
                     logger.info("余额不足")
@@ -153,25 +154,6 @@
             }
 
 
-        },
-        async updateErrorStatus(eth_hash, message) {
-            let updateStatus = `
-                update 
-                    mapping_eth_log 
-                set
-                    status = 4,
-                    send_error = '${message}'
-                where
-                    eth_hash= '${eth_hash}'
-            `
-            try {
-                await client.query(updateStatus);
-            } catch (error) {
-                logger.info("updateErrorStatus 更新失败")
-                logger.info(updateStatus)
-                logger.info(error)
-                throw error;
-            }
         },
         //插入最后一笔交易的hash(tempPrevious)，和更新status需要在一个事务中
         async updateLogAndLatestHash(eth_hash, previous, czr_hash) {

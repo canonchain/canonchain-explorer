@@ -636,7 +636,7 @@
 
                 //DO 解析log
                 //事件日志表，部署合约时跳过，Token转账之类会有
-                if (blockInfo.log.length) {
+                if (blockInfo.log && blockInfo.log.length) {
                     // logger.info('解析log信息');
                     blockInfo.is_event_log = true;
                     let tempTransTokenInsertInfo = {};
