@@ -335,7 +335,7 @@ router.get("/get_accounts", async function (req, res, next) {
         accounts.forEach((element, index) => {
             // element.true_balance = element.balance;
             //占比 element.balance / 1618033988 TODO 1132623791.6 这个值后期会修改
-            element.proportion = ((element.balance / (1132623791.6 * 1000000000000000000)) * 100).toFixed(10) + " %";
+            element.proportion = ((element.balance / (1618033988 * 1000000000000000000)) * 100).toFixed(10) + " %";
         });
 
         responseData = {
