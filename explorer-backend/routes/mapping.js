@@ -206,7 +206,7 @@ router.get("/get_status_multi_sum", async function (req, res, next) {
         }
     } else {
         responseData = {
-            data: data.rows ? data.rows[0].count : "0",
+            data: data.rows[0].sum ? data.rows[0].sum : "0",
             code: 200,
             success: true,
             message: "success"

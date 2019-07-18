@@ -113,7 +113,7 @@
                         result = await czr.request.generateOfflineBlock(generateOpt);
                         if (result.code === 0) {
                             tempPrevious = result.hash;
-                            await pageUtility.updateLogAndLatestHash(temItem.eth_hash, result.previous);
+                            await pageUtility.updateLogAndLatestHash(temItem.eth_hash, result.previous, result.hash);
                         } else if (result.code === 8) {
                             logger.info("余额不足!!!!!!!")
                             return;
@@ -133,9 +133,7 @@
                     try {
                         //sendBlock 不需要 Previous 参数
                         let sendResult = await czr.request.sendBlock(generateOpt);
-                        if (sendResult.code === 0) {
-                            await pageUtility.updateCzrHash(temItem.eth_hash, sendResult.hash);
-                        } else {
+                        if (sendResult.code !== 0) {
                             logger.info("sendResult 出错了")
                             logger.error(sendResult)
                             throw "request.sendBlock 出错了";
@@ -155,24 +153,6 @@
             }
 
 
-        },
-        async updateCzrHash(eth_hash, czr_hash) {
-            let updateStatus = `
-                update 
-                    mapping_eth_log 
-                set 
-                    czr_hash = '${czr_hash}'
-                where 
-                    eth_hash= '${eth_hash}'
-            `
-            try {
-                await client.query(updateStatus);
-            } catch (error) {
-                logger.info("update Czr Hash 更新失败")
-                logger.info(updateStatus)
-                logger.info(error)
-                throw error;
-            }
         },
         async updateErrorStatus(eth_hash, message) {
             let updateStatus = `
@@ -194,7 +174,7 @@
             }
         },
         //插入最后一笔交易的hash(tempPrevious)，和更新status需要在一个事务中
-        async updateLogAndLatestHash(eth_hash, previous) {
+        async updateLogAndLatestHash(eth_hash, previous, czr_hash) {
             //更新eth_log表
             let updateStatus = `
                 update 
@@ -202,6 +182,7 @@
                 set 
                     status = 2,
                     previous = '${previous}',
+                    czr_hash = '${czr_hash}',
                     patrol_time = ${Number(Date.parse(new Date())) + 10000}
                 where 
                     eth_hash= '${eth_hash}'
@@ -284,7 +265,7 @@
             };
 
             try {
-                let data = await client.query(SearchOptions);
+                let data = await pgPromise.query(SearchOptions);
                 await patrol.checkStatus(data.rows);
                 patrol.init();
             } catch (error) {
@@ -330,7 +311,7 @@
                         case 0:
                             //成功 将status设为3（成功）
                             try {
-                                await client.query(patrol.getUptatusSql(tempItem.hash, 3));
+                                await pgPromise.query(patrol.getUptatusSql(tempItem.hash, 3));
                             } catch (error) {
                                 logger.info("将status设为 3 出错了")
                                 logger.error(error)
@@ -340,7 +321,7 @@
                         case 1:
                             //双花 将status设为4（失败，需人工处理）
                             try {
-                                await client.query(patrol.getUptatusSql(tempItem.hash, 4));
+                                await pgPromise.query(patrol.getUptatusSql(tempItem.hash, 4));
                             } catch (error) {
                                 logger.info("将status设为 4 出错了")
                                 logger.error(error)
@@ -350,7 +331,7 @@
                         case 2:
                             //无效 将status设为1（即后面会重新发送）
                             try {
-                                await client.query(patrol.getUptatusSql(tempItem.hash, 1));
+                                await pgPromise.query(patrol.getUptatusSql(tempItem.hash, 1));
                             } catch (error) {
                                 logger.info("将status设为 1 出错了")
                                 logger.error(error)
@@ -360,7 +341,7 @@
                         case 3:
                             //合约错误 将status设为4（失败，需人工处理）
                             try {
-                                await client.query(patrol.getUptatusSql(tempItem.hash, 4));
+                                await pgPromise.query(patrol.getUptatusSql(tempItem.hash, 4));
                             } catch (error) {
                                 logger.info("将status设为 4 出错了")
                                 logger.error(error)
