@@ -8,6 +8,8 @@ var pgPromise = PgPromise.pool;
 let log4js = require('../database/log_config');
 let logger = log4js.getLogger('read_db');//此处使用category的值
 
+let BigNumber = require('bignumber.js').default;
+
 // 返回值
 var responseData = null;
 router.use(responseTime())
@@ -207,6 +209,73 @@ router.get("/get_status_multi_sum", async function (req, res, next) {
     } else {
         responseData = {
             data: data.rows[0].sum ? data.rows[0].sum : "0",
+            code: 200,
+            success: true,
+            message: "success"
+        }
+    }
+    res.json(responseData);
+})
+
+router.get("/get_planned_amount", async function (req, res, next) {
+    //查询为1的
+    let sql = {
+        text: `
+            Select 
+                sum (value)
+            FROM 
+                mapping_eth_log
+            where
+                "status" = 1
+                or
+                "status" = 2
+        `
+    };
+    let data1 = await pgPromise.query(sql)
+    let data1Resu;
+
+    if (data1.code) {
+        responseData = {
+            data: "0",
+            code: 500,
+            success: false,
+            message: 'select from mapping_eth_log sum error'
+        }
+        res.json(responseData);
+    } else {
+        data1Resu = data1.rows[0].sum ? data1.rows[0].sum : "0";
+    }
+
+    //查询为2的
+    let sql2 = {
+        text: `
+            Select 
+                count(1)
+            FROM 
+                mapping_eth_log
+            where
+                "status" = 1
+                or
+                "status" = 2
+        `
+    };
+    let data2 = await pgPromise.query(sql2)
+    let data2Resu;
+    if (data2.code) {
+        responseData = {
+            data: "0",
+            code: 500,
+            success: false,
+            message: 'select from mapping_eth_log count error'
+        }
+        res.json(responseData);
+    } else {
+        data2Resu = data2.rows[0].count ? data2.rows[0].count : "0";
+        let feeBig = BigNumber("420000000000000000").multipliedBy(data2Resu);
+        let sumTotal = BigNumber(data1Resu).plus(feeBig).toString();
+
+        responseData = {
+            data: sumTotal,
             code: 200,
             success: true,
             message: "success"
