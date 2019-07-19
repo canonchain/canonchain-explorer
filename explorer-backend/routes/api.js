@@ -302,7 +302,7 @@ router.get("/get_accounts", async function (req, res, next) {
            LIMIT
                $3
            `,
-            values: [Number(queryVal.acc_id), Number(queryVal.balance), LIMIT_VAL]
+            values: [queryVal.acc_id, queryVal.balance, LIMIT_VAL]
         }
     } else {
         res.json(paramError);
