@@ -1,9 +1,7 @@
 <template>
     <div id="header">
         <div class="container header-wrap">
-            <nav
-                class="navbar navbar-expand-md navbar-dark justify-content-between"
-            >
+            <nav class="navbar navbar-expand-md navbar-dark justify-content-between">
                 <router-link to="/">
                     <img src="@/assets/logo.png" alt="Logo" class="czr-logo" />
                 </router-link>
@@ -17,50 +15,32 @@
                 </button>
             </nav>
 
-            <nav
-                class="header-navs navbar navbar-expand-md navbar-dark justify-content-between"
-            >
+            <nav class="header-navs navbar navbar-expand-md navbar-dark justify-content-between">
                 <div class="collapse navbar-collapse" id="collapsibleNavbar">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/"
-                                >首页</router-link
-                            >
+                            <router-link class="nav-link" to="/">首页</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/accounts"
-                                >账户</router-link
-                            >
+                            <router-link class="nav-link" to="/accounts">账户</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/normal_trans"
-                                >普通交易</router-link
-                            >
+                            <router-link class="nav-link" to="/normal_trans">普通交易</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/witness_trans"
-                                >见证交易</router-link
-                            >
+                            <router-link class="nav-link" to="/witness_trans">见证交易</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/tokens"
-                                >代币</router-link
-                            >
+                            <router-link class="nav-link" to="/tokens">代币</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/internals"
-                                >合约内交易</router-link
-                            >
+                            <router-link class="nav-link" to="/internals">合约内交易</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link class="nav-link" to="/mapping_log"
-                                >映射记录</router-link
-                            >
+                            <router-link class="nav-link" to="/mapping_log">主网映射</router-link>
                         </li>
                         <li class="nav-item" v-if="is_mobile == false">
-                            <router-link class="nav-link" to="/dag"
-                                >DAG</router-link
-                            >
+                            <router-link class="nav-link" to="/dag">DAG</router-link>
                         </li>
                     </ul>
                 </div>

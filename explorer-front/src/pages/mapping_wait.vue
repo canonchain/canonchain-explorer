@@ -44,7 +44,7 @@
                                 </el-table-column>
                                 <el-table-column
                                     prop="value"
-                                    label="数量"
+                                    label="金额"
                                     min-width="190"
                                     align="right"
                                 >
