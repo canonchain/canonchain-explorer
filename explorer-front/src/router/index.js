@@ -13,6 +13,10 @@ import BlockAdvancedInfo from '@/pages/Block/advanced_info'
 //internal
 import Internals from '@/pages/internals'
 
+//mapping
+import MappingLog from '@/pages/mapping_log'
+import MappingWait from '@/pages/mapping_wait'
+
 // account
 import AccountTransaction from '@/pages/Account/transaction'
 import AccountTokenBalances from '@/pages/Account/token_balances'
@@ -154,6 +158,17 @@ export default new Router({
       path: '/internals',
       name: 'Internals',
       component: Internals
+    },
+    //mapping
+    {
+      path: '/mapping_log',
+      name: 'MappingLog',
+      component: MappingLog
+    },
+    {
+      path: '/mapping_wait',
+      name: 'MappingWait',
+      component: MappingWait
     },
     // 404
     {

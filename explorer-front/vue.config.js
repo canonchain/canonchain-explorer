@@ -14,6 +14,13 @@ module.exports = {
     },
     devServer: {
         proxy: {
+            '/mapping': {
+                target: 'http://localhost:8001',   //代理接口
+                changeOrigin: true,
+                pathRewrite: {
+                    '^/mapping': '/mapping'    //代理的路径
+                }
+            },
             '/api': {
                 target: 'http://localhost:8001',   //代理接口
                 changeOrigin: true,

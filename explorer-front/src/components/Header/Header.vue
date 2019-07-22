@@ -52,6 +52,11 @@
                                 >合约内交易</router-link
                             >
                         </li>
+                        <li class="nav-item">
+                            <router-link class="nav-link" to="/mapping_log"
+                                >映射记录</router-link
+                            >
+                        </li>
                         <li class="nav-item" v-if="is_mobile == false">
                             <router-link class="nav-link" to="/dag"
                                 >DAG</router-link

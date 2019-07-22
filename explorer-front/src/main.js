@@ -21,6 +21,7 @@ import './theme/element/table.css';
 import './theme/element/tabs.css';
 
 import {
+  Pagination,
   Table,
   TableColumn,
   Row,
@@ -32,10 +33,12 @@ import {
   ButtonGroup,
   Tabs,
   TabPane,
+  
   Loading,
   Message
 } from 'element-ui';
 
+Vue.use(Pagination);
 Vue.use(Table);
 Vue.use(TableColumn);
 Vue.use(Row);

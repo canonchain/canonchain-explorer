@@ -124,6 +124,8 @@ a {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    position: relative;
+    top: 3px;
 }
 .contract-code {
     display: block;
@@ -185,6 +187,14 @@ a {
     min-height: 550px;
     padding: 20px 0;
     background-color: #fff;
+}
+.page-mapping .list-wrap {
+    min-height: 550px;
+    padding: 0;
+    background-color: #fff;
+}
+.page-mapping .container {
+    padding-top: 5px;
 }
 .pagin-block {
     display: block;
@@ -356,5 +366,9 @@ a {
 .info-null .info-null-icon {
     margin: 0 auto 20px;
     font-size: 86px;
+}
+.pagination-wrap {
+    padding: 10px 0;
+    text-align: right;
 }
 </style>
