@@ -7,7 +7,7 @@ let defaultPath = path.join(basePath, '/default_database/');
 let writeDbPath = path.join(basePath, '/write_database/');
 let mappingWriteSql = path.join(basePath, '/mapping_write_sql/');
 let mappingGenerateSql = path.join(basePath, '/mapping_generate_sql/');
-let mappingSendSql = path.join(basePath, '/mapping_send_sql/');
+let webapiLog = path.join(basePath, '/webapi_log/');
 let readDbPath = path.join(basePath, '/read_database/');
 let sqlPath = path.join(basePath, '/pg_sql/');
 
@@ -24,7 +24,7 @@ if (basePath) {
     confirmPath(writeDbPath);
     confirmPath(mappingWriteSql);
     confirmPath(mappingGenerateSql);
-    confirmPath(mappingSendSql);
+    confirmPath(webapiLog);
     confirmPath(readDbPath);
 }
 
@@ -55,9 +55,9 @@ log4js.configure({
             "pattern": "yyyy-MM-dd-hh.log",
             alwaysIncludePattern: true
         },
-        mapping_send_sql: {
+        webapi_log: {
             type: 'dateFile',
-            filename: mappingSendSql,
+            filename: webapiLog,
             "pattern": "yyyy-MM-dd-hh.log",
             alwaysIncludePattern: true
         },
@@ -91,8 +91,8 @@ log4js.configure({
             appenders: ['mapping_generate_sql'],
             level: 'info'
         },
-        mapping_send_sql: {
-            appenders: ['mapping_send_sql'],
+        webapi_log: {
+            appenders: ['webapi_log'],
             level: 'info'
         },
         read_db: {

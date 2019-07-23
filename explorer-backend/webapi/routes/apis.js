@@ -8,8 +8,13 @@ let czr = new Czr();
 var PgPromise = require('../../database/PG-promise');// 引用上述文件
 var pgPromise = PgPromise.pool;
 
+//写日志
+let log4js = require('../../database/log_config');
+let logger = log4js.getLogger('webapi_log');//此处使用category的值
+
 //定時獲取apikeys
-let allApikeys = ["YourApiKeyToken"]; //緩存所有的apikeys
+// let allApikeys = ["YourApiKeyToken"]; //緩存所有的apikeys
+let allApikeys = []; //緩存所有的apikeys
 let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
@@ -25,24 +30,36 @@ async function updtAPikeys() {
 }
 
 //判断字符串是不是一个address 
-function  invalidAcct(acct){
-  let pat = /czr_[0-9a-z]{50,}/i;
-  return pat.test(acct)?  false:true 
-}
+// function  invalidAcct(acct){
+//   let pat = /czr_[0-9a-z]{50,}/i;
+//   return pat.test(acct)?  false:true 
+// }
 
 
 //判断字符串是不是一个交易hash
-function invalidTxHash(hash){
+function invalidTxHash(hash) {
   let pat = /[0-9a-f]{64,}/i
-  return  pat.test(hash)? false:true
+  return pat.test(hash) ? false : true
 }
 
 // db end
 router.prefix('/apis')
 
+let ERROR_MSG = {
+  SYSTEM: {
+    "code": 500,
+    "msg": "Webapi system error",
+    "result": ""
+  },
+  PARAM_NULL: {
+    "code": 400,
+    "msg": "Parameter not found",
+    "result": ""
+  }
+}
+
+
 // ******************************** 账户模块 开始
-
-
 /**
  * 
  * 接口：验证时不时合法的czr地址
@@ -60,12 +77,19 @@ router.prefix('/apis')
       "result":true      /    false
     }
  */
-async function account_validate(account){
-  let rlt = await czr.request.accountValidate(account);
-  return {
-      "code":100,
-      "msg":"ok",
-      "result":rlt.valid?  true : false
+async function account_validate(account) {
+  try {
+    let rlt = await czr.request.accountValidate(account);
+    //rlt.valid 验证结果，0：格式不合法，1：格式合法。
+    return {
+      "code": 100,
+      "msg": "ok",
+      "result": rlt.valid ? true : false
+    }
+  } catch (error) {
+    logger.error("account_validate error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -78,7 +102,6 @@ async function account_validate(account){
         module  : account
         action  : balance
         account : czr_account
-        tag     : latest
         apikey  : YourApiKeyToken
       }
   * 返回
@@ -89,17 +112,22 @@ async function account_validate(account){
     }
 */
 //获取单个账户的余额
-async function get_balance(query) {
-
-  let listOptions = {
-    text: "select balance from accounts where account = $1",
-    values: [query.account]
-  };
-  const resList = await pgPromise.query(listOptions);
-  return {
-    "code": 100,
-    "msg": "OK",
-    "result": resList.rowCount? resList.rows[0].balance : "0"
+async function account_balance(query) {
+  try {
+    let listOptions = {
+      text: "select balance from accounts where account = $1",
+      values: [query.account]
+    };
+    const resList = await pgPromise.query(listOptions);
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": resList.rowCount ? resList.rows[0].balance : "0"
+    }
+  } catch (error) {
+    logger.error("account_balance error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -110,7 +138,6 @@ async function get_balance(query) {
         module  : account
         action  : balance_multi
         account : czr_account1,czr_account2
-        tag     : latest
         apikey  : YourApiKeyToken
       }
   * 返回
@@ -130,33 +157,40 @@ async function get_balance(query) {
       }
 */
 //获取多个账户的余额
-async function get_balance_multi(query) {
-  let addressAry = query.account.split(',')
-  let account_multi_rlt = {}
-  addressAry.forEach(item =>{
-    account_multi_rlt[item] = "0"
-  })
-  let listOptions = {
-    text: "select account,balance from accounts where account = ANY ($1)",
-    values: [addressAry]
-  };
-  const resList = await pgPromise.query(listOptions);
-  if(resList.rowCount){
-    resList.rows.forEach(item => {
-      account_multi_rlt[item.account] = item.balance
+async function account_balance_multi(query) {
+  try {
+    let addressAry = query.account.split(',')
+    let account_multi_rlt = {}
+    addressAry.forEach(item => {
+      account_multi_rlt[item] = "0"
     })
-  }
-  let account_multi_rlt_ary = [];
-    Object.keys(account_multi_rlt).forEach(item=>{
+    let listOptions = {
+      text: "select account,balance from accounts where account = ANY ($1)",
+      values: [addressAry]
+    };
+    const resList = await pgPromise.query(listOptions);
+
+    if (resList.rowCount) {
+      resList.rows.forEach(item => {
+        account_multi_rlt[item.account] = item.balance
+      })
+    }
+    let account_multi_rlt_ary = [];
+    Object.keys(account_multi_rlt).forEach(item => {
       account_multi_rlt_ary.push({
-        "account":item,
-        "balance":account_multi_rlt[item]
+        "account": item,
+        "balance": account_multi_rlt[item]
       })
     })
-  return {
-    "code": 100,
-    "msg": "OK", 
-    "result": account_multi_rlt_ary
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": account_multi_rlt_ary
+    }
+  } catch (error) {
+    logger.error("account_balance_multi error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -191,11 +225,11 @@ async function get_balance_multi(query) {
     }
 */
 //获取单个账户的交易列表Normal
-async function tx_list(query) {
-  
-  let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
-  let sql = {
-    text: `select 
+async function account_txlist(query) {
+  try {
+    let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
+    let sql = {
+      text: `select 
             "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price"
           from
             trans_normal  
@@ -204,35 +238,40 @@ async function tx_list(query) {
           order by 
             mc_timestamp ${SORTVAL}   
           `,
-    values: [query.account]
-  }
-  if (query.page) {
-    let limitVal = Number(query.offset) || 10;
-    let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0; 
-    if(limitVal<0 || offsetVal<0){
-      return{
-        "code":400,
-        "msg":"parameter page and offset must be positive"
-      }
+      values: [query.account]
     }
-    sql.text += `offset
+    if (query.page) {
+      let limitVal = Number(query.offset) || 10;
+      let offsetVal = Number(query.page) ? (Number(query.page) - 1) * limitVal : 0;
+      if (limitVal < 0 || offsetVal < 0) {
+        return {
+          "code": 400,
+          "msg": "parameter page and offset must be positive"
+        }
+      }
+      sql.text += `offset
                   $2
                 limit
                   $3
                 `;
-    sql.values.push(offsetVal, limitVal);
-  } else {
-    sql.text += `
+      sql.values.push(offsetVal, limitVal);
+    } else {
+      sql.text += `
                 limit
                   10000
                 `;
-  }
-  let sqlrlt = await pgPromise.query(sql);
+    }
+    let sqlrlt = await pgPromise.query(sql);
 
-  return {
-    "code": 100,
-    "msg": "ok",
-    "result": sqlrlt.rows
+    return {
+      "code": 100,
+      "msg": "ok",
+      "result": sqlrlt.rows
+    }
+  } catch (error) {
+    logger.error("account_txlist error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -274,11 +313,11 @@ async function tx_list(query) {
     }
 */
 //获取单个账户的交易列表Internal 
-async function tx_list_internal(query) {
-  
-  let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
-  let sql = {
-    text: `select 
+async function account_txlist_internal(query) {
+  try {
+    let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
+    let sql = {
+      text: `select 
           "type", "call_type" ,"from","to","gas","input","value","gas_used","output","subtraces","trace_address"
           from
             trans_internal  
@@ -287,54 +326,63 @@ async function tx_list_internal(query) {
           order by 
             mc_timestamp ${SORTVAL}   
           `
-    , 
-    values: [query.account]
-  }
-  if (query.page) {
-    let limitVal = Number(query.offset) || 10;
-    let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
-    if(limitVal<0 || offsetVal<0){
-      return{
-        "code":400,
-        "msg":"parameter page and offset must be positive"
-      }
+      ,
+      values: [query.account]
     }
-    sql.text += `offset
+    if (query.page) {
+      let limitVal = Number(query.offset) || 10;
+      let offsetVal = Number(query.page) ? (Number(query.page) - 1) * limitVal : 0;
+      if (limitVal < 0 || offsetVal < 0) {
+        return {
+          "code": 400,
+          "msg": "parameter page and offset must be positive"
+        }
+      }
+      sql.text += `offset
                   $2
                 limit
                   $3
                 `;
-    sql.values.push(offsetVal, limitVal);
-  } else {
-    sql.text += `
+      sql.values.push(offsetVal, limitVal);
+    } else {
+      sql.text += `
                 limit
                   10000
                 `;
-  }
-  let sqlrlt = await pgPromise.query(sql);
-  let retrlt = [];
-  if(sqlrlt.rowCount){
-    for(let i=0;i<sqlrlt.rowCount;i++){
-      retrlt[i] = { "type": sqlrlt.rows[i].type,"subtraces":sqlrlt.rows[i].subtraces,"trace_address":sqlrlt.rows[i].trace_address.split('_')}
-      retrlt[i].action = {
-        "call_type": sqlrlt.rows[i].call_type,
-        "from": sqlrlt.rows[i].from,
-        "to": sqlrlt.rows[i].to,
-        "gas": sqlrlt.rows[i].gas,
-        "input": sqlrlt.rows[i].input,
-        "value": sqlrlt.rows[i].value
-      };
-      retrlt[i].result = {
-        "gas_used": sqlrlt.rows[i].gas_used,
-        "output": sqlrlt.rows[i].output,
-      };
     }
-  }
+    let sqlrlt = await pgPromise.query(sql);
+    let retrlt = [];
+    if (sqlrlt.rowCount) {
+      for (let i = 0; i < sqlrlt.rowCount; i++) {
+        retrlt[i] = {
+          "type": sqlrlt.rows[i].type,
+          "subtraces": sqlrlt.rows[i].subtraces,
+          "trace_address": sqlrlt.rows[i].trace_address.split('_')
+        }
+        retrlt[i].action = {
+          "call_type": sqlrlt.rows[i].call_type,
+          "from": sqlrlt.rows[i].from,
+          "to": sqlrlt.rows[i].to,
+          "gas": sqlrlt.rows[i].gas,
+          "input": sqlrlt.rows[i].input,
+          "value": sqlrlt.rows[i].value
+        };
+        retrlt[i].result = {
+          "gas_used": sqlrlt.rows[i].gas_used,
+          "output": sqlrlt.rows[i].output,
+        };
+      }
+    }
 
-  return {
-    "code": 100,
-    "msg": "ok",
-    "result": retrlt
+    return {
+      "code": 100,
+      "msg": "ok",
+      "result": retrlt
+    }
+  } catch (error) {
+    logger.error("account_txlist_internal error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -343,7 +391,7 @@ async function tx_list_internal(query) {
 * 参数:
     {
         module    : account
-        action    : txlist_count
+        action    : account_txlist_count
         account   : czr_xx
         apikey    : YourApiKeyToken
     }
@@ -355,14 +403,27 @@ async function tx_list_internal(query) {
   }
 */
 //获取单个账户的交易数量
-async function txlist_count(query){  
-  
-  let sql = `select count("from") from trans_normal where "from" = '${query.account}' or "to" = '${query.account}'` ;
-  let res = await pgPromise.query(sql);
-  return {
-    "code": 100,
-    "msg": "OK",
-    "result": res.rows[0]['count']
+async function account_txlist_count(query) {
+  try {
+    let sql = `
+      select 
+        "transaction_count"
+      from 
+        accounts
+      where 
+        "account" = '${query.account}'
+    `;
+
+    let res = await pgPromise.query(sql);
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": res.rows ? res.rows[0]['transaction_count'] : "0"
+    }
+  } catch (error) {
+    logger.error("account_txlist_count error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -371,7 +432,7 @@ async function txlist_count(query){
 * 参数:
     {
         module   : account
-        action   : balance_crc
+        action   : account_balance_token
         account  : czr_xx
         contract_account: (可选)czr_xx ,指定token账户
         apikey   : YourApiKeyToken
@@ -384,22 +445,35 @@ async function txlist_count(query){
   }
 */
 //获取单个账户的CRC20余额
-async function balance_crc(query){
-  let sql = `select account,contract_account,'name',symbol,precision,balance from token_asset where account = '${query.account}'`
-  if (query.contract_account){
-    sql += ` and contract_account = '${query.contract_account}'`
-    let rlt= await pgPromise.query(sql);
+async function account_balance_token(query) {
+  try {
+    let sql = `
+    select 
+      account,contract_account,'name',symbol,precision,balance 
+    from 
+      token_asset 
+    where 
+      account = '${query.account}'
+    `
+    if (query.contract_account) {
+      sql += ` and contract_account = '${query.contract_account}'`
+      let rlt = await pgPromise.query(sql);
+      return {
+        "code": 100,
+        "msg": "OK",
+        "result": rlt.rowCount ? rlt.rows[0] : 0
+      }
+    }
+    let rlt = await pgPromise.query(sql);
     return {
       "code": 100,
       "msg": "OK",
-      "result": rlt.rowCount? rlt.rows[0]:0
+      "result": rlt.rows
     }
-  }
-  let rlt= await pgPromise.query(sql);
-  return {
-    "code": 100,
-    "msg": "OK",
-    "result": rlt.rows
+  } catch (error) {
+    logger.error("account_balance_token error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
 
@@ -408,7 +482,7 @@ async function balance_crc(query){
 * 参数:
     {
         module          : account
-        action          : txlist_crc
+        action          : account_txlist_token
         account         : czr_xx
         contractaddress : czr_xx
         page            : 1
@@ -435,52 +509,57 @@ async function balance_crc(query){
       }
 */
 //获取单个账户的CRC20交易
-async  function txlist_crc(query){
-
-  let sort = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
-  let sql = { 
-            text:
-            `select 
-                "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount" 
-            from 
-              trans_token
-            where
-            ` + 
-            (!query.contractaddress?`  "from" = '${query.account}' or "to" = '${query.account}' `:
-            `  ( "from" = '${query.account}' or "to" = '${query.account}') and  "contract_account" = '${query.contractaddress}' `) +
-            `order by 
-              stable_index ${sort} 
-            `}
-  if (query.page) {
-    let limitVal = Number(query.limit) || 10;
-    let offsetVal = Number(query.page) ? (Number(query.page)-1) * limitVal : 0;
-    if(limitVal<0 || offsetVal<0){
-      return{
-        "code":400,
-        "msg":"parameter page and offset must be positive"
-      }
+async function account_txlist_token(query) {
+  try {
+    let sort = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
+    let sql = {
+      text:
+        `select 
+                  "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount" 
+              from 
+                trans_token
+              where
+              ` +
+        (!query.contractaddress ? `  "from" = '${query.account}' or "to" = '${query.account}' ` :
+          `  ( "from" = '${query.account}' or "to" = '${query.account}') and  "contract_account" = '${query.contractaddress}' `) +
+        `order by 
+                stable_index ${sort} 
+              `
     }
-    sql.text += `offset
-                  $1
-                limit
-                  $2
-                `;
-    sql.values = [offsetVal, limitVal];
-  } else {
-    sql.text += `limit
-                  10000;
-                `;
-  }
-  // return sql.text
-  let rlt= await pgPromise.query(sql);
-  return {
-    "code": 100,
-    "msg": "OK",
-    "result": rlt.rows
+
+    if (query.page) {
+      let limitVal = Number(query.limit) || 10;
+      let offsetVal = Number(query.page) ? (Number(query.page) - 1) * limitVal : 0;
+      if (limitVal < 0 || offsetVal < 0) {
+        return {
+          "code": 400,
+          "msg": "parameter page and offset must be positive"
+        }
+      }
+      sql.text += `offset
+                    $1
+                  limit
+                    $2
+                  `;
+      sql.values = [offsetVal, limitVal];
+    } else {
+      sql.text += `limit
+                    10000;
+                  `;
+    }
+    // return sql.text
+    let rlt = await pgPromise.query(sql);
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": rlt.rows
+    }
+  } catch (error) {
+    logger.error("account_txlist_token error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
 }
-
-
 // ******************************** 账户模块 结束
 
 
@@ -495,7 +574,7 @@ async  function txlist_crc(query){
 * 参数:
     {
       module  : transaction
-      action  : generate_offline_block
+      action  : tx_offline_generation
       previous：""                    可选 | 源账户的上一笔交易hash。可用于替换无法被打包的交易。
       from: "czr_account1"            源账户。
       to: "czr_account2"              目标账户。
@@ -521,63 +600,74 @@ async  function txlist_crc(query){
     }
 */
 //生成离线交易
-async function generate_offline_block(query){
-
-  if(!query.from || !query.to){
+async function tx_offline_generation(query) {
+  if (!query.from || !query.to) {
     return {
-      "code":400,
-      "msg":"parameter from and to is required"
+      "code": 400,
+      "msg": "parameter from and to is required"
     }
   }
-  let valid_from = await account_validate(query.from);
-  let valid_to = await account_validate(query.to);
-  if(!valid_from.result || !valid_to.result){
-    return {
-      "code":400,
-      "msg":"from or to is invalid format"
+  try {
+    let valid_from = await account_validate(query.from);
+    let valid_to = await account_validate(query.to);
+    //用code判断
+    if ((valid_from.code !== 100) || (valid_to.code !== 100)) {
+      return {
+        "code": 400,
+        "msg": "from or to is invalid format"
+      }
     }
-  }
-  if(!(+query.amount >= 0 )){
-    return{
-      "code":400,
-      "msg":"parameter amount is required and must not Negative"
+    if (!(+query.amount >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter amount is required and must not Negative"
+      }
     }
-  }
-  if(!( +query.gas >= 0)){
-    return{
-      "code":400,
-      "msg":"parameter gas is required and must not Negative"
+    if (!(+query.gas >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter gas is required and must not Negative"
+      }
     }
-  }
-  if(!( +query.gas_price >= 0)){
-    return{
-      "code":400,
-      "msg":"parameter gas_price is required and must not Negative"
+    if (!(+query.gas_price >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter gas_price is required and must not Negative"
+      }
     }
-  }
-  let transation  = {
-    "from":query.from,
-    "to":query.to,
-    "amount":query.amount,
-    "gas":query.gas,
-    "gas_price":query.gas_price
-  }
-  if(query.previous){transation.previous=query.previous}
-  if(query.data){transation.data=query.data}
+    let transation = {
+      "from": query.from,
+      "to": query.to,
+      "amount": query.amount,
+      "gas": query.gas,
+      "gas_price": query.gas_price
+    }
+    if (query.previous) { transation.previous = query.previous }
+    if (query.data) { transation.data = query.data }
 
-  let czrRlt = await czr.request.generateOfflineBlock(transation)
-  let retRlt = {}
-  retRlt.code = czrRlt.code? 401:100
-  retRlt.msg = czrRlt.msg
-  if(!czrRlt.code){
-    let rltAry = Object.keys(czrRlt)
-    retRlt.result = {}
-    for(let i=2;i<rltAry.length;i++){
-      retRlt.result[rltAry[i]] = czrRlt[rltAry[i]]
+    let czrRlt = await czr.request.generateOfflineBlock(transation)
+    let retRlt = {
+      code: czrRlt.code ? 401 : 100,
+      msg: czrRlt.msg
     }
+    if (!czrRlt.code) {
+      retRlt.result = {
+        "hash": czrRlt.hash,
+        "previous": czrRlt.previous,
+        "from": czrRlt.from,
+        "to": czrRlt.to,
+        "amount": czrRlt.amount,
+        "gas": czrRlt.gas,
+        "gas_price": czrRlt.gas_price,
+        "data": czrRlt.data || ""
+      }
+    }
+    return retRlt;
+  } catch (error) {
+    logger.error("tx_offline_generation error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
-  return retRlt
-  
 }
 
 /** 
@@ -585,7 +675,7 @@ async function generate_offline_block(query){
 * 参数:
     {
       module  : transaction
-      action  : send_offline_block
+      action  : tx_offline_sending
       previous: "A5E40538D4FA7505DDE81C538AAAB97142312E3FE3D606901E2C439967FE10F0"
       from: "czr_account1"
       to: "czr_account2"
@@ -608,9 +698,9 @@ async function generate_offline_block(query){
     }
 */
 //发送离线交易
-async function send_offline_block(query) {
+async function tx_offline_sending(query) {
   //   {
-  //     "action": "send_offline_block",
+  //     "action": "tx_offline_sending",
   //     "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",    
   //     "from": "czr_33EuccjKjcZgwbHYp8eLhoFiaKGARVigZojeHzySD9fQ1ysd7u",
   //     "to": "czr_4k1FXs5xvfYcKiikFeV3GtyMRqYMwbjatL5YVURqYf1KBgC8Mq",
@@ -621,66 +711,80 @@ async function send_offline_block(query) {
   //     "signature": "4ABC0440DEC29AA49B6C1EEAE1D5C263B9856C218ACA4E9EDA0292FF3CBB6E85404F5266CD0B58CEF825E24EDF9C7F9A5B6FDCE415EF384C5AAF403D187ABF03",
   //     "gen_next_work":""//可选,是否为下一笔交易预生成work值，0：不预生成，1：预生成。默认为1。
   // }
-  if(!query.from || !query.to){
+  if (!query.from || !query.to) {
     return {
-      "code":400,
-      "msg":"parameter from and to is required for generation"
+      "code": 400,
+      "msg": "parameter from and to is required for generation"
     }
   }
-  let valid_from = await account_validate(query.from);
-  let valid_to = await account_validate(query.to);
-  if(!valid_from.result || !valid_to.result){
-    return {
-      "code":400,
-      "msg":"from or to is invalid format"
-    }
-  }
-  if(!(+query.amount >= 0 )){
-    return{
-      "code":400,
-      "msg":"parameter amount is required and must not Negative"
-    }
-  }
-  if(!( +query.gas >= 0)){
-    return{
-      "code":400,
-      "msg":"parameter gas is required and must not Negative"
-    }
-  }
-  if(!( +query.gas_price >= 0)){
-    return{
-      "code":400,
-      "msg":"parameter gas_price is required and must not Negative"
-    }
-  }
-  if(!query.signature){
-    return{
-      "code":400,
-      "msg":"parameter signature is required"
-    }
-  }
-  if(!query.previous){
-    return{
-      "code":400,
-      "msg":"parameter previous is required"
-    }
-  }
-  let options = {
-    "from": query.from,
-    "to": query.to,
-    "amount": query.amount,
-    "gas": query.gas,
-    "gas_price":query.gas_price,
-    "signature": query.signature,
-  }
-  if(query.data){options["data"]=query.data};
-  if(query.gen_next_work){options["gen_next_work"]=query.gen_next_work};
-  if(query.previous){options["previous"]=query.previous};
 
-  let res = await czr.request.sendOfflineBlock(options);
-  console.log("res.code:",res.code)
-  res.code = res.code? 401: 100
-  return res;
+  try {
+    let valid_from = await account_validate(query.from);
+    let valid_to = await account_validate(query.to);
+
+    //用code判断
+    if ((valid_from.code !== 100) || (valid_to.code !== 100)) {
+      return {
+        "code": 400,
+        "msg": "from or to is invalid format"
+      }
+    }
+    if (!(+query.amount >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter amount is required and must not Negative"
+      }
+    }
+    if (!(+query.gas >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter gas is required and must not Negative"
+      }
+    }
+    if (!(+query.gas_price >= 0)) {
+      return {
+        "code": 400,
+        "msg": "parameter gas_price is required and must not Negative"
+      }
+    }
+    if (!query.signature) {
+      return {
+        "code": 400,
+        "msg": "parameter signature is required"
+      }
+    }
+
+    // 可选的参数，不需要验证
+    // if (!query.previous) {
+    //   return {
+    //     "code": 400,
+    //     "msg": "parameter previous is required"
+    //   }
+    // }
+
+    let options = {
+      "from": query.from,
+      "to": query.to,
+      "amount": query.amount,
+      "gas": query.gas,
+      "gas_price": query.gas_price,
+      "signature": query.signature,
+    }
+    if (query.data) { options["data"] = query.data };
+    if (query.gen_next_work) { options["gen_next_work"] = query.gen_next_work };
+    if (query.previous) { options["previous"] = query.previous };
+
+    let res = await czr.request.sendOfflineBlock(options);
+    return {
+      code: res.code ? 401 : 100,
+      msg: res.code ? res.msg : "OK",
+      result: res.hash || ""
+    };
+  } catch (error) {
+    logger.error("tx_offline_sending error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
 }
 
 /** 
@@ -713,7 +817,7 @@ async function send_offline_block(query) {
     }
 */
 //获取交易详情
-async function get_transaction_by_hash(query) {
+async function tx_details(query) {
   //校验
   if (!query.hash) {
     return {
@@ -721,70 +825,79 @@ async function get_transaction_by_hash(query) {
       "msg": "Parameter missing txhash"
     }
   }
-  if(invalidTxHash(query.hash)){
+  if (invalidTxHash(query.hash)) {
     return {
-      "code":400,
+      "code": 400,
       "msg": "invalid txhash"
     }
   }
-  let transTypeSQL = `select "type" from trans_type where "hash" = '${query.hash}'`
-  let transType = await pgPromise.query(transTypeSQL)
-  if (!transType.rowCount){
-    return {
-      "code":100,
-      "msg":"transaction not exist" 
+  try {
+    let transTypeSQL = `select "type" from trans_type where "hash" = '${query.hash}'`
+    let transType = await pgPromise.query(transTypeSQL)
+    if (!transType.rowCount) {
+      return {
+        "code": 100,
+        "msg": "transaction doesn't exist",
+        result: {}
+      }
     }
+    let listOptions = {};
+    let transDetail;
+    if (transType.rows[0].type == "0") {
+      // console.log('trans_genesis')
+      listOptions = `
+        select 
+            "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_timestamp"
+        from
+          trans_genesis
+        where
+          "hash" = '${query.hash}'
+        `
+      transDetail = await pgPromise.query(listOptions);
+      transDetail.rows[0]['gas'] = 0;
+      transDetail.rows[0]['gas_price'] = 0;
+    } else if (transType.rows[0].type == "1") {
+      // console.log('trans_witness')
+      listOptions = `
+        select 
+            "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_timestamp"
+        from
+          trans_witness
+        where
+          "hash" = '${query.hash}'
+      `
+      transDetail = await pgPromise.query(listOptions);
+      transDetail.rows[0]['gas'] = '';
+      transDetail.rows[0]['gas_price'] = '';
+      transDetail.rows[0]['gas_used'] = '';
+      transDetail.rows[0]['to'] = '';
+      transDetail.rows[0]['amount'] = '';
+      transDetail.rows[0]['data'] = '';
+      transDetail.rows[0]['is_stable'] = '';
+    } else {
+      // console.log('trans_normal')
+      listOptions = `
+        select 
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_timestamp"
+        from
+          trans_normal
+        where
+          "hash" = '${query.hash}'
+        `
+      transDetail = await pgPromise.query(listOptions);
+    }
+    return {
+      "code": 100,
+      "msg": "ok",
+      "result": transDetail.rows
+    }
+  } catch (error) {
+    logger.error("tx_details error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
-  let listOptions = {};
-  let transDetail;
-  if (transType.rows[0].type == "0"){
-    console.log('trans_genesis')
-    listOptions =`select 
-                      "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_timestamp"
-                  from
-                    trans_genesis
-                  where
-                    "hash" = '${query.hash}'
-                  `
-    transDetail = await pgPromise.query(listOptions);
-    transDetail.rows[0]['gas'] = 0;
-    transDetail.rows[0]['gas_price'] = 0;
-  }else if(transType.rows[0].type == "1"){
-    console.log('trans_witness')
-    listOptions =`select 
-                      "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_timestamp"
-                  from
-                    trans_witness
-                  where
-                    "hash" = '${query.hash}'
-                  `
-    transDetail = await pgPromise.query(listOptions);
-    transDetail.rows[0]['gas'] = '';
-    transDetail.rows[0]['gas_price'] = '';
-    transDetail.rows[0]['gas_used'] = '';
-    transDetail.rows[0]['to'] = '';
-    transDetail.rows[0]['amount'] = '';
-    transDetail.rows[0]['data'] = '';
-    transDetail.rows[0]['is_stable'] = '';
-  }else{
-    console.log('trans_normal')
-    listOptions =`select 
-                      "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_timestamp"
-                  from
-                    trans_normal
-                  where
-                    "hash" = '${query.hash}'
-                  `
-    transDetail = await pgPromise.query(listOptions);
-  }
-  return {
-    "code":100,
-    "msg":"ok",
-    "result":transDetail.rows
-  }
+
 }
-
-
 // ******************************** 交易模块 结束
 
 
@@ -798,7 +911,6 @@ async function get_transaction_by_hash(query) {
     {
       module      : other
       action      : gas_price
-      tag         : latest
       apikey      : YourApiKeyToken
     }
   * 返回
@@ -813,36 +925,41 @@ async function get_transaction_by_hash(query) {
     }
 */
 //获取CZRGas
-async function CZRGas(query) {
-  let querySql = {
-    text: `
-    SELECT 
-        "cheapest_gas_price",
-        "median_gas_price",
-        "highest_gas_price"
-    FROM 
-        gas_price 
-    order by
-      timestamp desc
-    limit
-        1
-    `
-  };
-  let rlt = await pgPromise.query(querySql);
-  if (rlt.rows[0]) {
-    return {
-      "code": 100,
-      "msg": "ok",
-      "result": rlt.rows[0]
+async function gas_price() {
+  try {
+    let querySql = {
+      text: `
+      SELECT 
+          "cheapest_gas_price",
+          "median_gas_price",
+          "highest_gas_price"
+      FROM 
+          gas_price 
+      order by
+        timestamp desc
+      limit
+          1
+      `
     };
-  } else {
-    return {
-      "code": 404,
-      "msg": "not found",
-      "result": {}
-    };
+    let rlt = await pgPromise.query(querySql);
+    if (rlt.rows.length) {
+      return {
+        "code": 100,
+        "msg": "ok",
+        "result": rlt.rows[0]
+      };
+    } else {
+      return {
+        "code": 404,
+        "msg": "not found",
+        "result": {}
+      };
+    }
+  } catch (error) {
+    logger.error("gas_price error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
-
 }
 
 /** 
@@ -851,7 +968,6 @@ async function CZRGas(query) {
     {
         module      : other
         action      : estimate_gas
-        tag         : latest
         apikey      : YourApiKeyToken
     }
   * 返回
@@ -862,23 +978,28 @@ async function CZRGas(query) {
     }
 */
 //获得估算Gas
-async function get_estimate_gas(query){
-  let call_obj = {
-    "from": query.from || '',
-    "to": query.to || '',
-    "amount": query.amount || '', //1CZR
-    "gas": query.gas || '',
-    "gas_price": query.gas_price || '',
-    "data": query.data || '',
-    "mci": query.mci || ''
+async function estimate_gas(query) {
+  try {
+    let call_obj = {
+      "from": query.from || '',
+      "to": query.to || '',
+      "amount": query.amount || '', //1CZR
+      "gas": query.gas || '',
+      "gas_price": query.gas_price || '',
+      "data": query.data || '',
+      "mci": query.mci || ''
+    }
+    let rlt = await czr.request.estimateGas(call_obj)
+    return {
+      "code": 100,
+      "msg": rlt.msg,
+      "result": rlt.gas
+    }
+  } catch (error) {
+    logger.error("estimate_gas error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
   }
-  let rlt = await czr.request.estimateGas(call_obj)
-  return {
-    "code": 100,
-    "msg": rlt.msg,
-    "result": rlt.gas
-  }
-
 }
 
 /** 
@@ -898,22 +1019,28 @@ async function get_estimate_gas(query){
     }
 */
 //字符串转16进制
-async function bs582hex(query){
-  if(!query.source){
-    return{
+async function to_hex(query) {
+  if (!query.source) {
+    return {
       "code": 400,
       "msg": "parameter missing source"
     }
   }
+  if (query.source.split('_').length !== 2) {
+    return {
+      "code": 400,
+      "msg": "wrong format ('source')"
+    }
+  }
   let source_valid = await account_validate(query.source)
-  if(!source_valid.result){
-    return{
+  if (source_valid.code !== 100) {
+    return {
       "code": 400,
       "msg": "parameter source is not a czr address"
     }
   }
   let buf = bs58check.decode(query.source.split('_')[1])
-  buf = buf.slice(1,)
+  buf = buf.slice(1)
   return {
     "code": 100,
     "msg": "ok",
@@ -938,20 +1065,23 @@ router.get('/', async function (ctx, next) {
     }
     return;
   } else {
-    let unfind = true;
-    allApikeys.forEach(item => {
-      if (item == query.apikey) {
-        unfind = false
-      }
-    })
-    if (unfind) {
+    // let unfind = true;
+    // allApikeys.forEach(item => {
+    //   if (item == query.apikey) {
+    //     unfind = false
+    //   }
+    // })
+
+    let keyIndex = allApikeys.indexOf(query.apikey);
+    if (keyIndex === -1) {
       ctx.body = {
-        "code": 400,   
+        "code": 400,
         "msg": "inValid Apikey Value",
       }
       return;
     }
   }
+
   //验证 action
   if (!query.action) {
     ctx.body = {
@@ -963,126 +1093,127 @@ router.get('/', async function (ctx, next) {
 
   //根据 action和module 做相应处理 
 
-
   //账户部分
-  if (query.module == 'account'){
-    if(!query.account){
+  if (query.module == 'account') {
+    //前置检测
+    if (!query.account) {
       ctx.body = {
         "code": 400,
         "msg": "missing account parameter"
       }
-      return ;
+      return;
     }
 
-    if(query.action === "account_validate"){
-      ctx.body = await account_validate(query.account); 
-      return ;
-    }
-
-    if(query.action === 'account_balance_multi'){
+    //前置检测
+    if (query.action === "account_validate") {
+      ctx.body = await account_validate(query.account);
+      return;
+    } else if (query.action === 'account_balance_multi') {
       let acctAry = query.account.split(',');
-      if(acctAry.length>20){
+      if (acctAry.length > 20) {
         ctx.body = {
-          "code":400,
-          "msg":"the numbers of account must be less than 20",
+          "code": 400,
+          "msg": "the numbers of account must be less than 20",
         }
-        return ;
+        return;
       }
-      for(let i=0;i<acctAry.length;i++){
+      for (let i = 0, accountLen = acctAry.length; i < accountLen;) {
         let acct_valid = await account_validate(acctAry[i])
-        if(!acct_valid.result){
+        if (!acct_valid.result) {
           ctx.body = {
-            "code":400,
-            "msg":"invalid account:"+acctAry[i],
-            "result":[]
+            "code": 400,
+            "msg": "invalid account:" + acctAry[i],
+            "result": []
           }
-          return ;
+          return;
         }
+        i++;
       }
-    }else{
+    } else {
       let acct_valid = await account_validate(query.account)
-      if(!acct_valid.result){
+      if (!acct_valid.result) {
         ctx.body = {
-          "code":400,
-          "msg":"invalid account",
-          "result":query.account
+          "code": 400,
+          "msg": "invalid account",
+          "result": query.account
         }
-        return ;
+        return;
       }
     }
+
+    //
     switch (query.action) {
       case 'account_balance':
-        ctx.body = await get_balance(query);
+        ctx.body = await account_balance(query);
         break;
       case 'account_balance_multi':
-        ctx.body = await get_balance_multi(query);
+        ctx.body = await account_balance_multi(query);
         break;
       case 'account_txlist':
-        ctx.body = await tx_list(query);
+        ctx.body = await account_txlist(query);
         break;
       case 'account_txlist_internal':
-        ctx.body = await tx_list_internal(query);
+        ctx.body = await account_txlist_internal(query);
         break;
       case 'account_txlist_count':
-        ctx.body = await txlist_count(query);
+        ctx.body = await account_txlist_count(query);
         break;
       case 'account_balance_token':
-        ctx.body = await balance_crc(query);
+        ctx.body = await account_balance_token(query);
         break;
       case 'account_txlist_token':
-        ctx.body =await txlist_crc(query);
+        ctx.body = await account_txlist_token(query);
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is net available in account module",
+          "code": 403,
+          "msg": "this action is net available in account module",
         }
     }
   }
 
   //交易部分
-  else if(query.module == 'transaction'){
-
+  else if (query.module == 'transaction') {
     switch (query.action) {
       case 'tx_offline_generation':
-      ctx.body = await generate_offline_block(query);
-      break;
-    case 'tx_offline_sending':
-      ctx.body = await send_offline_block(query);
-      break;
-    case 'tx_details':
-      ctx.body = await get_transaction_by_hash(query);
-      break;
-    default:
+        ctx.body = await tx_offline_generation(query);
+        break;
+      case 'tx_offline_sending':
+        ctx.body = await tx_offline_sending(query);
+        break;
+      case 'tx_details':
+        ctx.body = await tx_details(query);
+        break;
+      default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is net available in transaction module",
+          "code": 403,
+          "msg": "this action is net available in transaction module",
         }
     }
   }
 
   //其他部分
-  else if(query.module =='other'){
+  else if (query.module == 'other') {
     switch (query.action) {
       case 'gas_price':
-        ctx.body = await CZRGas(query);
+        ctx.body = await gas_price();
         break;
       case 'estimate_gas':
-        ctx.body = await get_estimate_gas(query);
+        ctx.body = await estimate_gas(query);
         break;
       case 'to_hex':
-        ctx.body = await bs582hex(query);
+        ctx.body = await to_hex(query);
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is net available in other module",
+          "code": 403,
+          "msg": "this action is net available in other module",
         }
     }
   }
 
   //module 缺失
-  else{
+  else {
     ctx.body = {
       "code": 500,
       "msg": "this module is not available",
