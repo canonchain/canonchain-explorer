@@ -1166,8 +1166,8 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code": 403,
-          "msg": "this action is net available in account module",
+          "code":403,
+          "msg":"this action is not available in account module",
         }
     }
   }
@@ -1186,8 +1186,8 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code": 403,
-          "msg": "this action is net available in transaction module",
+          "code":403,
+          "msg":"this action is not available in transaction module",
         }
     }
   }
@@ -1206,8 +1206,8 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code": 403,
-          "msg": "this action is net available in other module",
+          "code":403,
+          "msg":"this action is not available in other module",
         }
     }
   }
