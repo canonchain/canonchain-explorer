@@ -1035,7 +1035,7 @@ router.get('/', async function (ctx, next) {
       default:
         ctx.body = {
           "code":403,
-          "msg":"this action is net available in account module",
+          "msg":"this action is not available in account module",
         }
     }
   }
@@ -1056,7 +1056,7 @@ router.get('/', async function (ctx, next) {
     default:
         ctx.body = {
           "code":403,
-          "msg":"this action is net available in transaction module",
+          "msg":"this action is not available in transaction module",
         }
     }
   }
@@ -1076,7 +1076,7 @@ router.get('/', async function (ctx, next) {
       default:
         ctx.body = {
           "code":403,
-          "msg":"this action is net available in other module",
+          "msg":"this action is not available in other module",
         }
     }
   }
