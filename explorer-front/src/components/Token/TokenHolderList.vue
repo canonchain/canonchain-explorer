@@ -6,13 +6,12 @@
                     :to="{
                         path: '/account/' + scope.row.account
                     }"
-                    >{{ scope.row.account }}</router-link
-                >
+                >{{ scope.row.account }}</router-link>
             </template>
         </el-table-column>
         <el-table-column label="数量" align="right">
             <template slot-scope="scope">
-                <span>{{ scope.row.balance | toCZRVal }}</span>
+                <span>{{ scope.row.balance | toTokenVal }}</span>
             </template>
         </el-table-column>
     </el-table>
