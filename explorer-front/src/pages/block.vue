@@ -475,9 +475,9 @@ export default {
             trans_token: []
         };
     },
-    created() {
+    async created() {
         self = this;
-        this.initDatabase();
+        await this.initDatabase();
     },
     methods: {
         async initDatabase() {
@@ -559,7 +559,7 @@ export default {
         },
         change_table(tab, event) {
             switch (tab.name) {
-                case "token_trans":
+                case "trans_info":
                     break;
                 case "intel_trans":
                     this.$router.push(`/block/${self.blockHash}/intel_trans`);

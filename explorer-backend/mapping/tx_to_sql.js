@@ -57,6 +57,7 @@
         async start() {
             try {
                 db_block_number = await pageUtility.getDbBlockNum();
+                logger.info(`db_block_number : ${db_block_number}`)
                 //-12 
                 eth_block_number = await web3.eth.getBlockNumber();
                 eth_block_number = Number(eth_block_number) - 12;

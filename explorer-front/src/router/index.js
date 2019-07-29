@@ -66,20 +66,15 @@ export default new Router({
     },
     {
       path: '/dag/:id',
-      name: 'Dag',
+      name: 'DagInfo',
       component: Dag
     },
-    {
-      path: '/dag/:id/*',
-      name: 'Dag',
-      component: Dag
-    },
+    // {
+    //   path: '/dag/:id/*',
+    //   name: 'Dag',
+    //   component: Dag
+    // },
     // Block
-    {
-      path: '/block/:id',
-      name: 'Block',
-      component: Block
-    },
     {
       path: '/block/:id',
       name: 'Block',
@@ -149,7 +144,7 @@ export default new Router({
     },
     {
       path: '/token/:id/holder',
-      name: 'Token',
+      name: 'TokenHolder',
       component: TokenHolder
     },
 

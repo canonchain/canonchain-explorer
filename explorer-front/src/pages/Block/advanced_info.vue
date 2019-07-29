@@ -214,9 +214,9 @@ export default {
             activeName: "advanced_info"
         };
     },
-    created() {
+    async created() {
         self = this;
-        this.initDatabase();
+        await this.initDatabase();
     },
     methods: {
         async initDatabase() {
