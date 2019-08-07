@@ -242,7 +242,46 @@
                             <el-col :span="12">
                                 <div class="block-item-des">
                                     <strong class="bui-dlist-tit">Status</strong>
-                                    <div class="bui-dlist-det">{{ activeUnitInfo.witnessed_level }}</div>
+                                    <div class="bui-dlist-det">
+                                        <template
+                                            v-if="
+                                                activeUnitInfo.is_stable ===
+                                                    false
+                                            "
+                                        >
+                                            <span class="txt-warning">等待确认</span>
+                                        </template>
+                                        <template v-else>
+                                            <template
+                                                v-if="
+                                                    activeUnitInfo.status == '0'
+                                                "
+                                            >
+                                                <span class="txt-success">成功</span>
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '1'
+                                                "
+                                            >
+                                                <span class="txt-danger">失败(1)</span>
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '2'
+                                                "
+                                            >
+                                                <span class="txt-danger">失败(2)</span>
+                                            </template>
+                                            <template
+                                                v-else-if="
+                                                    activeUnitInfo.status == '3'
+                                                "
+                                            >
+                                                <span class="txt-danger">失败(3)</span>
+                                            </template>
+                                        </template>
+                                    </div>
                                 </div>
                             </el-col>
                         </el-row>
@@ -299,53 +338,6 @@
                                 <div class="block-item-des">
                                     <strong class="bui-dlist-tit">MCI</strong>
                                     <div class="bui-dlist-det">{{ activeUnitInfo.mci }}</div>
-                                </div>
-                            </el-col>
-                        </el-row>
-                        <el-row>
-                            <el-col :span="12">
-                                <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">Status</strong>
-                                    <div class="bui-dlist-det">
-                                        <template
-                                            v-if="
-                                                activeUnitInfo.is_stable ===
-                                                    false
-                                            "
-                                        >
-                                            <span class="txt-warning">等待确认</span>
-                                        </template>
-                                        <template v-else>
-                                            <template
-                                                v-if="
-                                                    activeUnitInfo.status == '0'
-                                                "
-                                            >
-                                                <span class="txt-success">成功</span>
-                                            </template>
-                                            <template
-                                                v-else-if="
-                                                    activeUnitInfo.status == '1'
-                                                "
-                                            >
-                                                <span class="txt-danger">失败(1)</span>
-                                            </template>
-                                            <template
-                                                v-else-if="
-                                                    activeUnitInfo.status == '2'
-                                                "
-                                            >
-                                                <span class="txt-danger">失败(2)</span>
-                                            </template>
-                                            <template
-                                                v-else-if="
-                                                    activeUnitInfo.status == '3'
-                                                "
-                                            >
-                                                <span class="txt-danger">失败(3)</span>
-                                            </template>
-                                        </template>
-                                    </div>
                                 </div>
                             </el-col>
                         </el-row>
