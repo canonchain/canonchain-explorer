@@ -2006,7 +2006,7 @@ router.get("/get_trans_witness_flag", async function (req, res, next) {
     }
     res.json(responseData);
 })
-// 获取见证交易列表
+// 获取见证交易列表(通过账户)
 //参数:account/position/stable_index
 router.get("/get_trans_witness", async function (req, res, next) {
     let queryVal = req.query;//TODODODODODDO 参数校验
@@ -2078,6 +2078,45 @@ router.get("/get_trans_witness", async function (req, res, next) {
     }
     res.json(responseData);
 })
+
+router.get("/get_witness_list", async function (req, res, next) {
+    let opt = {
+        text: `
+            Select 
+                "account"
+            FROM
+                witness_list
+            order by 
+                "witness_id" asc
+            LIMIT
+                32
+        `
+    }
+
+    let data = await pgPromise.query(opt)
+    if (data.code) {
+        responseData = {
+            transactions: [],
+            code: 500,
+            success: false,
+            message: 'Select witness list FROM acc trans_witness Error'
+        }
+        res.json(responseData);
+        return;
+    }
+    let listAry = [];
+    data.rows.forEach((item) => {
+        listAry.push(item.account);
+    })
+    responseData = {
+        data: listAry,
+        code: 200,
+        success: true,
+        message: "success"
+    }
+    res.json(responseData);
+})
+
 
 //获取内部交易的Flag -----------------------------------------------
 router.get("/get_trans_internal_flag", async function (req, res, next) {

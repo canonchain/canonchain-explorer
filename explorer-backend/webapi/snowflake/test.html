@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/big-integer/1.6.32/BigInteger.min.js"></script>
+    <!-- <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script> -->
+    <script>
+        var Snowflake = (function () {
+            function Snowflake(_workerId, _dataCenterId, _sequence) {
+                // this.twepoch = 1288834974657;
+                this.twepoch = 0;
+                this.workerIdBits = 5;
+                this.dataCenterIdBits = 5;
+                this.maxWrokerId = -1 ^ (-1 << this.workerIdBits); // 值为：31
+                this.maxDataCenterId = -1 ^ (-1 << this.dataCenterIdBits); // 值为：31
+                this.sequenceBits = 12;
+                this.workerIdShift = this.sequenceBits; // 值为：12
+                this.dataCenterIdShift = this.sequenceBits + this.workerIdBits; // 值为：17
+                this.timestampLeftShift = this.sequenceBits + this.workerIdBits + this.dataCenterIdBits; // 值为：22
+                this.sequenceMask = -1 ^ (-1 << this.sequenceBits); // 值为：4095
+                this.lastTimestamp = -1;
+                //设置默认值,从环境变量取
+                this.workerId = 1;
+                this.dataCenterId = 1;
+                this.sequence = 0;
+                if (this.workerId > this.maxWrokerId || this.workerId < 0) {
+                    throw new Error('config.worker_id must max than 0 and small than maxWrokerId-[' + this.maxWrokerId + ']');
+                }
+                if (this.dataCenterId > this.maxDataCenterId || this.dataCenterId < 0) {
+                    throw new Error('config.data_center_id must max than 0 and small than maxDataCenterId-[' + this.maxDataCenterId + ']');
+                }
+                this.workerId = _workerId;
+                this.dataCenterId = _dataCenterId;
+                this.sequence = _sequence;
+            }
+            Snowflake.prototype.tilNextMillis = function (lastTimestamp) {
+                var timestamp = this.timeGen();
+                while (timestamp <= lastTimestamp) {
+                    timestamp = this.timeGen();
+                }
+                return timestamp;
+            };
+            Snowflake.prototype.timeGen = function () {
+                //new Date().getTime() === Date.now()
+                return Date.now();
+            };
+            Snowflake.prototype.nextId = function () {
+                var timestamp = this.timeGen();
+                if (timestamp < this.lastTimestamp) {
+                    throw new Error('Clock moved backwards. Refusing to generate id for ' +
+                        (this.lastTimestamp - timestamp));
+                }
+                if (this.lastTimestamp === timestamp) {
+                    this.sequence = (this.sequence + 1) & this.sequenceMask;
+                    if (this.sequence === 0) {
+                        timestamp = this.tilNextMillis(this.lastTimestamp);
+                    }
+                } else {
+                    this.sequence = 0;
+                }
+                this.lastTimestamp = timestamp;
+                var shiftNum = (this.dataCenterId << this.dataCenterIdShift) |
+                    (this.workerId << this.workerIdShift) |
+                    this.sequence; // dataCenterId:1,workerId:1,sequence:0  shiftNum:135168
+                var nfirst = new bigInt(String(timestamp - this.twepoch), 10);
+                nfirst = nfirst.shiftLeft(this.timestampLeftShift);
+                var nnextId = nfirst.or(new bigInt(String(shiftNum), 10)).toString(10);
+                return nnextId;
+            };
+            return Snowflake;
+        }());
+        var tempSnowflake = new Snowflake(1, 1, 0);
+        var tempIds = [];
+        console.time();
+        for (var i = 0; i < 100; i++) {
+            var tempId = tempSnowflake.nextId();
+            console.log(tempId);
+            if (tempIds.indexOf(tempId) < 0) {
+                tempIds.push(tempId);
+            }
+        }
+        console.log(tempIds.length);
+        console.timeEnd();
+    </script>
+</body>
+
+</html>
