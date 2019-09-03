@@ -130,6 +130,7 @@ export default {
 }
 .navbar {
     padding: 0;
+    flex-flow: row wrap;
 }
 
 @media (min-width: 768px) {
@@ -159,7 +160,8 @@ export default {
         padding: 6px 10px 0;
     }
     #header .input-wrap {
-        display: none;
+        margin-bottom: 8px;
+        min-width: 100%;
     }
 }
 </style>

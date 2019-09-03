@@ -74,7 +74,7 @@
                 </template>
             </template>
         </el-table-column>
-        <el-table-column label="金额 / CZR" align="right">
+        <el-table-column label="金额 / CZR" align="right" min-width="205">
             <template slot-scope="scope">
                 <span>{{ scope.row.amount | toCZRVal }}</span>
             </template>
