@@ -554,11 +554,13 @@ export default {
             database: {
                 nodes: [],
                 edges: {}
-            }
+            },
+            borderColorList: []
         };
     },
     created() {
         self = this;
+        self.getWitnessList()
     },
     mounted() {
         self.initVar();
@@ -706,6 +708,47 @@ export default {
                 self.getStar(location.hash.substr(6, 64));
             }
         },
+        getWitnessList () {
+            self.$axios
+                .get('/api/get_witness_list', {
+                })
+                .then(function(res) {
+                    self.borderColorList = setBorderColors(res.data.data)
+                }).catch(function(error) {
+                    console.log(error)
+                })
+            function setBorderColors (selectors) {
+                // const COLORS = [
+                //     '#000099', '#0033FF', '#006600', '#0066FF', '#009900', '#00FF00', '#00FFFF',
+                //     '#330000', '#330033', '#330066', '#333333', '#333300', '#660000', '#660066',
+                //     '#990000', '#993300', '#990066', '#996600', '#9900FF', '#996600', '#996666',
+                //     '#996699', '#999966', '#9999CC', '#99FF00', '#99FFFF', '#CC0000', '#CC0033',
+                //     '#CC0099', '#CC6600', '#CCFFFF', '#CCFFCC', '#FF9900', '#FF9966', '#FFFF00'
+                // ]
+
+                const COLORS = [
+                    '#ff0000', '#00ff78', '#00626b', '#ff0089', '#a6ff0a', '#130162', '#e9aee0', 
+                    '#ab420c', '#631083', '#00b6eb', '#959595', '#fff300', '#286901', '#136a77'
+                ]
+
+                var result = []
+
+                selectors.forEach((item, index, arr) => {
+                    if (arr.indexOf(item) !== index) {
+                        result.push(Object.assign({}, result.find(it => it.selector === '.' + item)))
+                    } else {
+                        result.push({
+                            selector: '.' + item,
+                            style: {
+                                'border-color': COLORS.shift()
+                            }
+                        })
+                    }
+                })
+
+                return result
+            }
+        },
         getStar(searchUnit) {
             if (searchUnit && searchUnit.length !== 64) {
                 searchUnit = "";
@@ -843,107 +886,109 @@ export default {
                             "border-color": "#5a59a0"
                         }
                     },
+
+                    ...self.borderColorList,
+
                     // 12个见证人
-                    {
-                        selector:
-                            ".czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS",
-                        style: {
-                            "border-color": "#ff0000"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3",
-                        style: {
-                            "border-color": "#00ff78"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU",
-                        style: {
-                            "border-color": "#00626b"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf",
-                        style: {
-                            "border-color": "#ff0089"
-                        }
-                    },
+                    // {
+                    //     selector:
+                    //         ".czr_321JDA7Brgbnm64iY2Xh8yHMEqEgBDutnoTKVLcxW2DJvJLUsS",
+                    //     style: {
+                    //         "border-color": "#ff0000"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_32RmC9FsxjgLkgRQ58j3CdLg79cQE3KaY2wAT1QthBTU25vpd3",
+                    //     style: {
+                    //         "border-color": "#00ff78"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_3MnXfV9hbmxVPdgfrPqgUiH6N7VbkSEhn5VqBCzBcxzTzkEUxU",
+                    //     style: {
+                    //         "border-color": "#00626b"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_3SrfL6LnPbtyf6sanrgtKs1BTYDN8taacGBVG37LfZVqXvRHbf",
+                    //     style: {
+                    //         "border-color": "#ff0089"
+                    //     }
+                    // },
 
-                    {
-                        selector:
-                            ".czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z",
-                        style: {
-                            "border-color": "#a6ff0a"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7",
-                        style: {
-                            "border-color": "#130162"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii",
-                        style: {
-                            "border-color": "#e9aee0"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_49BvoaSgGnyfPdaHfrSdac74fcxV4cUdysskHSQPQ8XisShN3P",
-                        style: {
-                            "border-color": "#ab420c"
-                        }
-                    },
-
-                    {
-                        selector:
-                            ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
-                        style: {
-                            "border-color": "#631083"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
-                        style: {
-                            "border-color": "#00b6eb"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
-                        style: {
-                            "border-color": "#959595"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
-                        style: {
-                            "border-color": "#fff300"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_4aBXjWXyN7WVGqMKH7FgnSoN9oePeEPiZsrtc2AMYyuTRJoNpb",
-                        style: {
-                            "border-color": "#286901"
-                        }
-                    },
-                    {
-                        selector:
-                            ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
-                        style: {
-                            "border-color": "#136a77"
-                        }
-                    },
+                    // {
+                    //     selector:
+                    //         ".czr_3igvJpdDiV4v5HxEzCifFcUpKvWsk3qWYNrTrbEVQztKbpyW1z",
+                    //     style: {
+                    //         "border-color": "#a6ff0a"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_3tiy2jgoUENkszPjrHjQGfmopqwV5m9BcEh2Grb1zDYgSGnBF7",
+                    //     style: {
+                    //         "border-color": "#130162"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_47E2jJ9rXVk5GRBcTLQMLQHXqsrnVcV5Kv2CWQJ6dnUaugnvii",
+                    //     style: {
+                    //         "border-color": "#e9aee0"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_49BvoaSgGnyfPdaHfrSdac74fcxV4cUdysskHSQPQ8XisShN3P",
+                    //     style: {
+                    //         "border-color": "#ab420c"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4HhYojuHanxQ57thkSxwy5necRtDFwiQP7zqngBDZHMjqdPiMS",
+                    //     style: {
+                    //         "border-color": "#631083"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4MYTD6Xctkb6fEL8xUZxUwY6eqYB7ReEfB61YFrMHaZxsqLCKd",
+                    //     style: {
+                    //         "border-color": "#00b6eb"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4URkteqck9rM8Vo6VzWmvKtMWoSH8vo4A1rADNAFrQHxAR23Tb",
+                    //     style: {
+                    //         "border-color": "#959595"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4ZJ8hBdR6dLv4hb1RPCmajdZf7ozkH1sHU18kT7xnXj4mjxxKE",
+                    //     style: {
+                    //         "border-color": "#fff300"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4aBXjWXyN7WVGqMKH7FgnSoN9oePeEPiZsrtc2AMYyuTRJoNpb",
+                    //     style: {
+                    //         "border-color": "#286901"
+                    //     }
+                    // },
+                    // {
+                    //     selector:
+                    //         ".czr_4iig3fTcXQmz7bT2ztJPrpH8usrqGTN5zmygFqsCJQ4HgiuNvP",
+                    //     style: {
+                    //         "border-color": "#136a77"
+                    //     }
+                    // },
 
                     {
                         selector: ".active",

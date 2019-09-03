@@ -21,8 +21,15 @@ module.exports = {
                     '^/mapping': '/mapping'    //代理的路径
                 }
             },
+            // '/api': {
+            //     target: 'http://localhost:8001',   //代理接口
+            //     changeOrigin: true,
+            //     pathRewrite: {
+            //         '^/api': '/api'    //代理的路径
+            //     }
+            // },
             '/api': {
-                target: 'http://localhost:8001',   //代理接口
+                target: 'http://39.105.101.31:50616',   //代理接口
                 changeOrigin: true,
                 pathRewrite: {
                     '^/api': '/api'    //代理的路径
