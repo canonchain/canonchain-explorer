@@ -383,7 +383,7 @@
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
                             data.blocks[index].data_hash = item.content.data_hash;//++新增属性
-                            data.blocks[index].data = item.content.data || item.data;
+                            data.blocks[index].data = item.content.data;
                             data.blocks[index].parents = [];
                             //status
                             data.blocks[index].witnessed_level = blockStatesAry[index].content.witnessed_level;
@@ -412,7 +412,7 @@
                             data.blocks[index].to = item.content.to;
                             data.blocks[index].amount = item.content.amount;
                             data.blocks[index].data_hash = item.content.data_hash;//++新增属性
-                            data.blocks[index].data = item.content.data || item.data;
+                            data.blocks[index].data = item.content.data;
                             //普通交易特有
                             data.blocks[index].previous = item.content.previous;
                             data.blocks[index].gas = item.content.gas;
