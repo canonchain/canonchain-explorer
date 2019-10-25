@@ -437,7 +437,8 @@
                             data.blocks[index].gas_used = blockStatesAry[index].stable_content.gas_used || 0;
                             data.blocks[index].log = blockStatesAry[index].stable_content.log;
                             data.blocks[index].log_bloom = blockStatesAry[index].stable_content.log_bloom;
-                            data.blocks[index].contract_address = blockStatesAry[index].stable_content.contract_address;
+                            //2019年10月18日上午，RPC接口的更改，block_state返回数据中的 contract_address 改为 contract_account , 与周友对接
+                            data.blocks[index].contract_address = blockStatesAry[index].stable_content.contract_account;
                         }
                     });
                     hashGroupAry = [];
@@ -647,7 +648,8 @@
 
                         // await Promise.all(blockInfo.log.map(async (log_item) => {
 
-                        let contractAccount = czr.utils.encode_account(log_item.address);
+                        //改为 account 了
+                        let contractAccount = czr.utils.encode_account(log_item.account);
                         let transData = parseInt(log_item.data, 16);
                         tempEventLogItem = {
                             hash: blockInfo.hash,
@@ -905,8 +907,9 @@
                                 tempTracesInfo.from = traces_item.action.from;
                                 tempTracesInfo.to = traces_item.action.to;
                                 tempTracesInfo.gas = traces_item.action.gas;
-                                tempTracesInfo.input = traces_item.action.input;
-                                tempTracesInfo.value = traces_item.action.value;
+                                //2019年10月18日上午，RPC接口的更改, 返回数据中的 action.input 改为 action.data , 与周友对接
+                                tempTracesInfo.input = traces_item.action.data;
+                                tempTracesInfo.value = traces_item.action.amount;
                                 if (!traces_item.error) {
                                     tempTracesInfo.gas_used = traces_item.result.gas_used || 0;
                                     tempTracesInfo.output = traces_item.result.output;
@@ -917,11 +920,11 @@
                                 tempTracesInfo.from = traces_item.action.from;
                                 tempTracesInfo.gas = traces_item.action.gas;
                                 tempTracesInfo.init = traces_item.action.init;
-                                tempTracesInfo.value = traces_item.action.value;
+                                tempTracesInfo.value = traces_item.action.amount;
 
                                 if (!traces_item.error) {
                                     tempTracesInfo.gas_used = traces_item.result.gas_used;
-                                    tempTracesInfo.contract_address_create = traces_item.result.contract_address;
+                                    tempTracesInfo.contract_address_create = traces_item.result.contract_account;
                                     tempTracesInfo.contract_address_create_code = traces_item.result.code;
                                 }
 
@@ -969,12 +972,12 @@
                             }
                             //suicide
                             if (tempTracesInfo.type === 2) {
-                                tempTracesInfo.contract_address_suicide = traces_item.action.contract_address;
-                                tempTracesInfo.refund_adderss = traces_item.action.refund_adderss;
+                                tempTracesInfo.contract_address_suicide = traces_item.action.contract_account;
+                                tempTracesInfo.refund_adderss = traces_item.action.refund_account;
                                 tempTracesInfo.balance = traces_item.action.balance;
                                 //更改From，To，方便查询账户查询内部交易列表
                                 tempTracesInfo.from = tempTracesInfo.contract_address_suicide;
-                                tempTracesInfo.to = tempTracesInfo.refund_adderss;
+                                tempTracesInfo.to = tempTracesInfo.refund_account;
                             }
 
                             //这里交易可以转CZR/CRCToken
