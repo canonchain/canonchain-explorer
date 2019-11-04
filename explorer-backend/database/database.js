@@ -649,7 +649,7 @@
                         // await Promise.all(blockInfo.log.map(async (log_item) => {
 
                         //改为 account 了
-                        let contractAccount = czr.utils.encode_account(log_item.account);
+                        let contractAccount = czr.utils.encodeAccount(log_item.account);
                         let transData = parseInt(log_item.data, 16);
                         tempEventLogItem = {
                             hash: blockInfo.hash,
@@ -658,8 +658,8 @@
                             stable_index: blockInfo.stable_index,
 
                             contract_address: contractAccount,
-                            from: log_item.topics[1] ? czr.utils.encode_account(log_item.topics[1]) : "",
-                            to: log_item.topics[2] ? czr.utils.encode_account(log_item.topics[2]) : "",
+                            from: log_item.topics[1] ? czr.utils.encodeAccount(log_item.topics[1]) : "",
+                            to: log_item.topics[2] ? czr.utils.encodeAccount(log_item.topics[2]) : "",
                             method: blockInfo.data.toString().substring(0, 8),//A9059CBB
 
                             address: log_item.address,
@@ -712,8 +712,8 @@
 
 
                             //双方账户
-                            let contractFromAcc = czr.utils.encode_account(log_item.topics[1]);
-                            let contractToAcc = czr.utils.encode_account(log_item.topics[2]);
+                            let contractFromAcc = czr.utils.encodeAccount(log_item.topics[1]);
+                            let contractToAcc = czr.utils.encodeAccount(log_item.topics[2]);
                             let fromAccAndcontract = contractFromAcc + contractAccount;
                             let toAccAndcontract = contractToAcc + contractAccount;
 

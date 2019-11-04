@@ -11,7 +11,7 @@
   "dependencies": {
     "bignumber.js": "^7.2.1",
     "cookie-parser": "~1.4.3",
-    "czr": "git+https://github.com/canonchain/czr.js",
+    "czr": "^1.3.1",
     "debug": "^2.6.9",
     "express": "~4.16.0",
     "file-stream-rotator": "^0.2.1",

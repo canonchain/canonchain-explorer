@@ -110,7 +110,7 @@
                         timestamp: decodeLogInfo.timestamp.toString(10),
                         eth_hash: item.transactionHash,
                         eth_address: decodeLogInfo.ethAddress,
-                        czr_account: czr.utils.encode_account(decodeLogInfo.czrAccount.substring(2)),
+                        czr_account: czr.utils.encodeAccount(decodeLogInfo.czrAccount.substring(2)),
                         block_number: item.blockNumber,
                         value: decodeLogInfo.value.toString(10),
                         status: 1
