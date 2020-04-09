@@ -9,215 +9,308 @@
                             <template v-if="IS_GET_INFO">
                                 <template v-if="isSuccess === false">
                                     <div class="info-null">
-                                        <i class="info-null-icon el-icon-chat-line-round"></i>
+                                        <i
+                                            class="info-null-icon el-icon-chat-line-round"
+                                        ></i>
                                         <br />暂无信息
                                     </div>
                                 </template>
                                 <template v-else>
                                     <div class="bui-dlist">
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">交易号</strong>
+                                            <strong class="bui-dlist-tit"
+                                                >交易号</strong
+                                            >
                                             <div class="bui-dlist-det">
                                                 {{ blockHash }}
                                                 <template
-                                                    v-if="blockInfo.type === '1'"
+                                                    v-if="
+                                                        blockInfo.type === '1'
+                                                    "
                                                 >
-                                                    <router-link :to="'/dag/' + blockHash">DAG中查看</router-link>
+                                                    <router-link
+                                                        :to="
+                                                            '/dag/' + blockHash
+                                                        "
+                                                        >DAG中查看</router-link
+                                                    >
                                                 </template>
                                             </div>
                                         </div>
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">状态</strong>
+                                            <strong class="bui-dlist-tit"
+                                                >状态</strong
+                                            >
                                             <div class="bui-dlist-det">
-                                                <template v-if="isSuccess === false">
-                                                    <span class="txt-info">暂无信息</span>
+                                                <template
+                                                    v-if="isSuccess === false"
+                                                >
+                                                    <span class="txt-info"
+                                                        >暂无信息</span
+                                                    >
                                                 </template>
                                                 <template v-else>
                                                     <template
                                                         v-if="
-                                                        blockInfo.is_stable ===
-                                                            false
-                                                    "
+                                                            blockInfo.is_stable ===
+                                                                false
+                                                        "
                                                     >
-                                                        <span class="txt-warning">等待确认</span>
+                                                        <span
+                                                            class="txt-warning"
+                                                            >等待确认</span
+                                                        >
                                                     </template>
                                                     <template v-else>
                                                         <template
                                                             v-if="
-                                                            blockInfo.status ==
-                                                                '0'
-                                                        "
+                                                                blockInfo.status ==
+                                                                    '0'
+                                                            "
                                                         >
-                                                            <span class="txt-success">成功</span>
+                                                            <span
+                                                                class="txt-success"
+                                                                >成功</span
+                                                            >
                                                         </template>
                                                         <template
                                                             v-else-if="
-                                                            blockInfo.status ==
-                                                                '1'
-                                                        "
+                                                                blockInfo.status ==
+                                                                    '1'
+                                                            "
                                                         >
-                                                            <span class="txt-danger">失败(1)</span>
+                                                            <span
+                                                                class="txt-danger"
+                                                                >失败(1)</span
+                                                            >
                                                         </template>
                                                         <template
                                                             v-else-if="
-                                                            blockInfo.status ==
-                                                                '2'
-                                                        "
+                                                                blockInfo.status ==
+                                                                    '2'
+                                                            "
                                                         >
-                                                            <span class="txt-danger">失败(2)</span>
+                                                            <span
+                                                                class="txt-danger"
+                                                                >失败(2)</span
+                                                            >
                                                         </template>
                                                         <template
                                                             v-else-if="
-                                                            blockInfo.status ==
-                                                                '3'
-                                                        "
+                                                                blockInfo.status ==
+                                                                    '3'
+                                                            "
                                                         >
-                                                            <span class="txt-danger">失败(3)</span>
+                                                            <span
+                                                                class="txt-danger"
+                                                                >失败(3)</span
+                                                            >
                                                         </template>
                                                         <template
                                                             v-else-if="
-                                                            blockInfo.status ==
-                                                                '99'
-                                                        "
+                                                                blockInfo.status ==
+                                                                    '99'
+                                                            "
                                                         >
-                                                            <span class="txt-danger">不存在</span>
+                                                            <span
+                                                                class="txt-danger"
+                                                                >不存在</span
+                                                            >
                                                         </template>
                                                         <template v-else>
-                                                            <span class="txt-info">-</span>
+                                                            <span
+                                                                class="txt-info"
+                                                                >-</span
+                                                            >
                                                         </template>
                                                     </template>
                                                 </template>
                                             </div>
                                         </div>
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">确认时间</strong>
+                                            <strong class="bui-dlist-tit"
+                                                >确认时间</strong
+                                            >
                                             <div class="bui-dlist-det">
                                                 {{
-                                                blockInfo.stable_timestamp
-                                                | toDate
+                                                    blockInfo.stable_timestamp
+                                                        | toDate
                                                 }}
                                             </div>
                                         </div>
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">交易类型</strong>
+                                            <strong class="bui-dlist-tit"
+                                                >交易类型</strong
+                                            >
                                             <div class="bui-dlist-det">
-                                                <template v-if="blockInfo.type === '0'">
-                                                    <span class="txt-info">创世交易</span>
+                                                <template
+                                                    v-if="
+                                                        blockInfo.type === '0'
+                                                    "
+                                                >
+                                                    <span class="txt-info"
+                                                        >创世交易</span
+                                                    >
                                                 </template>
                                                 <template
                                                     v-else-if="
-                                                    blockInfo.type === '1'
-                                                "
+                                                        blockInfo.type === '1'
+                                                    "
                                                 >
-                                                    <span class="txt-info">见证交易</span>
+                                                    <span class="txt-info"
+                                                        >见证交易</span
+                                                    >
                                                 </template>
                                                 <template
                                                     v-else-if="
-                                                    blockInfo.type === '2'
-                                                "
+                                                        blockInfo.type === '2'
+                                                    "
                                                 >
-                                                    <span class="txt-info">普通交易</span>
+                                                    <span class="txt-info"
+                                                        >普通交易</span
+                                                    >
                                                 </template>
                                                 <template v-else>
-                                                    <span class="txt-info">-</span>
+                                                    <span class="txt-info"
+                                                        >-</span
+                                                    >
                                                 </template>
                                             </div>
                                         </div>
                                         <template v-if="blockInfo.type === '1'">
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">账户</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >账户</strong
+                                                >
                                                 <div class="bui-dlist-det">
-                                                    <span v-if="isSuccess === false">-</span>
+                                                    <span
+                                                        v-if="
+                                                            isSuccess === false
+                                                        "
+                                                        >-</span
+                                                    >
                                                     <router-link
                                                         v-else
                                                         :to="
-                                                        '/account/' +
-                                                            blockInfo.from
-                                                    "
+                                                            '/account/' +
+                                                                blockInfo.from
+                                                        "
                                                     >
                                                         {{
-                                                        blockInfo.from || "-"
+                                                            blockInfo.from ||
+                                                                "-"
                                                         }}
                                                     </router-link>
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">是否在主链</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >是否在主链</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     <template
                                                         v-if="
-                                                        blockInfo.is_on_mc ==
-                                                            '0'
-                                                    "
+                                                            blockInfo.is_on_mc ==
+                                                                '0'
+                                                        "
                                                     >
-                                                        <span class="txt-danger">False</span>
+                                                        <span class="txt-danger"
+                                                            >False</span
+                                                        >
                                                     </template>
                                                     <template
                                                         v-else-if="
-                                                        blockInfo.is_on_mc ==
-                                                            '1'
-                                                    "
+                                                            blockInfo.is_on_mc ==
+                                                                '1'
+                                                        "
                                                     >
-                                                        <span class="txt-success">True</span>
+                                                        <span
+                                                            class="txt-success"
+                                                            >True</span
+                                                        >
                                                     </template>
                                                 </div>
                                             </div>
                                         </template>
                                         <template v-else>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">发款方</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >发款方</strong
+                                                >
                                                 <div class="bui-dlist-det">
-                                                    <span v-if="isSuccess === false">-</span>
+                                                    <span
+                                                        v-if="
+                                                            isSuccess === false
+                                                        "
+                                                        >-</span
+                                                    >
                                                     <router-link
                                                         v-else
                                                         :to="
-                                                        '/account/' +
-                                                            blockInfo.from
-                                                    "
+                                                            '/account/' +
+                                                                blockInfo.from
+                                                        "
                                                     >
                                                         {{
-                                                        blockInfo.from || "-"
+                                                            blockInfo.from ||
+                                                                "-"
                                                         }}
                                                     </router-link>
                                                 </div>
                                             </div>
-                                            <template v-if="blockInfo.contract_address">
+                                            <template
+                                                v-if="
+                                                    blockInfo.contract_address
+                                                "
+                                            >
                                                 <div class="block-item-des">
-                                                    <strong class="bui-dlist-tit">收款方</strong>
+                                                    <strong
+                                                        class="bui-dlist-tit"
+                                                        >收款方</strong
+                                                    >
                                                     <div class="bui-dlist-det">
                                                         [合约
                                                         <router-link
                                                             :to="
-                                                            '/account/' +
-                                                                blockInfo.contract_address
-                                                        "
+                                                                '/account/' +
+                                                                    blockInfo.contract_address
+                                                            "
                                                         >
                                                             {{
-                                                            blockInfo.contract_address
-                                                            }}
-                                                        </router-link>创建]
+                                                                blockInfo.contract_address
+                                                            }} </router-link
+                                                        >创建]
                                                     </div>
                                                 </div>
                                             </template>
                                             <template v-else>
                                                 <div class="block-item-des">
-                                                    <strong class="bui-dlist-tit">收款方</strong>
+                                                    <strong
+                                                        class="bui-dlist-tit"
+                                                        >收款方</strong
+                                                    >
                                                     <div class="bui-dlist-det">
                                                         <span
                                                             v-if="
-                                                            isSuccess === false
-                                                        "
-                                                        >-</span>
+                                                                isSuccess ===
+                                                                    false
+                                                            "
+                                                            >-</span
+                                                        >
                                                         <template v-else>
-                                                            <template v-if="blockInfo.to">
+                                                            <template
+                                                                v-if="
+                                                                    blockInfo.to
+                                                                "
+                                                            >
                                                                 <router-link
                                                                     :to="
-                                                                    '/account/' +
-                                                                        blockInfo.to
-                                                                "
+                                                                        '/account/' +
+                                                                            blockInfo.to
+                                                                    "
                                                                 >
                                                                     {{
-                                                                    blockInfo.to
+                                                                        blockInfo.to
                                                                     }}
                                                                 </router-link>
                                                             </template>
@@ -231,49 +324,55 @@
 
                                             <template v-if="trans_token.length">
                                                 <div class="block-item-des">
-                                                    <strong class="bui-dlist-tit">代币转账</strong>
+                                                    <strong
+                                                        class="bui-dlist-tit"
+                                                        >代币转账</strong
+                                                    >
                                                     <div class="bui-dlist-det">
                                                         <div
-                                                            v-for="(item,index) in trans_token"
+                                                            v-for="(item,
+                                                            index) in trans_token"
                                                             :key="index"
                                                         >
                                                             从
                                                             <router-link
                                                                 class="table-long-item"
                                                                 :to="{
-                                                                path:
-                                                                    '/account/' +
-                                                                    item.from
-                                                            }"
+                                                                    path:
+                                                                        '/account/' +
+                                                                        item.from
+                                                                }"
                                                             >
                                                                 {{
-                                                                item.from
-                                                                }}
-                                                            </router-link>转
-                                                            <span class="amount-val">
+                                                                    item.from
+                                                                }} </router-link
+                                                            >转
+                                                            <span
+                                                                class="amount-val"
+                                                            >
                                                                 {{
-                                                                item.amount
-                                                                | toTokenVal(
-                                                                Math.pow(
-                                                                10,
-                                                                18
-                                                                )
-                                                                )
+                                                                    item.amount
+                                                                        | toTokenVal(
+                                                                            Math.pow(
+                                                                                10,
+                                                                                18
+                                                                            )
+                                                                        )
                                                                 }}
                                                             </span>
-                                                            {{ item.token_symbol }}
+                                                            {{
+                                                                item.token_symbol
+                                                            }}
                                                             至
                                                             <router-link
                                                                 class="table-long-item"
                                                                 :to="{
-                                                                path:
-                                                                    '/account/' +
-                                                                    item.to
-                                                            }"
+                                                                    path:
+                                                                        '/account/' +
+                                                                        item.to
+                                                                }"
                                                             >
-                                                                {{
-                                                                item.to
-                                                                }}
+                                                                {{ item.to }}
                                                             </router-link>
                                                         </div>
                                                     </div>
@@ -281,12 +380,14 @@
                                             </template>
 
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">金额</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >金额</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     <span class="amount-val">
                                                         {{
-                                                        blockInfo.amount
-                                                        | toCZRVal
+                                                            blockInfo.amount
+                                                                | toCZRVal
                                                         }}
                                                     </span>
                                                     CZR
@@ -295,98 +396,120 @@
                                         </template>
                                         <template v-if="blockInfo.type !== '1'">
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">手续费</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >手续费</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     {{
-                                                    blockInfo.handling_fee
-                                                    | toCZRVal
+                                                        blockInfo.handling_fee
+                                                            | toCZRVal
                                                     }}
                                                     CZR
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Gas</strong>
-                                                <div class="bui-dlist-det">{{ blockInfo.gas }}</div>
-                                            </div>
-                                            <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Gas Used</strong>
-                                                <div class="bui-dlist-det">{{ blockInfo.gas_used }}</div>
-                                            </div>
-                                            <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Gas Price</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >Gas</strong
+                                                >
                                                 <div class="bui-dlist-det">
-                                                    {{
-                                                    blockInfo.gas_price
-                                                    | toTokenVal(
-                                                    Math.pow(
-                                                    10,
-                                                    9
-                                                    )
-                                                    )
-                                                    }} (1*10
-                                                    <sup>-9</sup> CZR/gas)
+                                                    {{ blockInfo.gas }}
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Data</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >Gas Used</strong
+                                                >
                                                 <div class="bui-dlist-det">
-                                                    <pre class="contract-code">{{
-                                                    blockInfo.data
-                                                }}</pre>
+                                                    {{ blockInfo.gas_used }}
+                                                </div>
+                                            </div>
+                                            <div class="block-item-des">
+                                                <strong class="bui-dlist-tit"
+                                                    >Gas Price</strong
+                                                >
+                                                <div class="bui-dlist-det">
+                                                    {{
+                                                        blockInfo.gas_price
+                                                            | toTokenVal(
+                                                                Math.pow(10, 9)
+                                                            )
+                                                    }}
+                                                    (1*10 <sup>-9</sup> CZR/gas)
+                                                </div>
+                                            </div>
+                                            <div class="block-item-des">
+                                                <strong class="bui-dlist-tit"
+                                                    >Data</strong
+                                                >
+                                                <div class="bui-dlist-det">
+                                                    <pre
+                                                        class="contract-code"
+                                                        >{{
+                                                            blockInfo.data
+                                                        }}</pre
+                                                    >
                                                 </div>
                                             </div>
                                         </template>
                                         <template v-if="blockInfo.type === '1'">
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Best Parent</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >Best Parent</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     <router-link
                                                         :to="
-                                                        '/block/' +
+                                                            '/block/' +
+                                                                blockInfo.best_parent
+                                                        "
+                                                    >
+                                                        {{
                                                             blockInfo.best_parent
-                                                    "
-                                                    >
-                                                        {{
-                                                        blockInfo.best_parent
                                                         }}
                                                     </router-link>
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Last Stable Block</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >Last Stable Block</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     <router-link
                                                         :to="
-                                                        '/block/' +
+                                                            '/block/' +
+                                                                blockInfo.last_stable_block
+                                                        "
+                                                    >
+                                                        {{
                                                             blockInfo.last_stable_block
-                                                    "
-                                                    >
-                                                        {{
-                                                        blockInfo.last_stable_block
                                                         }}
                                                     </router-link>
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Last Summary Block</strong>
+                                                <strong class="bui-dlist-tit"
+                                                    >Last Summary Block</strong
+                                                >
                                                 <div class="bui-dlist-det">
                                                     <router-link
                                                         :to="
-                                                        '/block/' +
-                                                            blockInfo.last_summary_block
-                                                    "
+                                                            '/block/' +
+                                                                blockInfo.last_summary_block
+                                                        "
                                                     >
                                                         {{
-                                                        blockInfo.last_summary_block
+                                                            blockInfo.last_summary_block
                                                         }}
                                                     </router-link>
                                                 </div>
                                             </div>
                                             <div class="block-item-des">
-                                                <strong class="bui-dlist-tit">Last Summary</strong>
-                                                <div
-                                                    class="bui-dlist-det"
-                                                >{{ blockInfo.last_summary }}</div>
+                                                <strong class="bui-dlist-tit"
+                                                    >Last Summary</strong
+                                                >
+                                                <div class="bui-dlist-det">
+                                                    {{ blockInfo.last_summary }}
+                                                </div>
                                             </div>
                                         </template>
                                     </div>
@@ -395,13 +518,22 @@
                         </template>
                     </el-tab-pane>
                     <template v-if="isSuccess">
-                        <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
+                        <el-tab-pane
+                            label="高级信息"
+                            name="advanced_info"
+                        ></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_intel_trans">
-                        <el-tab-pane label="合约内交易" name="intel_trans"></el-tab-pane>
+                        <el-tab-pane
+                            label="合约内交易"
+                            name="intel_trans"
+                        ></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_event_log">
-                        <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                        <el-tab-pane
+                            label="事件日志"
+                            name="event_log"
+                        ></el-tab-pane>
                     </template>
                 </el-tabs>
             </div>
@@ -425,7 +557,7 @@ export default {
     },
     data() {
         return {
-            blockHash: this.$route.params.id,
+            blockHash: this.$route.params.id.toUpperCase(),
             isSuccess: false,
             loadingSwitch: true,
             IS_GET_INFO: false,
