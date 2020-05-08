@@ -18,13 +18,14 @@
     </div>
 </template>
 <script>
+
 export default {
     name: "Search",
     data() {
         return {
             form: {
                 searchVal: "",
-                placeholder: "请输入CZR交易号或账户进行查询"
+                placeholder: this.$t('header.search')
             }
         };
     },

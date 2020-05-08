@@ -2,7 +2,9 @@
     <div class="com-account-wrap">
         <div class="acc-address">
             <!-- -->
-            <strong class="acc-address-tit">账户地址</strong>
+            <strong class="acc-address-tit">{{
+                $t("accoount.account_address")
+            }}</strong>
             <span class="acc-address-des">{{ address }}</span>
         </div>
         <div class="bui-dlist" v-loading="loadingSwitch">
@@ -10,31 +12,47 @@
                 <el-row>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">账户类型</strong>
+                            <strong class="bui-dlist-tit">{{
+                                $t("accoount.account_type")
+                            }}</strong>
                             <div class="bui-dlist-det">
-                                <template v-if="account_info.type == 2">合约账户</template>
-                                <template v-else>普通账户</template>
+                                <template v-if="account_info.type == 2">{{
+                                    $t("accoount.contract_account")
+                                }}</template>
+                                <template v-else>{{
+                                    $t("accoount.ordinary_account")
+                                }}</template>
                             </div>
                         </div>
                     </el-col>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">交易数</strong>
-                            <div class="bui-dlist-det">{{ account_info.total }} 次</div>
+                            <strong class="bui-dlist-tit">{{
+                                $t("accoount.transs_number")
+                            }}</strong>
+                            <div class="bui-dlist-det">
+                                {{ account_info.total }} 次
+                            </div>
                         </div>
                     </el-col>
                 </el-row>
                 <el-row>
                     <el-col :span="12">
                         <div class="block-item-des">
-                            <strong class="bui-dlist-tit">余额</strong>
-                            <div class="bui-dlist-det">{{ account_info.balance | toCZRVal }} CZR</div>
+                            <strong class="bui-dlist-tit">{{
+                                $t("accoount.amount")
+                            }}</strong>
+                            <div class="bui-dlist-det">
+                                {{ account_info.balance | toCZRVal }} CZR
+                            </div>
                         </div>
                     </el-col>
                     <template v-if="account_info.type == 2">
                         <el-col :span="12">
                             <div class="block-item-des">
-                                <strong class="bui-dlist-tit">合约创建</strong>
+                                <strong class="bui-dlist-tit">{{
+                                    $t("accoount.contract_creation")
+                                }}</strong>
                                 <div class="bui-dlist-det">
                                     <router-link
                                         class="table-long-item"
@@ -44,16 +62,14 @@
                                         "
                                     >
                                         {{
-                                        account_info.own_account
-                                        }}
-                                    </router-link>创建于
+                                            account_info.own_account
+                                        }} </router-link
+                                    >{{ $t("accoount.built_in") }}
                                     <router-link
                                         class="table-long-item"
                                         :to="'/block/' + account_info.born_unit"
                                     >
-                                        {{
-                                        account_info.born_unit
-                                        }}
+                                        {{ account_info.born_unit }}
                                     </router-link>
                                 </div>
                             </div>
@@ -65,15 +81,15 @@
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">对应代币</strong>
+                                    <strong class="bui-dlist-tit">{{
+                                        $t("accoount.corresponding_token")
+                                    }}</strong>
                                     <div class="bui-dlist-det">
                                         <router-link
                                             class="table-long-item"
                                             :to="'/token/' + address"
                                         >
-                                            {{
-                                            account_info.symbol
-                                            }}
+                                            {{ account_info.symbol }}
                                         </router-link>
                                     </div>
                                 </div>

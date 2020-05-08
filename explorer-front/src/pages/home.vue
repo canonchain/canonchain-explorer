@@ -9,7 +9,9 @@
                 <echarts></echarts>
             </div>-->
             <div class="trans-wrap" v-loading="loadingSwitch">
-                <h2 class="list-title">最新交易</h2>
+                <h2 class="list-title">
+                    {{ $t("home.latest_transactions") }}
+                </h2>
                 <nomal-list :database="database"></nomal-list>
             </div>
         </div>

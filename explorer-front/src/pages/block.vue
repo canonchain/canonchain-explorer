@@ -4,7 +4,7 @@
         <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
-                    <el-tab-pane label="交易详情" name="trans_info">
+                    <el-tab-pane :label="$t('block.trans_detail')"  name="trans_info">
                         <template>
                             <template v-if="IS_GET_INFO">
                                 <template v-if="isSuccess === false">
@@ -12,14 +12,14 @@
                                         <i
                                             class="info-null-icon el-icon-chat-line-round"
                                         ></i>
-                                        <br />暂无信息
+                                        <br />{{ $t("block.null_info") }}
                                     </div>
                                 </template>
                                 <template v-else>
                                     <div class="bui-dlist">
                                         <div class="block-item-des">
                                             <strong class="bui-dlist-tit"
-                                                >交易号</strong
+                                                >{{ $t("block.transaction_hash") }}</strong
                                             >
                                             <div class="bui-dlist-det">
                                                 {{ blockHash }}
@@ -32,21 +32,21 @@
                                                         :to="
                                                             '/dag/' + blockHash
                                                         "
-                                                        >DAG中查看</router-link
+                                                        >{{ $t("block.look_dag") }}</router-link
                                                     >
                                                 </template>
                                             </div>
                                         </div>
                                         <div class="block-item-des">
                                             <strong class="bui-dlist-tit"
-                                                >状态</strong
+                                                >{{ $t("block.status") }}</strong
                                             >
                                             <div class="bui-dlist-det">
                                                 <template
                                                     v-if="isSuccess === false"
                                                 >
                                                     <span class="txt-info"
-                                                        >暂无信息</span
+                                                        >{{ $t("block.null_info") }}</span
                                                     >
                                                 </template>
                                                 <template v-else>
@@ -58,7 +58,7 @@
                                                     >
                                                         <span
                                                             class="txt-warning"
-                                                            >等待确认</span
+                                                            >{{ $t("block.waiting") }}</span
                                                         >
                                                     </template>
                                                     <template v-else>
@@ -70,7 +70,7 @@
                                                         >
                                                             <span
                                                                 class="txt-success"
-                                                                >成功</span
+                                                                >{{ $t("block.success") }}</span
                                                             >
                                                         </template>
                                                         <template
@@ -81,7 +81,7 @@
                                                         >
                                                             <span
                                                                 class="txt-danger"
-                                                                >失败(1)</span
+                                                                >{{ $t("block.fail") }}(1)</span
                                                             >
                                                         </template>
                                                         <template
@@ -92,7 +92,7 @@
                                                         >
                                                             <span
                                                                 class="txt-danger"
-                                                                >失败(2)</span
+                                                                >{{ $t("block.fail") }}(2)</span
                                                             >
                                                         </template>
                                                         <template
@@ -103,7 +103,7 @@
                                                         >
                                                             <span
                                                                 class="txt-danger"
-                                                                >失败(3)</span
+                                                                >{{ $t("block.fail") }}(3)</span
                                                             >
                                                         </template>
                                                         <template
@@ -114,7 +114,7 @@
                                                         >
                                                             <span
                                                                 class="txt-danger"
-                                                                >不存在</span
+                                                                >{{ $t("block.not_exist") }}</span
                                                             >
                                                         </template>
                                                         <template v-else>
@@ -129,7 +129,7 @@
                                         </div>
                                         <div class="block-item-des">
                                             <strong class="bui-dlist-tit"
-                                                >确认时间</strong
+                                                >{{ $t("block.confirm_time") }}</strong
                                             >
                                             <div class="bui-dlist-det">
                                                 {{
@@ -140,7 +140,7 @@
                                         </div>
                                         <div class="block-item-des">
                                             <strong class="bui-dlist-tit"
-                                                >交易类型</strong
+                                                >{{ $t("block.trans_type") }}</strong
                                             >
                                             <div class="bui-dlist-det">
                                                 <template
@@ -149,7 +149,7 @@
                                                     "
                                                 >
                                                     <span class="txt-info"
-                                                        >创世交易</span
+                                                        >{{ $t("block.type0") }}</span
                                                     >
                                                 </template>
                                                 <template
@@ -158,7 +158,7 @@
                                                     "
                                                 >
                                                     <span class="txt-info"
-                                                        >见证交易</span
+                                                        >{{ $t("block.type1") }}</span
                                                     >
                                                 </template>
                                                 <template
@@ -167,7 +167,7 @@
                                                     "
                                                 >
                                                     <span class="txt-info"
-                                                        >普通交易</span
+                                                        >{{ $t("block.normal_trans") }}</span
                                                     >
                                                 </template>
                                                 <template v-else>
@@ -180,7 +180,7 @@
                                         <template v-if="blockInfo.type === '1'">
                                             <div class="block-item-des">
                                                 <strong class="bui-dlist-tit"
-                                                    >账户</strong
+                                                    >{{ $t("block.accounts") }}</strong
                                                 >
                                                 <div class="bui-dlist-det">
                                                     <span
@@ -205,7 +205,7 @@
                                             </div>
                                             <div class="block-item-des">
                                                 <strong class="bui-dlist-tit"
-                                                    >是否在主链</strong
+                                                    >{{ $t("block.is_on_main_chain") }}</strong
                                                 >
                                                 <div class="bui-dlist-det">
                                                     <template
@@ -235,7 +235,7 @@
                                         <template v-else>
                                             <div class="block-item-des">
                                                 <strong class="bui-dlist-tit"
-                                                    >发款方</strong
+                                                    >{{ $t("block.sender") }}</strong
                                                 >
                                                 <div class="bui-dlist-det">
                                                     <span
@@ -266,10 +266,10 @@
                                                 <div class="block-item-des">
                                                     <strong
                                                         class="bui-dlist-tit"
-                                                        >收款方</strong
+                                                        >{{ $t("block.receiver") }}</strong
                                                     >
                                                     <div class="bui-dlist-det">
-                                                        [合约
+                                                        [{{ $t("block.contract") }}
                                                         <router-link
                                                             :to="
                                                                 '/account/' +
@@ -279,7 +279,7 @@
                                                             {{
                                                                 blockInfo.contract_address
                                                             }} </router-link
-                                                        >创建]
+                                                        >{{ $t("block.create") }}]
                                                     </div>
                                                 </div>
                                             </template>
@@ -287,7 +287,7 @@
                                                 <div class="block-item-des">
                                                     <strong
                                                         class="bui-dlist-tit"
-                                                        >收款方</strong
+                                                        >{{ $t("block.receiver") }}</strong
                                                     >
                                                     <div class="bui-dlist-det">
                                                         <span
@@ -326,7 +326,7 @@
                                                 <div class="block-item-des">
                                                     <strong
                                                         class="bui-dlist-tit"
-                                                        >代币转账</strong
+                                                        >{{ $t("block.token_trans") }}</strong
                                                     >
                                                     <div class="bui-dlist-det">
                                                         <div
@@ -334,7 +334,7 @@
                                                             index) in trans_token"
                                                             :key="index"
                                                         >
-                                                            从
+                                                            {{ $t("block.from") }}
                                                             <router-link
                                                                 class="table-long-item"
                                                                 :to="{
@@ -346,7 +346,7 @@
                                                                 {{
                                                                     item.from
                                                                 }} </router-link
-                                                            >转
+                                                            >{{ $t("block.transfer") }}
                                                             <span
                                                                 class="amount-val"
                                                             >
@@ -363,7 +363,7 @@
                                                             {{
                                                                 item.token_symbol
                                                             }}
-                                                            至
+                                                            {{ $t("block.to") }}
                                                             <router-link
                                                                 class="table-long-item"
                                                                 :to="{
@@ -381,7 +381,7 @@
 
                                             <div class="block-item-des">
                                                 <strong class="bui-dlist-tit"
-                                                    >金额</strong
+                                                    >{{ $t("block.amount") }}</strong
                                                 >
                                                 <div class="bui-dlist-det">
                                                     <span class="amount-val">
@@ -397,7 +397,7 @@
                                         <template v-if="blockInfo.type !== '1'">
                                             <div class="block-item-des">
                                                 <strong class="bui-dlist-tit"
-                                                    >手续费</strong
+                                                    >{{ $t("block.handling_fee") }}</strong
                                                 >
                                                 <div class="bui-dlist-det">
                                                     {{
@@ -519,19 +519,19 @@
                     </el-tab-pane>
                     <template v-if="isSuccess">
                         <el-tab-pane
-                            label="高级信息"
+                            :label="$t('block.advanced_info')"
                             name="advanced_info"
                         ></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_intel_trans">
                         <el-tab-pane
-                            label="合约内交易"
+                            :label="$t('block.contract_transactions')"
                             name="intel_trans"
                         ></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_event_log">
                         <el-tab-pane
-                            label="事件日志"
+                            :label="$t('block.event_log')"
                             name="event_log"
                         ></el-tab-pane>
                     </template>

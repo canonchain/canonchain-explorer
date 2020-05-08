@@ -3,25 +3,25 @@
         <el-col :span="6">
             <div class="text-content">
                 <h4 class="mci-number">{{ mci.last_mci }}</h4>
-                <p class="mci-tit">最新MCI</p>
+                <p class="mci-tit">{{ $t('home.latest_mci') }}</p>
             </div>
         </el-col>
         <el-col :span="6">
             <div class="text-content">
                 <h4 class="mci-number">{{ mci.last_stable_mci }}</h4>
-                <p class="mci-tit">最新稳定MCI</p>
+                <p class="mci-tit">{{ $t('home.latest_stable_mci') }}</p>
             </div>
         </el-col>
         <el-col :span="6">
             <div class="text-content">
                 <h4 class="mci-number">{{ mci.last_stable_block_index }}</h4>
-                <p class="mci-tit">最新稳定索引值</p>
+                <p class="mci-tit">{{ $t('home.latest_stable_index') }}</p>
             </div>
         </el-col>
         <el-col :span="6">
             <div class="text-content">
                 <h4 class="mci-number">{{ mci.top_tps }}</h4>
-                <p class="mci-tit">峰值TPS</p>
+                <p class="mci-tit">{{ $t('home.peak_tps') }}</p>
             </div>
         </el-col>
     </el-row>

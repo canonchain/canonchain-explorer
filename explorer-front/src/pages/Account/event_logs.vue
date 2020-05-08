@@ -9,22 +9,22 @@
                 <div class="account-main">
                     <template>
                         <el-tabs v-model="activeName" @tab-click="change_table">
-                            <el-tab-pane label="交易记录" name="transaction"></el-tab-pane>
+                            <el-tab-pane  :label="$t('accoount.trans_record')" name="transaction"></el-tab-pane>
 
                             <template v-if="account_props.is_has_token_assets">
                                 <!-- is_has_token_assets 应该为 is_has_token -->
-                                <el-tab-pane label="代币余额" name="token_balances"></el-tab-pane>
+                                <el-tab-pane :label="$t('accoount.token_balance')" name="token_balances"></el-tab-pane>
                             </template>
                             <template v-if="account_props.is_has_token_trans">
-                                <el-tab-pane label="代币转账" name="trans_token"></el-tab-pane>
+                                <el-tab-pane :label="$t('accoount.token_transfer')" name="trans_token"></el-tab-pane>
                             </template>
                             <template v-if="account_props.is_has_intel_trans">
-                                <el-tab-pane label="合约内交易" name="trans_internal"></el-tab-pane>
+                                <el-tab-pane :label="$t('accoount.contract_trans')" name="trans_internal"></el-tab-pane>
                             </template>
                             <template v-if="account_props.is_witness">
-                                <el-tab-pane label="见证交易" name="trans_witness"></el-tab-pane>
+                                <el-tab-pane :label="$t('accoount.witness_trans')" name="trans_witness"></el-tab-pane>
                             </template>
-                            <el-tab-pane label="事件日志" name="event_logs">
+                            <el-tab-pane :label="$t('accoount.event_log')" name="event_logs">
                                 <div class="accounts-main-wrap" v-loading="loadingSwitch">
                                     <template v-if="IS_GET_INFO">
                                         <event-logs :database="event_logs"></event-logs>
@@ -43,7 +43,7 @@
                                                                 'header'
                                                             )
                                                         "
-                                                    >首页</el-button>
+                                                    >{{ $t('accoount.first') }}</el-button>
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
@@ -55,7 +55,7 @@
                                                                 'left'
                                                             )
                                                         "
-                                                    >上一页</el-button>
+                                                    >{{ $t('accoount.prev') }}</el-button>
                                                     <el-button
                                                         size="mini"
                                                         :disabled="
@@ -67,7 +67,7 @@
                                                             )
                                                         "
                                                     >
-                                                        下一页
+                                                        {{ $t('accoount.next') }}
                                                         <i
                                                             class="el-icon-arrow-right el-icon--right"
                                                         ></i>
@@ -82,7 +82,7 @@
                                                                 'footer'
                                                             )
                                                         "
-                                                    >尾页</el-button>
+                                                    >{{ $t('accoount.last') }}</el-button>
                                                 </el-button-group>
                                             </div>
                                         </template>
@@ -90,7 +90,7 @@
                                 </div>
                             </el-tab-pane>
                             <template v-if="account_props.account_type === 2">
-                                <el-tab-pane label="合约创建代码" name="contract_code"></el-tab-pane>
+                                <el-tab-pane :label="$t('accoount.contract_creation_code')" name="contract_code"></el-tab-pane>
                             </template>
                         </el-tabs>
                     </template>

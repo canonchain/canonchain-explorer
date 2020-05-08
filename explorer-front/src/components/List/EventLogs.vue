@@ -25,7 +25,7 @@
         </div>
         <!-- End -->
         <template v-if="database.length === 0">
-            <div class="data-null">--- 无数据 ---</div>
+            <div class="data-null">--- {{ $t('list.no_data') }} ---</div>
         </template>
     </div>
 </template>

@@ -2,7 +2,7 @@
     <div class="com-account-wrap">
         <div class="acc-address">
             <!-- -->
-            <strong class="acc-address-tit">代币</strong>
+            <strong class="acc-address-tit">{{ $t("token.token") }}</strong>
             <span class="acc-address-des"
                 >{{ account_info.name }}（{{ account_info.symbol }}）</span
             >
@@ -13,7 +13,7 @@
                     <el-col :span="12">
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                总供应量
+                                {{ $t("token.total_supply") }}
                             </strong>
                             <div class="bui-dlist-det">
                                 {{
@@ -29,7 +29,7 @@
                     <el-col :span="12">
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                位数
+                                {{ $t("token.digits") }}
                             </strong>
                             <div class="bui-dlist-det">
                                 {{ account_info.precision }}
@@ -41,7 +41,7 @@
                     <el-col :span="12">
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                持有者
+                                {{ $t("token.holder") }}
                             </strong>
                             <div class="bui-dlist-det">
                                 {{ account_info.account_count }}
@@ -51,7 +51,7 @@
                     <el-col :span="12">
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                交易数
+                                {{ $t("token.transs_number") }}
                             </strong>
                             <div class="bui-dlist-det">
                                 {{ account_info.transaction_count }} 次
@@ -63,7 +63,7 @@
                     <el-col :span="12">
                         <div class="block-item-des">
                             <strong class="bui-dlist-tit">
-                                对应合约
+                                {{ $t("token.corresponding_contract") }}
                             </strong>
                             <div class="bui-dlist-det">
                                 <router-link
