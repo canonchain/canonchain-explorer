@@ -889,7 +889,7 @@ async function tx_details(query) {
     return {
       "code": 100,
       "msg": "ok",
-      "result": transDetail.rows
+      "result": transDetail.rows[0]
     }
   } catch (error) {
     logger.error("tx_details error");
