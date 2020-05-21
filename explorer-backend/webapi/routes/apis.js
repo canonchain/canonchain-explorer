@@ -847,7 +847,7 @@ async function tx_details(query) {
       // console.log('trans_genesis')
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_timestamp"
+            "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_genesis
         where
@@ -860,7 +860,7 @@ async function tx_details(query) {
       // console.log('trans_witness')
       listOptions = `
         select 
-            "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_timestamp"
+            "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_witness
         where
@@ -878,7 +878,7 @@ async function tx_details(query) {
       // console.log('trans_normal')
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_timestamp"
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_normal
         where
