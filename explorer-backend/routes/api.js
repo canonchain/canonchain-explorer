@@ -458,7 +458,7 @@ router.get("/get_tokens", async function (req, res, next) {
         return;
     }
 
-    let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_total","transaction_count","account_count"',
+    let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_precision","token_total","transaction_count","account_count"',
         tableName = "token";
 
     let opt;

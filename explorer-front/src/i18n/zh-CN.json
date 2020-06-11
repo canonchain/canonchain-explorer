@@ -38,7 +38,7 @@
     "sender": "发款方",
     "receiver": "收款方",
     "waiting": "等待确认",
-    "czr_blan": "余额/CZR",
+    "czr_blan": "金额/CZR",
     "status": "状态",
     "success": "成功",
     "fail": "失败"

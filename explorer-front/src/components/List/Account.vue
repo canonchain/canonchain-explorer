@@ -15,7 +15,7 @@
         </el-table-column>
         <el-table-column
             prop="proportion"
-            :label="$t('list.proportion')"
+            :label="$t('accoount.proportion')"
             align="right"
             min-width="160"
         ></el-table-column>

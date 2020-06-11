@@ -39,7 +39,7 @@
         >
             <template slot-scope="scope">
                 <span>{{
-                    scope.row.token_total | toTokenVal(Math.pow(10, 18))
+                    scope.row.token_total | toTokenVal(Math.pow(10, scope.row.token_precision))
                 }}</span>
             </template>
         </el-table-column>
