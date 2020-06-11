@@ -12,7 +12,10 @@
         </el-table-column>
         <el-table-column :label="$t('token.quantity')" align="right">
             <template slot-scope="scope">
-                <span>{{ scope.row.balance | toTokenVal }}</span>
+                <span>{{
+                    scope.row.balance
+                        | toTokenVal(Math.pow(10, scope.row.precision))
+                }}</span>
             </template>
         </el-table-column>
     </el-table>

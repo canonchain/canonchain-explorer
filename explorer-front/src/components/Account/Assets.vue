@@ -1,12 +1,12 @@
 <template>
     <el-table :data="database" style="width: 100%">
-        <el-table-column :label="$t('accoount.token_symbol')" width="200">
+        <el-table-column :label="$t('token.token_symbol')" width="200">
             <template slot-scope="scope"
                 >{{ scope.row.symbol }}（{{ scope.row.name }}）</template
             >
         </el-table-column>
         <el-table-column
-            :label="$t('accoount.corresponding_contract')"
+            :label="$t('token.corresponding_contract')"
             min-width="200"
         >
             <template slot-scope="scope">

@@ -649,7 +649,8 @@
                         // await Promise.all(blockInfo.log.map(async (log_item) => {
 
                         //改为 account 了
-                        let contractAccount = czr.utils.encodeAccount(log_item.account);
+                        // let contractAccount = czr.utils.encodeAccount(log_item.account);
+                        let contractAccount = log_item.account;
                         let transData = parseInt(log_item.data, 16);
                         tempEventLogItem = {
                             hash: blockInfo.hash,

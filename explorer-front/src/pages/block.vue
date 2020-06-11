@@ -355,7 +355,7 @@
                                                                         | toTokenVal(
                                                                             Math.pow(
                                                                                 10,
-                                                                                18
+                                                                                item.token_precision
                                                                             )
                                                                         )
                                                                 }}
