@@ -27,6 +27,7 @@
 - [tx_offline_generation （生成离线交易）](./doc/Transaction.md/#生成离线交易)
 - [tx_offline_sending （发送离线交易）](./doc/Transaction.md/#发送离线交易)
 - [tx_details （通过交易Hash获取交易详情）](./doc/Transaction.md/#获取交易详情)
+- [token_tx_details （通过交易Hash获取Token交易详情）](./doc/Transaction.md/#获取Token交易详情)
 
 <!-- /TOC -->
 

@@ -955,7 +955,7 @@ async function tx_details (query) {
       // is_token_trans
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","is_token_trans","status","mc_timestamp","stable_index","stable_timestamp"
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_normal
         where
@@ -972,24 +972,24 @@ async function tx_details (query) {
       }
     }
     let targetData = transDetail.rows[0];
-    if (targetData.is_token_trans) {
-      // 获取Token信息
-      let opt = {
-        text: `
-          Select 
-              "hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
-          FROM 
-              "trans_token"
-          WHERE
-              "hash" = $1
-          order by
-              trans_token_id asc
-      `,
-        values: [query.hash]
-      }
-      let data = await pgPromise.query(opt);
-      targetData.token_trans_info = data.rows.length ? data.rows[0] : {};
-    }
+    // if (targetData.is_token_trans) {
+    //   // 获取Token信息
+    //   let opt = {
+    //     text: `
+    //       Select 
+    //           "hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
+    //       FROM 
+    //           "trans_token"
+    //       WHERE
+    //           "hash" = $1
+    //       order by
+    //           trans_token_id asc
+    //   `,
+    //     values: [query.hash]
+    //   }
+    //   let data = await pgPromise.query(opt);
+    //   targetData.token_trans_info = data.rows.length ? data.rows[0] : {};
+    // }
 
     return {
       "code": 100,
@@ -1004,6 +1004,63 @@ async function tx_details (query) {
   }
 
 }
+
+// 获取Token交易
+async function token_tx_details (query) {
+  //校验
+  if (!query.hash) {
+    return {
+      "code": 400,
+      "msg": "Parameter missing txhash"
+    }
+  }
+  if (invalidTxHash(query.hash)) {
+    return {
+      "code": 400,
+      "msg": "invalid txhash"
+    }
+  }
+  try {
+    let opt = {
+      text: `
+          Select 
+              "hash","mc_timestamp","stable_index",
+              "from","to","contract_account","token_symbol","token_name","token_precision",
+              "amount","gas","gas_price","gas_used","input"
+          FROM 
+              "trans_token"
+          WHERE
+              "hash" = $1
+      `,
+      values: [queryVal.hash]
+    }
+    let transDetail = await pgPromise.query(opt);
+
+    if (!transDetail.rows.length) {
+      return {
+        "code": 100,
+        "msg": "ok",
+        "result": {}
+      }
+    }
+    let targetData = transDetail.rows[0];
+
+    targetData.data = targetData.input;
+    delete targetData.input;
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": targetData
+    }
+
+  } catch (error) {
+    logger.error("token_tx_details error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+
+}
+
 // ******************************** 交易模块 结束
 
 
@@ -1292,6 +1349,9 @@ router.get('/', async function (ctx, next) {
         break;
       case 'tx_details':
         ctx.body = await tx_details(query);
+        break;
+      case 'token_tx_details':
+        ctx.body = await token_tx_details(query);
         break;
       default:
         ctx.body = {
