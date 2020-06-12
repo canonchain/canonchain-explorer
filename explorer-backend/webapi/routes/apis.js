@@ -1032,7 +1032,7 @@ async function token_tx_details (query) {
           WHERE
               "hash" = $1
       `,
-      values: [queryVal.hash]
+      values: [query.hash]
     }
     let transDetail = await pgPromise.query(opt);
 

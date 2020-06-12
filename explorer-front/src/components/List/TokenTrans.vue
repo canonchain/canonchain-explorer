@@ -59,7 +59,12 @@
         >
             <template slot-scope="scope">
                 <span>
-                    {{ scope.row.amount | toCZRVal }}
+                    {{
+                        scope.row.amount
+                            | toTokenVal(
+                                Math.pow(10, scope.row.token_precision || 18)
+                            )
+                    }}
                     {{ scope.row.token_symbol }}
                 </span>
             </template>

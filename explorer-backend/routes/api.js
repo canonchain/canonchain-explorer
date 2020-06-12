@@ -1902,7 +1902,7 @@ router.get("/get_trans_token", async function (req, res, next) {
     let mainOpt = {
         text: `
             Select 
-                "stable_index","trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                "stable_index","trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","token_precision","amount"
             FROM
                 trans_token
             WHERE
