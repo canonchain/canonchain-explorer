@@ -3,6 +3,7 @@
 - [account_balance （获取 单个账户 的余额）](#获取单个账户的余额)
 - [account_balance_multi （获取 多个账户 的余额）](#获取多个账户的余额)
 - [account_balance_token （获取 单个账户 的 C-ERC20 Token 余额）](#获取单个账户的C-ERC20余额)
+- [account_balance_token_multi （获取 多个账户 的 C-ERC20 Token 余额）](#获取多个账户的C-ERC20余额)
 - [account_txlist （获取 单个账户 的交易列表 Normal）](#获取单个账户的交易列表Normal)
 - [account_txlist_internal （获取 单个账户 的交易列表 Internal）](#获取单个账户的交易列表Internal)
 - [account_txlist_count （获取 单个账户 的交易数 Normal）](#获取单个账户的交易数量)
@@ -159,6 +160,58 @@
                 precision:18, 
                 balance :"1580000000"
             }
+    }
+
+    失败（缺少account参数）：
+    {
+        "code"  : 400,
+        "msg"   : "missing account parameter",
+    }
+    ```
+- 结果说明
+    - 返回格式: Array
+    - 返回值: 获取到的账户Token以及对应信息
+        - account           账户
+        - contract_account  合约账户
+        - name              Token全称
+        - symbol            Token简称
+        - precision         精度
+        - balance           余额,单位：10<sup>-精度</sup> Token
+
+
+[返回账户API列表](#账户API列表)
+
+
+
+### 获取多个账户的C-ERC20余额
+
+返回从地址发送的Token
+
+- 方式 ：GET
+- 参数
+    ```
+    module              : account
+    action              : account_balance_token_multi
+    account             : czr_xx,czr_xx
+    contract_account    : czr_xx ,指定token账户
+    apikey              : YourApiKeyToken
+    ```
+- 结果
+    ```
+    成功：
+    {
+        "code": 100,
+        "msg": "OK",
+        "result": [
+            {
+                account :"czr_account",
+                contract_account :"czr_account",
+                name :"Token Name",
+                symbol :"Token Symbol",
+                precision:18, 
+                balance :"1580000000"
+            }
+        ]
     }
 
     失败（缺少account参数）：
@@ -371,7 +424,12 @@
                 "to": "czr_3juP4ekGuk66hA78XJb9XcJxCAaPff5a1K5W2eiehvmucjwotk",
                 "contract_account": "czr_3juP4ekGuk66hA78XJb9XcJxCAaPff5a1K5W2eiehvmucjwotk",
                 "token_symbol": "CCC",
-                "amount": "1000"
+                "amount": "1000",
+                "gas": "1000",
+                "gas_price": "1500000",
+                "gas_used": "21000",
+                "token_precision": "6",
+                "input": "",
             }
         ]
     }

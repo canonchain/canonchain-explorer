@@ -18,7 +18,7 @@ let allApikeys = []; //緩存所有的apikeys
 let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
-async function updtAPikeys() {
+async function updtAPikeys () {
   let sql = `select apikey from api_keys where create_timestamp > ${lastTimestamp}`
   rlt = await pgPromise.query(sql);
   rlt.rows.forEach(item => {
@@ -37,7 +37,7 @@ async function updtAPikeys() {
 
 
 //判断字符串是不是一个交易hash
-function invalidTxHash(hash) {
+function invalidTxHash (hash) {
   let pat = /[0-9a-f]{64,}/i
   return pat.test(hash) ? false : true
 }
@@ -77,7 +77,7 @@ let ERROR_MSG = {
       "result":true      /    false
     }
  */
-async function account_validate(account) {
+async function account_validate (account) {
   try {
     let rlt = await czr.request.accountValidate(account);
     //rlt.valid 验证结果，0：格式不合法，1：格式合法。
@@ -112,7 +112,7 @@ async function account_validate(account) {
     }
 */
 //获取单个账户的余额
-async function account_balance(query) {
+async function account_balance (query) {
   try {
     let listOptions = {
       text: "select balance from accounts where account = $1",
@@ -157,7 +157,7 @@ async function account_balance(query) {
       }
 */
 //获取多个账户的余额
-async function account_balance_multi(query) {
+async function account_balance_multi (query) {
   try {
     let addressAry = query.account.split(',')
     let account_multi_rlt = {}
@@ -225,7 +225,7 @@ async function account_balance_multi(query) {
     }
 */
 //获取单个账户的交易列表Normal
-async function account_txlist(query) {
+async function account_txlist (query) {
   try {
     let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
@@ -313,7 +313,7 @@ async function account_txlist(query) {
     }
 */
 //获取单个账户的交易列表Internal 
-async function account_txlist_internal(query) {
+async function account_txlist_internal (query) {
   try {
     let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
@@ -403,7 +403,7 @@ async function account_txlist_internal(query) {
   }
 */
 //获取单个账户的交易数量
-async function account_txlist_count(query) {
+async function account_txlist_count (query) {
   try {
     let sql = `
       select 
@@ -445,11 +445,11 @@ async function account_txlist_count(query) {
   }
 */
 //获取单个账户的CRC20余额
-async function account_balance_token(query) {
+async function account_balance_token (query) {
   try {
     let sql = `
     select 
-      account,contract_account,'name',symbol,precision,balance 
+      account,contract_account,"name",symbol,precision,balance 
     from 
       token_asset 
     where 
@@ -472,6 +472,78 @@ async function account_balance_token(query) {
     }
   } catch (error) {
     logger.error("account_balance_token error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+}
+
+/** 
+ * 接口： 获取多个账户的CRC20余额
+* 参数:
+    {
+        module   : account
+        action   : account_balance_token_multi
+        account : czr_account1,czr_account2
+        contract_account: czr_xx ,指定token账户
+        apikey   : YourApiKeyToken
+    }
+  * 返回
+    {
+      "code": 100,
+      "msg": "OK",
+      "result": 2
+  }
+*/
+//获取多个账户的指定CRC20余额
+async function account_balance_token_multi (query) {
+  try {
+    let addressAry = query.account.split(',');
+    let listOptions = {
+      text: `
+      select 
+        account,contract_account,"name",symbol,precision,balance 
+      from 
+        token_asset
+      where 
+        (contract_account = '${query.contract_account}')
+        AND
+        (account = ANY ($1))
+      `,
+      values: [addressAry]
+    };
+    const resList = await pgPromise.query(listOptions);
+
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": resList.rows
+    }
+
+    // let sql = `
+    // select 
+    //   account,contract_account,'name',symbol,precision,balance 
+    // from 
+    //   token_asset 
+    // where 
+    //   account = '${query.account}'
+    // `
+    // if (query.contract_account) {
+    //   sql += ` and contract_account = '${query.contract_account}'`
+    //   let rlt = await pgPromise.query(sql);
+    //   return {
+    //     "code": 100,
+    //     "msg": "OK",
+    //     "result": rlt.rowCount ? rlt.rows[0] : 0
+    //   }
+    // }
+    // let rlt = await pgPromise.query(sql);
+    // return {
+    //   "code": 100,
+    //   "msg": "OK",
+    //   "result": rlt.rows
+    // }
+  } catch (error) {
+    logger.error("account_balance_token_multi error");
     logger.error(error);
     return ERROR_MSG.SYSTEM;
   }
@@ -509,13 +581,13 @@ async function account_balance_token(query) {
       }
 */
 //获取单个账户的CRC20交易
-async function account_txlist_token(query) {
+async function account_txlist_token (query) {
   try {
     let sort = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
       text:
         `select 
-                  "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount" 
+                  "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","gas" ,"gas_price" ,"gas_used","token_precision","input"
               from 
                 trans_token
               where
@@ -600,7 +672,7 @@ async function account_txlist_token(query) {
     }
 */
 //生成离线交易
-async function tx_offline_generation(query) {
+async function tx_offline_generation (query) {
   if (!query.from || !query.to) {
     return {
       "code": 400,
@@ -698,7 +770,7 @@ async function tx_offline_generation(query) {
     }
 */
 //发送离线交易
-async function tx_offline_sending(query) {
+async function tx_offline_sending (query) {
   //   {
   //     "action": "tx_offline_sending",
   //     "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",    
@@ -817,7 +889,7 @@ async function tx_offline_sending(query) {
     }
 */
 //获取交易详情
-async function tx_details(query) {
+async function tx_details (query) {
   //校验
   if (!query.hash) {
     return {
@@ -925,7 +997,7 @@ async function tx_details(query) {
     }
 */
 //获取CZRGas
-async function gas_price() {
+async function gas_price () {
   try {
     let querySql = {
       text: `
@@ -978,7 +1050,7 @@ async function gas_price() {
     }
 */
 //获得估算Gas
-async function estimate_gas(query) {
+async function estimate_gas (query) {
   try {
     let call_obj = {
       "from": query.from || '',
@@ -1019,7 +1091,7 @@ async function estimate_gas(query) {
     }
 */
 //字符串转16进制
-async function to_hex(query) {
+async function to_hex (query) {
   if (!query.source) {
     return {
       "code": 400,
@@ -1161,13 +1233,16 @@ router.get('/', async function (ctx, next) {
       case 'account_balance_token':
         ctx.body = await account_balance_token(query);
         break;
+      case 'account_balance_token_multi':
+        ctx.body = await account_balance_token_multi(query);
+        break;
       case 'account_txlist_token':
         ctx.body = await account_txlist_token(query);
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in account module",
+          "code": 403,
+          "msg": "this action is not available in account module",
         }
     }
   }
@@ -1186,8 +1261,8 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in transaction module",
+          "code": 403,
+          "msg": "this action is not available in transaction module",
         }
     }
   }
@@ -1206,8 +1281,8 @@ router.get('/', async function (ctx, next) {
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in other module",
+          "code": 403,
+          "msg": "this action is not available in other module",
         }
     }
   }

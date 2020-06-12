@@ -10,6 +10,7 @@
 - [account_balance （获取 单个账户 的余额）](./doc/Accounts.md/#获取单个账户的余额)
 - [account_balance_multi （获取 多个账户 的余额）](./doc/Accounts.md/#获取多个账户的余额)
 - [account_balance_token （获取 单个账户 的 C-ERC20 Token 余额）](./doc/Accounts.md/#获取单个账户的C-ERC20余额)
+- [account_balance_token_multi （获取 多个账户 的 C-ERC20 Token 余额）](./doc/Accounts.md/#获取多个账户的C-ERC20余额)
 - [account_txlist （获取 单个账户 的交易列表 Normal）](./doc/Accounts.md/#获取单个账户的交易列表Normal)
 - [account_txlist_internal （获取 单个账户 的交易列表 Internal）](./doc/Accounts.md/#获取单个账户的交易列表Internal)
 - [account_txlist_count （获取 单个账户 的交易数  Normal ）](./doc/Accounts.md/#获取单个账户的交易数量)
