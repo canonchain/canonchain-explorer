@@ -1271,7 +1271,10 @@ router.get('/', async function (ctx, next) {
     if (query.action === "account_validate") {
       ctx.body = await account_validate(query.account);
       return;
-    } else if (query.action === 'account_balance_multi') {
+    } else if (
+      (query.action === 'account_balance_multi') ||
+      (query.action === 'account_balance_token_multi')
+    ) {
       let acctAry = query.account.split(',');
       if (acctAry.length > 20) {
         ctx.body = {
