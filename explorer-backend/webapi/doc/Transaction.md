@@ -157,7 +157,18 @@
             "is_stable": "1",
             "status": "0",
             "mc_timestamp": "1560946863",
-            "stable_timestamp": "1560946868"
+            "stable_timestamp": "1560946868",
+            "is_token_trans":false,//是否属于Token交易
+            "token_trans_info":{
+                amount: "4000000000"
+                contract_account: "czr_4SfUV4"
+                from: "czr_3eHWaLn"
+                hash: "C33E2B4C1BB8E"
+                mc_timestamp: "1591846446"
+                to: "czr_4hQqVxZGY"
+                token_precision: "6"
+                token_symbol: "CUSDT"
+            }
         }
 
     失败（缺失hash参数）：

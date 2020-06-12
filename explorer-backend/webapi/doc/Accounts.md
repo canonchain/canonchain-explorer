@@ -429,7 +429,7 @@
                 "gas_price": "1500000",
                 "gas_used": "21000",
                 "token_precision": "6",
-                "input": "",
+                "data": "",
             }
         ]
     }

@@ -621,6 +621,10 @@ async function account_txlist_token (query) {
     }
     // return sql.text
     let rlt = await pgPromise.query(sql);
+    rlt.rows.forEach(item => {
+      item.data = item.input;
+      delete item.input;
+    })
     return {
       "code": 100,
       "msg": "OK",
@@ -948,9 +952,10 @@ async function tx_details (query) {
       transDetail.rows[0]['is_stable'] = '';
     } else {
       // console.log('trans_normal')
+      // is_token_trans
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","is_token_trans","status","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_normal
         where
@@ -958,11 +963,40 @@ async function tx_details (query) {
         `
       transDetail = await pgPromise.query(listOptions);
     }
+
+    if (!transDetail.rows.length) {
+      return {
+        "code": 100,
+        "msg": "ok",
+        "result": {}
+      }
+    }
+    let targetData = transDetail.rows[0];
+    if (targetData.is_token_trans) {
+      // 获取Token信息
+      let opt = {
+        text: `
+          Select 
+              "hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
+          FROM 
+              "trans_token"
+          WHERE
+              "hash" = $1
+          order by
+              trans_token_id asc
+      `,
+        values: [query.hash]
+      }
+      let data = await pgPromise.query(opt);
+      targetData.token_trans_info = data.rows.length ? data.rows[0] : {};
+    }
+
     return {
       "code": 100,
       "msg": "ok",
-      "result": transDetail.rows[0]
+      "result": targetData
     }
+
   } catch (error) {
     logger.error("tx_details error");
     logger.error(error);
