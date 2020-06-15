@@ -230,7 +230,7 @@ async function account_txlist (query) {
     let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
       text: `select 
-      "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price","previous","data"
+      "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price","previous","data","is_token_trans"
                from
             trans_normal  
           where 
@@ -955,7 +955,7 @@ async function tx_details (query) {
       // is_token_trans
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp","is_token_trans"
         from
           trans_normal
         where
