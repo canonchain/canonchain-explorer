@@ -18,6 +18,33 @@ let allApikeys = []; //緩存所有的apikeys
 let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
+// Mapping 接口
+let interfaceFile = [
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "name": "_spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "name": "remaining",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+
 async function updtAPikeys () {
   let sql = `select apikey from api_keys where create_timestamp > ${lastTimestamp}`
   rlt = await pgPromise.query(sql);
@@ -1153,6 +1180,7 @@ async function estimate_gas (query) {
       "mci": query.mci || ''
     }
     let rlt = await czr.request.estimateGas(call_obj)
+
     return {
       "code": 100,
       "msg": rlt.msg,
@@ -1160,6 +1188,44 @@ async function estimate_gas (query) {
     }
   } catch (error) {
     logger.error("estimate_gas error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+}
+
+// 获取授权金额
+async function allowance (query) {
+  if (!query.token_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:${query.token_account}`
+    }
+  }
+  if (!query.user_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:${query.user_account}`
+    }
+  }
+  if (!query.action_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:${query.action_account}`
+    }
+  }
+  try {
+    // token_account CUSDT合约
+    // user_account 用户账户
+    // action_account 映射合约
+    let myContract = new czr.Contract(interfaceFile, query.token_account);
+    let allowance = await myContract.methods.allowance(query.user_account, query.action_account).call();
+    return {
+      "code": 100,
+      "msg": 'success',
+      "result": allowance.toString()
+    }
+  } catch (error) {
+    logger.error("allowance error");
     logger.error(error);
     return ERROR_MSG.SYSTEM;
   }
@@ -1372,6 +1438,9 @@ router.get('/', async function (ctx, next) {
         break;
       case 'estimate_gas':
         ctx.body = await estimate_gas(query);
+        break;
+      case 'allowance':
+        ctx.body = await allowance(query);
         break;
       case 'to_hex':
         ctx.body = await to_hex(query);
