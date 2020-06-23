@@ -3,6 +3,8 @@ var bs58check = require('bs58check')
 //czr start 
 let Czr = require("czr");
 let czr = new Czr();
+const czrUrl = 'http://127.0.0.1:8765/';
+czr.Contract.setProvider(czrUrl);
 
 // db start
 var PgPromise = require('../../database/PG-promise');// 引用上述文件
@@ -1198,19 +1200,19 @@ async function allowance (query) {
   if (!query.token_account) {
     return {
       "code": 400,
-      "msg": `Missing parameter:${query.token_account}`
+      "msg": `Missing parameter:token_account`
     }
   }
   if (!query.user_account) {
     return {
       "code": 400,
-      "msg": `Missing parameter:${query.user_account}`
+      "msg": `Missing parameter:user_account`
     }
   }
   if (!query.action_account) {
     return {
       "code": 400,
-      "msg": `Missing parameter:${query.action_account}`
+      "msg": `Missing parameter:action_account`
     }
   }
   try {
