@@ -547,6 +547,12 @@
                         is_has_event_logs: false
                     }
                 }
+
+                // 删除Gas 确认状态，0：成功，1：双花，2：无效，3：智能合约执行失败。
+                if ((blockInfo.status === 0) || (blockInfo.status === 3)) {
+                    accountsTotal[blockInfo.from].balance = BigNumber(accountsTotal[blockInfo.from].balance).minus(blockInfo.gas_used * blockInfo.gas_price).toString(10);
+                }
+
                 //账户余额 只有是成功的交易才操作账户余额
                 unitIsFail = pageUtility.isFail(blockInfo); //交易失败了
                 if (!unitIsFail) {
@@ -582,11 +588,9 @@
                                 is_has_event_logs: false
                             }
                         }
-
-
                     }
                     //处理发款方余额
-                    accountsTotal[blockInfo.from].balance = BigNumber(accountsTotal[blockInfo.from].balance).minus(blockInfo.amount).minus(blockInfo.gas_used * blockInfo.gas_price).toString(10);
+                    accountsTotal[blockInfo.from].balance = BigNumber(accountsTotal[blockInfo.from].balance).minus(blockInfo.amount).toString(10);
                 }
 
                 //DO timestamp 1秒

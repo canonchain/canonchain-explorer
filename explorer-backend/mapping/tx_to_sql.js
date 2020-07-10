@@ -5,7 +5,7 @@
 (async () => {
     const Web3 = require("web3")
     const config = require("./config/to_sql_config")
-    const web3 = new Web3(config.INFURA_URL);
+    const web3 = new Web3(config.INFURA_URL, { timeout: 1000 * 10 });
     let Czr = require("czr");
     let czr = new Czr();
     // logger
@@ -62,7 +62,7 @@
                 eth_block_number = await web3.eth.getBlockNumber();
                 eth_block_number = Number(eth_block_number) - 12;
 
-                logger.info(`db_block_number:${db_block_number}  eth_block_number:${eth_block_number}`)
+                logger.info(`eth_block_number:${eth_block_number}`)
 
                 while (eth_block_number > db_block_number) {
                     db_block_number++;
@@ -79,7 +79,7 @@
                 }
                 pageUtility.startTimer(10)
             } catch (e) {
-                logger.info(`start catch 错误`)
+                logger.info(`start catch 错误*********************************************`)
                 logger.info(e)
                 pageUtility.startTimer(10)
             }
@@ -116,6 +116,8 @@
                         status: 1
                     }
                     // console.log(parseInt(item.blockNumber, 16), item.blockNumber)
+                    logger.info("insertLog",insertLog)
+                    logger.info("decodeLogInfo",decodeLogInfo)
                     logAry.push(insertLog);
                 } else {
                     logger.info("item.removed为True，交易失败的情况，不做处理")
