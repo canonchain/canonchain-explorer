@@ -4,9 +4,14 @@
             <i class="el-icon-warning icon-no-found"></i>
         </div>
         <div class="no-found-des">
-            没有找到资源
+            {{ $t("undefined.undefined") }}
             <div class="go-home">
-              <router-link to="/" tag="li" class="wui-button wui-button-purple-nobg">返回首页</router-link>
+                <router-link
+                    to="/"
+                    tag="li"
+                    class="wui-button wui-button-purple-nobg"
+                    >{{ $t("undefined.go_home") }}</router-link
+                >
             </div>
         </div>
     </div>
@@ -41,7 +46,7 @@
 .no-found-des {
     font-size: 24px;
 }
-.go-home{
+.go-home {
     display: block;
     padding-top: 10px;
 }
@@ -56,8 +61,8 @@
     border-radius: 3px;
 }
 .wui-button-purple-nobg {
-    color: #9C80C9;
-    border: 1px solid #8244AE;
+    color: #9c80c9;
+    border: 1px solid #8244ae;
     background-color: #fff;
 }
 .wui-button {

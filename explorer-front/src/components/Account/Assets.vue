@@ -1,23 +1,34 @@
 <template>
     <el-table :data="database" style="width: 100%">
-        <el-table-column label="代币符号" width="200">
-            <template slot-scope="scope">{{ scope.row.symbol }}（{{ scope.row.name }}）</template>
+        <el-table-column :label="$t('token.token_symbol')" width="200">
+            <template slot-scope="scope"
+                >{{ scope.row.symbol }}（{{ scope.row.name }}）</template
+            >
         </el-table-column>
-        <el-table-column label="代币合约" min-width="200">
+        <el-table-column
+            :label="$t('token.corresponding_contract')"
+            min-width="200"
+        >
             <template slot-scope="scope">
                 <router-link
                     class="table-long-item"
                     :to="{
                         path: '/token/' + scope.row.contract_account
                     }"
-                >{{ scope.row.contract_account }}</router-link>
+                    >{{ scope.row.contract_account }}</router-link
+                >
             </template>
         </el-table-column>
-        <el-table-column label="资产" align="right" min-width="230">
+        <el-table-column
+            :label="$t('block.amount')"
+            align="right"
+            min-width="230"
+        >
             <template slot-scope="scope">
                 <span>
                     {{
-                    scope.row.balance | toTokenVal(Math.pow(10, scope.row.precision))
+                        scope.row.balance
+                            | toTokenVal(Math.pow(10, scope.row.precision))
                     }}
                 </span>
             </template>

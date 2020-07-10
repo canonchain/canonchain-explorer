@@ -1,17 +1,21 @@
 <template>
     <el-table :data="database" style="width: 100%">
-        <el-table-column label="地址" width="500">
+        <el-table-column :label="$t('token.address')" width="500">
             <template slot-scope="scope">
                 <router-link
                     :to="{
                         path: '/account/' + scope.row.account
                     }"
-                >{{ scope.row.account }}</router-link>
+                    >{{ scope.row.account }}</router-link
+                >
             </template>
         </el-table-column>
-        <el-table-column label="数量" align="right">
+        <el-table-column :label="$t('token.quantity')" align="right">
             <template slot-scope="scope">
-                <span>{{ scope.row.balance | toTokenVal }}</span>
+                <span>{{
+                    scope.row.balance
+                        | toTokenVal(Math.pow(10, scope.row.precision))
+                }}</span>
             </template>
         </el-table-column>
     </el-table>

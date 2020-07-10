@@ -8,12 +8,23 @@
                 </div>
                 <div class="account-main">
                     <el-tabs v-model="activeName" @tab-click="change_table">
-                        <el-tab-pane label="代币转账" name="transaction"></el-tab-pane>
-                        <el-tab-pane label="持有者" name="holder">
+                        <el-tab-pane
+                            :label="$t('token.token_transfer')"
+                            name="transaction"
+                        ></el-tab-pane>
+                        <el-tab-pane
+                            :label="$t('token.number_of_accounts')"
+                            name="holder"
+                        >
                             <div class="account-content">
-                                <div class="accounts-main-wrap" v-loading="loadingSwitch">
+                                <div
+                                    class="accounts-main-wrap"
+                                    v-loading="loadingSwitch"
+                                >
                                     <template v-if="IS_GET_TOKEN">
-                                        <token-holder-list :database="trans_token"></token-holder-list>
+                                        <token-holder-list
+                                            :database="trans_token"
+                                        ></token-holder-list>
                                         <!-- page -->
                                         <template v-if="trans_token.length">
                                             <div class="pagin-block">
@@ -28,7 +39,10 @@
                                                                 'header'
                                                             )
                                                         "
-                                                    >首页</el-button>
+                                                        >{{
+                                                            $t("accoount.first")
+                                                        }}</el-button
+                                                    >
                                                     <el-button
                                                         size="mini"
                                                         icon="el-icon-arrow-left"
@@ -40,7 +54,10 @@
                                                                 'left'
                                                             )
                                                         "
-                                                    >上一页</el-button>
+                                                        >{{
+                                                            $t("accoount.prev")
+                                                        }}</el-button
+                                                    >
                                                     <el-button
                                                         size="mini"
                                                         :disabled="
@@ -52,7 +69,9 @@
                                                             )
                                                         "
                                                     >
-                                                        下一页
+                                                        {{
+                                                            $t("accoount.next")
+                                                        }}
                                                         <i
                                                             class="el-icon-arrow-right el-icon--right"
                                                         ></i>
@@ -67,7 +86,10 @@
                                                                 'footer'
                                                             )
                                                         "
-                                                    >尾页</el-button>
+                                                        >{{
+                                                            $t("accoount.last")
+                                                        }}</el-button
+                                                    >
                                                 </el-button-group>
                                             </div>
                                         </template>

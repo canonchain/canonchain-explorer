@@ -10,7 +10,7 @@
                 </el-col>
                 <el-col :span="10">
                     <a href="http://www.canonchain.com/news" target="_blank"
-                        >CZR突破100元/枚，单日涨幅突破5%</a
+                        >CZR突破1元/枚，单日涨幅突破5%</a
                     ></el-col
                 >
                 <el-col :span="2" class="placard-more"

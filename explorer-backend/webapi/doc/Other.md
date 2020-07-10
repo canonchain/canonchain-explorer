@@ -72,6 +72,38 @@
 
 [返回其他API列表](#其它API列表)
 
+### 获得授权金额
+
+
+    // token_account CUSDT合约
+    // user_account 用户账户
+    // action_account 映射合约
+
+- 方式 ：GET
+- 参数
+    ```
+    module      : other
+    action      : allowance
+    apikey      : YourApiKeyToken
+    token_account   :想要查询的Token地址(CUSDT)
+    user_account    :目标账户(用户的账号)
+    action_account  :想要授权给谁的地址（Mapping地址）
+    ```
+- 结果
+    ```
+    {
+        "code": 100,
+        "msg": "OK",
+        "result": "0"
+    }
+    ```
+- 结果说明
+    - 返回格式：string
+    - 返回值：目前授权的值
+
+[返回其他API列表](#其它API列表)
+
+
 ### czr地址转16进制
 
 - 方式 ：GET

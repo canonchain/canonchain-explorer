@@ -458,7 +458,7 @@ router.get("/get_tokens", async function (req, res, next) {
         return;
     }
 
-    let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_total","transaction_count","account_count"',
+    let columnName = '"token_id","contract_account","mc_timestamp","token_name","token_symbol","token_precision","token_total","transaction_count","account_count"',
         tableName = "token";
 
     let opt;
@@ -714,7 +714,7 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
                 FROM 
                     "trans_token"
                 WHERE
@@ -731,7 +731,7 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
                 FROM 
                     "trans_token"
                 WHERE
@@ -755,7 +755,7 @@ router.get("/get_token_trans", async function (req, res, next) {
         opt = {
             text: `
                 Select 
-                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                    "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
                 FROM 
                     "trans_token"
                 WHERE 
@@ -1902,7 +1902,7 @@ router.get("/get_trans_token", async function (req, res, next) {
     let mainOpt = {
         text: `
             Select 
-                "stable_index","trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                "stable_index","trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","token_precision","amount"
             FROM
                 trans_token
             WHERE
@@ -2835,7 +2835,7 @@ router.get("/get_transaction_trans_token", async function (req, res, next) {
     let opt = {
         text: `
             Select 
-                "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount"
+                "trans_token_id","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
             FROM 
                 "trans_token"
             WHERE

@@ -3,13 +3,13 @@
         <!-- Header Start -->
         <div id="menu" class="rowFull">
             <div id="menuSocial">
-                <router-link class="dag-link" to="/">首页</router-link>
-                <router-link class="dag-link" to="/accounts">账户</router-link>
-                <router-link class="dag-link" to="/normal_trans">普通交易</router-link>
-                <router-link class="dag-link" to="/witness_trans">见证交易</router-link>
-                <router-link class="dag-link" to="/tokens">代币</router-link>
-                <router-link class="dag-link" to="/internals">合约内交易</router-link>
-                <router-link class="dag-link" to="/dag">DAG</router-link>
+                <router-link class="dag-link" to="/">{{ $t('header.main') }}</router-link>
+                <router-link class="dag-link" to="/accounts">{{ $t('header.account') }}</router-link>
+                <router-link class="dag-link" to="/normal_trans">{{ $t('header.normal_trans') }}</router-link>
+                <router-link class="dag-link" to="/witness_trans">{{ $t('header.witness_trans') }}</router-link>
+                <router-link class="dag-link" to="/tokens">{{ $t('header.token') }}</router-link>
+                <router-link class="dag-link" to="/internals">{{ $t('header.trans_in_contracts') }}</router-link>
+                <router-link class="dag-link" to="/dag">{{ $t('header.dag') }}</router-link>
             </div>
             <div id="menuLeft">
                 <router-link to="/" id="menuLeftImg">
@@ -20,7 +20,7 @@
                         <el-form class="demo-form-inline" id="search-form">
                             <el-input
                                 v-model="searchVal"
-                                placeholder="请输入DAG上的查询内容"
+                                :placeholder="$t('dag.search')"
                                 id="inputSearch"
                                 size="small"
                             >
@@ -49,7 +49,7 @@
             <div id="scrollBody">&nbsp;</div>
         </div>
         <div id="info" class="hideInfoBlock" v-loading="loadingInfoSwitch">
-            <div id="defaultInfo">点击左侧单元可查看详情</div>
+            <div id="defaultInfo">{{$t('dag.look')}}</div>
             <div id="listInfo">
                 <div class="area-wrap">
                     <div class="info-item-dev">
@@ -65,17 +65,17 @@
                         <el-row>
                             <el-col :span="12">
                                 <div class="block-item-des">
-                                    <strong class="bui-dlist-tit">类型</strong>
+                                    <strong class="bui-dlist-tit">{{$t('dag.type')}}</strong>
                                     <div class="bui-dlist-det">
                                         <template v-if="activeUnitInfo.type === '0'">
-                                            <span class="txt-success">创世交易</span>
+                                            <span class="txt-success">{{$t('dag.type0')}}</span>
                                         </template>
                                         <template
                                             v-else-if="
                                                 activeUnitInfo.type === '1'
                                             "
                                         >
-                                            <span class="txt-info">见证交易</span>
+                                            <span class="txt-info">{{$t('dag.type1')}}</span>
                                         </template>
                                     </div>
                                 </div>

@@ -3,6 +3,7 @@
 - [tx_offline_generation (生成离线交易)](#生成离线交易)
 - [tx_offline_sending (发送离线交易)](#发送离线交易)
 - [tx_details (通过交易Hash获取交易详情) ](#获取交易详情)
+- [token_tx_details （通过交易Hash获取Token交易详情）](#获取Token交易详情)
 
 金额的单位请参考：[API结果说明](../README.md/#接口返回结果)
 
@@ -157,7 +158,7 @@
             "is_stable": "1",
             "status": "0",
             "mc_timestamp": "1560946863",
-            "stable_timestamp": "1560946868"
+            "stable_timestamp": "1560946868",
         }
 
     失败（缺失hash参数）：
@@ -191,6 +192,59 @@
     "mc_timestamp"      string, MC时间
     "stable_timestamp"  string, 稳定时间
     ```
+    - 具体详情，请转到浏览器Hash行情页查看
+
+[返回交易API列表](#交易API列表)
+
+### 获取Token交易详情
+
+
+- 方式 ：GET
+- 参数
+    ```
+    module  : transaction
+    action  : token_tx_details
+    hash    : HASH
+    apikey  : YourApiKeyToken
+    ```
+- 结果
+    ```
+    成功：
+    {
+        "code": 100,
+        "msg": "OK",
+        "result": {
+            "hash": "C33E2B4F",
+            "mc_timestamp": "4000000000"
+            "stable_index": "4000000000"
+            "from": "czr_42",
+            "to": "czr_4hQ",
+            "contract_account": "czr_3CWg",
+            "token_symbol": "CUSDT",
+            "token_name": "CUSDT",
+            "token_precision": "6",
+            "amount": "4000000000",
+            "gas": "11",
+            "gas_price": "1591846446",
+            "gas_used": "77",
+            "data": ""
+        }
+
+    失败（缺失hash参数）：
+    {
+        "code": 400,
+        "msg": "Parameter missing txhash"
+    }
+
+    失败（hash参数非法）：
+    {
+        "code":400,
+        "msg": "invalid txhash"
+    }
+    ```
+- 结果说明
+    - 返回格式：Object
+    - 返回值：
     - 具体详情，请转到浏览器Hash行情页查看
 
 [返回交易API列表](#交易API列表)

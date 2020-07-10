@@ -4,39 +4,39 @@
         <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
-                    <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
-                    <el-tab-pane label="高级信息" name="advanced_info">
+                    <el-tab-pane :label="$t('block.trans_detail')" name="trans_info"></el-tab-pane>
+                    <el-tab-pane :label="$t('block.advanced_info')" name="advanced_info">
                         <template>
                             <template v-if="IS_GET_INFO">
                                 <div class="bui-dlist">
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">交易号</strong>
+                                        <strong class="bui-dlist-tit">{{$t('block.transaction_hash')}}</strong>
                                         <div class="bui-dlist-det">
                                             {{ blockHash }}
                                             <template v-if="blockInfo.type === '1'">
-                                                <router-link :to="'/dag/' + blockHash">DAG中查看</router-link>
+                                                <router-link :to="'/dag/' + blockHash">{{$t('block.look_dag')}}</router-link>
                                             </template>
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">交易类型</strong>
+                                        <strong class="bui-dlist-tit">{{$t('block.trans_type')}}</strong>
                                         <div class="bui-dlist-det">
                                             <template v-if="blockInfo.type === '0'">
-                                                <span class="txt-info">创世交易</span>
+                                                <span class="txt-info">{{$t('block.type0')}}</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     blockInfo.type === '1'
                                                 "
                                             >
-                                                <span class="txt-info">见证交易</span>
+                                                <span class="txt-info">{{$t('block.type1')}}</span>
                                             </template>
                                             <template
                                                 v-else-if="
                                                     blockInfo.type === '2'
                                                 "
                                             >
-                                                <span class="txt-info">普通交易</span>
+                                                <span class="txt-info">{{$t('block.normal_trans')}}</span>
                                             </template>
                                             <template v-else>
                                                 <span class="txt-info">-</span>
@@ -45,7 +45,7 @@
                                     </div>
                                     <template v-if="blockInfo.type === '1' ">
                                         <div class="block-item-des">
-                                            <strong class="bui-dlist-tit">发送时间</strong>
+                                            <strong class="bui-dlist-tit">{{$t('block.time_send')}}</strong>
                                             <div class="bui-dlist-det">
                                                 {{
                                                 blockInfo.timestamp
@@ -55,7 +55,7 @@
                                         </div>
                                     </template>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">主链时间</strong>
+                                        <strong class="bui-dlist-tit">{{$t('block.time_main')}}</strong>
                                         <div class="bui-dlist-det">
                                             {{
                                             blockInfo.mc_timestamp | toDate
@@ -63,7 +63,7 @@
                                         </div>
                                     </div>
                                     <div class="block-item-des">
-                                        <strong class="bui-dlist-tit">确认时间</strong>
+                                        <strong class="bui-dlist-tit">{{$t('block.time_conf')}}</strong>
                                         <div class="bui-dlist-det">
                                             {{
                                             blockInfo.stable_timestamp
@@ -139,10 +139,10 @@
                         </template>
                     </el-tab-pane>
                     <template v-if="blockInfo.is_intel_trans">
-                        <el-tab-pane label="合约内交易" name="intel_trans"></el-tab-pane>
+                        <el-tab-pane :label="$t('block.contract_transactions')" name="intel_trans"></el-tab-pane>
                     </template>
                     <template v-if="blockInfo.is_event_log">
-                        <el-tab-pane label="事件日志" name="event_log"></el-tab-pane>
+                        <el-tab-pane :label="$t('block.event_log')" name="event_log"></el-tab-pane>
                     </template>
                 </el-tabs>
             </div>

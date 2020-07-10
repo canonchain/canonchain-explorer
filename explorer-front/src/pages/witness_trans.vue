@@ -4,8 +4,13 @@
         <div class="page-container">
             <div class="container">
                 <div class="list-wrap" v-loading="loadingSwitch">
-                    <strong class="list-title">见证交易列表</strong>
-                    <span class="sub_header-des">合计 {{ TOTAL_VAL }} 笔交易</span>
+                    <strong class="list-title">{{
+                        $t("witness_trans.witness_trans_list")
+                    }}</strong>
+                    <span class="sub_header-des"
+                        >{{ $t("normal_trans.total") }} {{ TOTAL_VAL }}
+                        {{ $t("normal_trans.trans") }}</span
+                    >
                     <template v-if="IS_GET_INFO">
                         <witness-list :database="database"></witness-list>
                     </template>
@@ -17,26 +22,31 @@
                                 size="mini"
                                 :disabled="btnSwitch.header"
                                 @click="getPaginationFlag('header')"
-                            >首页</el-button>
+                                >{{ $t("accoount.first") }}</el-button
+                            >
                             <el-button
                                 size="mini"
                                 icon="el-icon-arrow-left"
                                 :disabled="btnSwitch.left"
                                 @click="getPaginationFlag('left')"
-                            >上一页</el-button>
+                                >{{ $t("accoount.prev") }}</el-button
+                            >
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.right"
                                 @click="getPaginationFlag('right')"
                             >
-                                下一页
-                                <i class="el-icon-arrow-right el-icon--right"></i>
+                                {{ $t("accoount.next") }}
+                                <i
+                                    class="el-icon-arrow-right el-icon--right"
+                                ></i>
                             </el-button>
                             <el-button
                                 size="mini"
                                 :disabled="btnSwitch.footer"
                                 @click="getPaginationFlag('footer')"
-                            >尾页</el-button>
+                                >{{ $t("accoount.last") }}</el-button
+                            >
                         </el-button-group>
                     </div>
                 </template>

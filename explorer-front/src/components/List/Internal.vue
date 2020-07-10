@@ -1,6 +1,6 @@
 <template>
     <el-table :data="database" style="width: 100%">
-        <el-table-column label="时间" width="180">
+        <el-table-column :label="$t('list.time')" width="180">
             <template slot-scope="scope">
                 <span class="table-long-item">
                     {{
@@ -9,7 +9,7 @@
                 </span>
             </template>
         </el-table-column>
-        <el-table-column label="父区块交易号" width="180">
+        <el-table-column :label="$t('list.parent_block_trans')" width="180">
             <template slot-scope="scope">
                 <template>
                     <router-link
@@ -29,7 +29,7 @@
                 <template v-else-if="scope.row.type === '2'">suicide</template>
             </template>
         </el-table-column>
-        <el-table-column label="发送方" width="180">
+        <el-table-column :label="$t('list.sender')" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.type === '2'">
                     <router-link
@@ -56,7 +56,7 @@
         <el-table-column width="40">
             <i class="el-icon-right"></i>
         </el-table-column>
-        <el-table-column label="接收方" width="180">
+        <el-table-column :label="$t('list.receiver')" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.type === '2'">
                     <template v-if="scope.row.refund_adderss===address">
@@ -100,17 +100,17 @@
                 </template>
             </template>
         </el-table-column>
-        <el-table-column label="状态" width="70">
+        <el-table-column :label="$t('list.status')" width="70">
             <template slot-scope="scope">
                 <template v-if="scope.row.is_error">
-                    <span class="txt-danger">失败(3)</span>
+                    <span class="txt-danger">{{$t('list.fail')}}(3)</span>
                 </template>
                 <template v-else>
-                    <span class="txt-success">成功</span>
+                    <span class="txt-success">{{$t('list.success')}}</span>
                 </template>
             </template>
         </el-table-column>
-        <el-table-column label="数额" align="right" min-width="170">
+        <el-table-column :label="$t('list.amount')" align="right" min-width="170">
             <template slot-scope="scope">
                 <span>{{ scope.row.value | toCZRVal }}</span>
             </template>

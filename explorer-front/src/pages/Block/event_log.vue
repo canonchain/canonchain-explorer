@@ -4,13 +4,13 @@
         <div class="block-wrap" v-loading="loadingSwitch">
             <div class="container">
                 <el-tabs v-model="activeName" @tab-click="change_table">
-                    <el-tab-pane label="交易详情" name="trans_info"></el-tab-pane>
-                    <el-tab-pane label="高级信息" name="advanced_info"></el-tab-pane>
+                    <el-tab-pane :label="$t('block.trans_detail')" name="trans_info"></el-tab-pane>
+                    <el-tab-pane :label="$t('block.advanced_info')" name="advanced_info"></el-tab-pane>
 
                     <template v-if="hash_props.is_intel_trans">
-                        <el-tab-pane label="合约内交易" name="intel_trans"></el-tab-pane>
+                        <el-tab-pane :label="$t('block.contract_transactions')" name="intel_trans"></el-tab-pane>
                     </template>
-                    <el-tab-pane label="事件日志" name="event_log">
+                    <el-tab-pane :label="$t('block.event_log')" name="event_log">
                         <template>
                             <template v-if="IS_GET_INFO">
                                 <event-logs :database="event_log"></event-logs>

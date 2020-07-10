@@ -10,6 +10,7 @@
 - [account_balance （获取 单个账户 的余额）](./doc/Accounts.md/#获取单个账户的余额)
 - [account_balance_multi （获取 多个账户 的余额）](./doc/Accounts.md/#获取多个账户的余额)
 - [account_balance_token （获取 单个账户 的 C-ERC20 Token 余额）](./doc/Accounts.md/#获取单个账户的C-ERC20余额)
+- [account_balance_token_multi （获取 多个账户 的 C-ERC20 Token 余额）](./doc/Accounts.md/#获取多个账户的C-ERC20余额)
 - [account_txlist （获取 单个账户 的交易列表 Normal）](./doc/Accounts.md/#获取单个账户的交易列表Normal)
 - [account_txlist_internal （获取 单个账户 的交易列表 Internal）](./doc/Accounts.md/#获取单个账户的交易列表Internal)
 - [account_txlist_count （获取 单个账户 的交易数  Normal ）](./doc/Accounts.md/#获取单个账户的交易数量)
@@ -26,6 +27,7 @@
 - [tx_offline_generation （生成离线交易）](./doc/Transaction.md/#生成离线交易)
 - [tx_offline_sending （发送离线交易）](./doc/Transaction.md/#发送离线交易)
 - [tx_details （通过交易Hash获取交易详情）](./doc/Transaction.md/#获取交易详情)
+- [token_tx_details （通过交易Hash获取Token交易详情）](./doc/Transaction.md/#获取Token交易详情)
 
 <!-- /TOC -->
 
@@ -37,6 +39,7 @@
 
 - [gas_price （获取 CZR Gas）](./doc/Other.md/#获取Gas价格)
 - [estimate_gas （ 获得估算Gas）](./doc/Other.md/#获得估算Gas)
+- [allowance （ 获得授权金额）](./doc/Other.md/#获得授权金额)
 - [to_hex czr地址转16进制](./doc/Other.md/#czr地址转16进制)
 
 <!-- /TOC -->

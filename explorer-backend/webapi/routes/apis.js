@@ -3,6 +3,8 @@ var bs58check = require('bs58check')
 //czr start 
 let Czr = require("czr");
 let czr = new Czr();
+const czrUrl = 'http://127.0.0.1:8765/';
+czr.Contract.setProvider(czrUrl);
 
 // db start
 var PgPromise = require('../../database/PG-promise');// 引用上述文件
@@ -18,7 +20,34 @@ let allApikeys = []; //緩存所有的apikeys
 let lastTimestamp = 0;
 let intval2getApikeys = 500 * 1000;//獲取apikeys的間隔時間
 
-async function updtAPikeys() {
+// Mapping 接口
+let interfaceFile = [
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "name": "_spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "name": "remaining",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+
+async function updtAPikeys () {
   let sql = `select apikey from api_keys where create_timestamp > ${lastTimestamp}`
   rlt = await pgPromise.query(sql);
   rlt.rows.forEach(item => {
@@ -37,7 +66,7 @@ async function updtAPikeys() {
 
 
 //判断字符串是不是一个交易hash
-function invalidTxHash(hash) {
+function invalidTxHash (hash) {
   let pat = /[0-9a-f]{64,}/i
   return pat.test(hash) ? false : true
 }
@@ -77,7 +106,7 @@ let ERROR_MSG = {
       "result":true      /    false
     }
  */
-async function account_validate(account) {
+async function account_validate (account) {
   try {
     let rlt = await czr.request.accountValidate(account);
     //rlt.valid 验证结果，0：格式不合法，1：格式合法。
@@ -112,7 +141,7 @@ async function account_validate(account) {
     }
 */
 //获取单个账户的余额
-async function account_balance(query) {
+async function account_balance (query) {
   try {
     let listOptions = {
       text: "select balance from accounts where account = $1",
@@ -157,7 +186,7 @@ async function account_balance(query) {
       }
 */
 //获取多个账户的余额
-async function account_balance_multi(query) {
+async function account_balance_multi (query) {
   try {
     let addressAry = query.account.split(',')
     let account_multi_rlt = {}
@@ -225,12 +254,12 @@ async function account_balance_multi(query) {
     }
 */
 //获取单个账户的交易列表Normal
-async function account_txlist(query) {
+async function account_txlist (query) {
   try {
     let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
       text: `select 
-      "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price","previous","data"
+      "hash","from","to","amount","is_stable","mc_timestamp","stable_index","status","gas","gas_used","gas_price","previous","data","is_token_trans"
                from
             trans_normal  
           where 
@@ -313,7 +342,7 @@ async function account_txlist(query) {
     }
 */
 //获取单个账户的交易列表Internal 
-async function account_txlist_internal(query) {
+async function account_txlist_internal (query) {
   try {
     let SORTVAL = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
@@ -403,7 +432,7 @@ async function account_txlist_internal(query) {
   }
 */
 //获取单个账户的交易数量
-async function account_txlist_count(query) {
+async function account_txlist_count (query) {
   try {
     let sql = `
       select 
@@ -445,11 +474,11 @@ async function account_txlist_count(query) {
   }
 */
 //获取单个账户的CRC20余额
-async function account_balance_token(query) {
+async function account_balance_token (query) {
   try {
     let sql = `
     select 
-      account,contract_account,'name',symbol,precision,balance 
+      account,contract_account,"name",symbol,precision,balance 
     from 
       token_asset 
     where 
@@ -472,6 +501,78 @@ async function account_balance_token(query) {
     }
   } catch (error) {
     logger.error("account_balance_token error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+}
+
+/** 
+ * 接口： 获取多个账户的CRC20余额
+* 参数:
+    {
+        module   : account
+        action   : account_balance_token_multi
+        account : czr_account1,czr_account2
+        contract_account: czr_xx ,指定token账户
+        apikey   : YourApiKeyToken
+    }
+  * 返回
+    {
+      "code": 100,
+      "msg": "OK",
+      "result": 2
+  }
+*/
+//获取多个账户的指定CRC20余额
+async function account_balance_token_multi (query) {
+  try {
+    let addressAry = query.account.split(',');
+    let listOptions = {
+      text: `
+      select 
+        account,contract_account,"name",symbol,precision,balance 
+      from 
+        token_asset
+      where 
+        (contract_account = '${query.contract_account}')
+        AND
+        (account = ANY ($1))
+      `,
+      values: [addressAry]
+    };
+    const resList = await pgPromise.query(listOptions);
+
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": resList.rows
+    }
+
+    // let sql = `
+    // select 
+    //   account,contract_account,'name',symbol,precision,balance 
+    // from 
+    //   token_asset 
+    // where 
+    //   account = '${query.account}'
+    // `
+    // if (query.contract_account) {
+    //   sql += ` and contract_account = '${query.contract_account}'`
+    //   let rlt = await pgPromise.query(sql);
+    //   return {
+    //     "code": 100,
+    //     "msg": "OK",
+    //     "result": rlt.rowCount ? rlt.rows[0] : 0
+    //   }
+    // }
+    // let rlt = await pgPromise.query(sql);
+    // return {
+    //   "code": 100,
+    //   "msg": "OK",
+    //   "result": rlt.rows
+    // }
+  } catch (error) {
+    logger.error("account_balance_token_multi error");
     logger.error(error);
     return ERROR_MSG.SYSTEM;
   }
@@ -509,13 +610,13 @@ async function account_balance_token(query) {
       }
 */
 //获取单个账户的CRC20交易
-async function account_txlist_token(query) {
+async function account_txlist_token (query) {
   try {
     let sort = (query.sort && query.sort.toLowerCase() === "desc") ? "DESC" : "ASC";
     let sql = {
       text:
         `select 
-                  "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount" 
+                  "stable_index","hash","mc_timestamp","from","to","contract_account","token_symbol","amount","gas" ,"gas_price" ,"gas_used","token_precision","input"
               from 
                 trans_token
               where
@@ -549,6 +650,10 @@ async function account_txlist_token(query) {
     }
     // return sql.text
     let rlt = await pgPromise.query(sql);
+    rlt.rows.forEach(item => {
+      item.data = item.input;
+      delete item.input;
+    })
     return {
       "code": 100,
       "msg": "OK",
@@ -600,7 +705,7 @@ async function account_txlist_token(query) {
     }
 */
 //生成离线交易
-async function tx_offline_generation(query) {
+async function tx_offline_generation (query) {
   if (!query.from || !query.to) {
     return {
       "code": 400,
@@ -698,7 +803,7 @@ async function tx_offline_generation(query) {
     }
 */
 //发送离线交易
-async function tx_offline_sending(query) {
+async function tx_offline_sending (query) {
   //   {
   //     "action": "tx_offline_sending",
   //     "hash": "2CDB2DD9C1A8FC6C2EB5B9D6034E01CE9B0E4C04F8EEC7E9AB0D72DB0A111FDC",    
@@ -817,7 +922,7 @@ async function tx_offline_sending(query) {
     }
 */
 //获取交易详情
-async function tx_details(query) {
+async function tx_details (query) {
   //校验
   if (!query.hash) {
     return {
@@ -847,7 +952,7 @@ async function tx_details(query) {
       // console.log('trans_genesis')
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_timestamp"
+            "hash", "type","from","to","amount","gas_used","data","timestamp","is_stable","status","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_genesis
         where
@@ -860,7 +965,7 @@ async function tx_details(query) {
       // console.log('trans_witness')
       listOptions = `
         select 
-            "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_timestamp"
+            "hash", "type","from","is_stable","status","timestamp","mc_timestamp","stable_index","stable_timestamp"
         from
           trans_witness
         where
@@ -876,9 +981,10 @@ async function tx_details(query) {
       transDetail.rows[0]['is_stable'] = '';
     } else {
       // console.log('trans_normal')
+      // is_token_trans
       listOptions = `
         select 
-            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_timestamp"
+            "hash", "type","from","to","amount","gas","gas_price","gas_used","data","is_stable","status","mc_timestamp","stable_index","stable_timestamp","is_token_trans"
         from
           trans_normal
         where
@@ -886,11 +992,40 @@ async function tx_details(query) {
         `
       transDetail = await pgPromise.query(listOptions);
     }
+
+    if (!transDetail.rows.length) {
+      return {
+        "code": 100,
+        "msg": "ok",
+        "result": {}
+      }
+    }
+    let targetData = transDetail.rows[0];
+    // if (targetData.is_token_trans) {
+    //   // 获取Token信息
+    //   let opt = {
+    //     text: `
+    //       Select 
+    //           "hash","mc_timestamp","from","to","contract_account","token_symbol","amount","token_precision"
+    //       FROM 
+    //           "trans_token"
+    //       WHERE
+    //           "hash" = $1
+    //       order by
+    //           trans_token_id asc
+    //   `,
+    //     values: [query.hash]
+    //   }
+    //   let data = await pgPromise.query(opt);
+    //   targetData.token_trans_info = data.rows.length ? data.rows[0] : {};
+    // }
+
     return {
       "code": 100,
       "msg": "ok",
-      "result": transDetail.rows
+      "result": targetData
     }
+
   } catch (error) {
     logger.error("tx_details error");
     logger.error(error);
@@ -898,6 +1033,63 @@ async function tx_details(query) {
   }
 
 }
+
+// 获取Token交易
+async function token_tx_details (query) {
+  //校验
+  if (!query.hash) {
+    return {
+      "code": 400,
+      "msg": "Parameter missing txhash"
+    }
+  }
+  if (invalidTxHash(query.hash)) {
+    return {
+      "code": 400,
+      "msg": "invalid txhash"
+    }
+  }
+  try {
+    let opt = {
+      text: `
+          Select 
+              "hash","mc_timestamp","stable_index",
+              "from","to","contract_account","token_symbol","token_name","token_precision",
+              "amount","gas","gas_price","gas_used","input"
+          FROM 
+              "trans_token"
+          WHERE
+              "hash" = $1
+      `,
+      values: [query.hash]
+    }
+    let transDetail = await pgPromise.query(opt);
+
+    if (!transDetail.rows.length) {
+      return {
+        "code": 100,
+        "msg": "ok",
+        "result": {}
+      }
+    }
+    let targetData = transDetail.rows[0];
+
+    targetData.data = targetData.input;
+    delete targetData.input;
+    return {
+      "code": 100,
+      "msg": "OK",
+      "result": targetData
+    }
+
+  } catch (error) {
+    logger.error("token_tx_details error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+
+}
+
 // ******************************** 交易模块 结束
 
 
@@ -925,7 +1117,7 @@ async function tx_details(query) {
     }
 */
 //获取CZRGas
-async function gas_price() {
+async function gas_price () {
   try {
     let querySql = {
       text: `
@@ -978,7 +1170,7 @@ async function gas_price() {
     }
 */
 //获得估算Gas
-async function estimate_gas(query) {
+async function estimate_gas (query) {
   try {
     let call_obj = {
       "from": query.from || '',
@@ -990,6 +1182,7 @@ async function estimate_gas(query) {
       "mci": query.mci || ''
     }
     let rlt = await czr.request.estimateGas(call_obj)
+
     return {
       "code": 100,
       "msg": rlt.msg,
@@ -997,6 +1190,44 @@ async function estimate_gas(query) {
     }
   } catch (error) {
     logger.error("estimate_gas error");
+    logger.error(error);
+    return ERROR_MSG.SYSTEM;
+  }
+}
+
+// 获取授权金额
+async function allowance (query) {
+  if (!query.token_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:token_account`
+    }
+  }
+  if (!query.user_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:user_account`
+    }
+  }
+  if (!query.action_account) {
+    return {
+      "code": 400,
+      "msg": `Missing parameter:action_account`
+    }
+  }
+  try {
+    // token_account CUSDT合约
+    // user_account 用户账户
+    // action_account 映射合约
+    let myContract = new czr.Contract(interfaceFile, query.token_account);
+    let allowance = await myContract.methods.allowance(query.user_account, query.action_account).call();
+    return {
+      "code": 100,
+      "msg": 'success',
+      "result": allowance.toString()
+    }
+  } catch (error) {
+    logger.error("allowance error");
     logger.error(error);
     return ERROR_MSG.SYSTEM;
   }
@@ -1019,7 +1250,7 @@ async function estimate_gas(query) {
     }
 */
 //字符串转16进制
-async function to_hex(query) {
+async function to_hex (query) {
   if (!query.source) {
     return {
       "code": 400,
@@ -1108,7 +1339,10 @@ router.get('/', async function (ctx, next) {
     if (query.action === "account_validate") {
       ctx.body = await account_validate(query.account);
       return;
-    } else if (query.action === 'account_balance_multi') {
+    } else if (
+      (query.action === 'account_balance_multi') ||
+      (query.action === 'account_balance_token_multi')
+    ) {
       let acctAry = query.account.split(',');
       if (acctAry.length > 20) {
         ctx.body = {
@@ -1161,13 +1395,16 @@ router.get('/', async function (ctx, next) {
       case 'account_balance_token':
         ctx.body = await account_balance_token(query);
         break;
+      case 'account_balance_token_multi':
+        ctx.body = await account_balance_token_multi(query);
+        break;
       case 'account_txlist_token':
         ctx.body = await account_txlist_token(query);
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in account module",
+          "code": 403,
+          "msg": "this action is not available in account module",
         }
     }
   }
@@ -1184,10 +1421,13 @@ router.get('/', async function (ctx, next) {
       case 'tx_details':
         ctx.body = await tx_details(query);
         break;
+      case 'token_tx_details':
+        ctx.body = await token_tx_details(query);
+        break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in transaction module",
+          "code": 403,
+          "msg": "this action is not available in transaction module",
         }
     }
   }
@@ -1201,13 +1441,16 @@ router.get('/', async function (ctx, next) {
       case 'estimate_gas':
         ctx.body = await estimate_gas(query);
         break;
+      case 'allowance':
+        ctx.body = await allowance(query);
+        break;
       case 'to_hex':
         ctx.body = await to_hex(query);
         break;
       default:
         ctx.body = {
-          "code":403,
-          "msg":"this action is not available in other module",
+          "code": 403,
+          "msg": "this action is not available in other module",
         }
     }
   }

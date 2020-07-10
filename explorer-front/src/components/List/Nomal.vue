@@ -1,6 +1,6 @@
 <template>
     <el-table :data="database" style="width: 100%">
-        <el-table-column label="时间" width="160">
+        <el-table-column :label="$t('home.time')" width="160">
             <template slot-scope="scope">
                 <span class="table-long-item">
                     {{
@@ -9,7 +9,7 @@
                 </span>
             </template>
         </el-table-column>
-        <el-table-column label="交易号" width="180">
+        <el-table-column :label="$t('home.transaction_hash')" width="180">
             <template slot-scope="scope">
                 <router-link
                     class="table-long-item"
@@ -17,7 +17,7 @@
                 >{{ scope.row.hash }}</router-link>
             </template>
         </el-table-column>
-        <el-table-column label="发款方" width="180">
+        <el-table-column :label="$t('home.sender')" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.mci <= 0">
                     <span class="table-long-item">GENESIS</span>
@@ -36,7 +36,7 @@
         <el-table-column width="40">
             <i class="el-icon-right"></i>
         </el-table-column>
-        <el-table-column label="收款方" width="180">
+        <el-table-column :label="$t('home.receiver')" width="180">
             <template slot-scope="scope">
                 <template v-if="scope.row.to===address">
                     <span class="table-long-item">{{ scope.row.to }}</span>
@@ -50,23 +50,23 @@
                 <template v-else>-</template>
             </template>
         </el-table-column>
-        <el-table-column label="状态" min-width="60" align="center">
+        <el-table-column :label="$t('home.status')" min-width="60" align="center">
             <template slot-scope="scope">
                 <template v-if="scope.row.is_stable === false">
-                    <span class="txt-warning">等待确认</span>
+                    <span class="txt-warning">{{$t('home.waiting')}}</span>
                 </template>
                 <template v-else>
                     <template v-if="scope.row.status == '0'">
-                        <span class="txt-success">成功</span>
+                        <span class="txt-success">{{$t('home.success')}}</span>
                     </template>
                     <template v-else-if="scope.row.status == '1'">
-                        <span class="txt-danger">失败(1)</span>
+                        <span class="txt-danger">{{$t('home.fail')}}(1)</span>
                     </template>
                     <template v-else-if="scope.row.status == '2'">
-                        <span class="txt-danger">失败(2)</span>
+                        <span class="txt-danger">{{$t('home.fail')}}(2)</span>
                     </template>
                     <template v-else-if="scope.row.status == '3'">
-                        <span class="txt-danger">失败(3)</span>
+                        <span class="txt-danger">{{$t('home.fail')}}(3)</span>
                     </template>
                     <template v-else>
                         <span class="txt-info">-</span>
@@ -74,7 +74,7 @@
                 </template>
             </template>
         </el-table-column>
-        <el-table-column label="金额 / CZR" align="right" min-width="205">
+        <el-table-column :label="$t('home.czr_blan')" align="right" min-width="205">
             <template slot-scope="scope">
                 <span>{{ scope.row.amount | toCZRVal }}</span>
             </template>

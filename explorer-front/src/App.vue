@@ -311,7 +311,7 @@ a {
 
 /* 账户详情 开始 */
 .page-account .table-long-item {
-    line-height: 12px;
+    line-height: 13px;
     position: relative;
     top: 2px;
 }
